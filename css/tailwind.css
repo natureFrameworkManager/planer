@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-background text-onBackground text-body-medium py-4 px-2;
+        font-family: "Montserrat"
+    }
+    body.gradient {
+        @apply bg-gradient-to-br from-[#A22552] via-[#ED4D21] to-[#67070A]
+    }
+    input[type=checkbox] {
+        @apply rounded
+    }
+}
+
+@layer components {
+    h1#title {
+        @apply text-[18px]
+    }
+    h2#updateTimestamp {
+        @apply text-[12px] mb-4
+    }
+    button#filter {
+        @apply mb-2
+    }
+    button {
+        @apply bg-blue-500 rounded px-2 py-1 me-1
+    }
+    
+    #calendar {
+        @apply text-[11px] h-full
+    }
+    .fc-event {
+        @apply cursor-pointer
+    }
+
+    label {
+        @apply ms-1 me-4 
+    }
+
+    #filter_con.modal {
+        @apply w-full h-full z-20 absolute top-0 left-0 items-center justify-center bg-[#000000d6]
+    } 
+    #filter_con.modal .modal-container {
+        @apply rounded-2xl w-full m-6 p-4 flex flex-col overflow-y-auto max-h-[90vh] gap-y-2
+    }
+    #filter_con.modal div.option-con {
+        @apply flex justify-between cursor-pointer
+    }
+    #filter_con.modal div.option-con div.title-con {
+        @apply flex gap-x-2 items-center text-[15px] w-full
+    }
+    #filter_con.modal div.option-con div.title-con span {
+        @apply text-icon
+    }
+    #filter_con.modal div.option-con div.btn-con {
+        @apply flex 
+    }
+    #filter_con.modal #courseoptions {
+        @apply grid gap-y-3 smd:grid-cols-3 sm:grid-cols-2 grid-cols-1
+    }
+    #filter_con.modal #courseoptions div.topCourse-con {
+        @apply flex flex-col gap-y-1
+    }
+    #filter_con.modal #courseoptions div.topCourse-con div {
+        @apply flex flex-wrap gap-x-1 gap-y-1
+    }
+    #filter_con.modal #personoptions {
+        @apply grid gap-y-3 smd:grid-cols-4 sm:grid-cols-3 grid-cols-2
+    }
+    #info_con.modal {
+        @apply w-full h-full z-20 absolute top-0 left-0 items-center justify-center bg-[#000000d6]
+    } 
+    #info_con.modal .modal-container {
+        @apply rounded-2xl m-6 p-4 flex flex-col max-h-[90vh] gap-y-2 overflow-y-auto max-h-[90vh]
+    }
+    #info_con.modal .modal-container h1 {
+        @apply text-[15px]
+    }
+    #info_con.modal .modal-container h3 {
+        @apply text-[12px]
+    }
+    #info_con.modal .modal-container ul {
+        @apply mb-2
+    }
+    #info_con.modal .modal-container hr {
+        @apply my-2
+    }
+    #info_con.modal .modal-container table.events {
+        @apply overflow-x-auto
+    }
+    #info_con.modal .modal-container table.events th {
+        @apply text-start
+    }
+    #info_con.modal .modal-container table.events td {
+        @apply text-nowrap pe-1
+    }
+}
+
+/* Override FullCalendar.io for dark mode */
+:root {
+    --fc-page-bg-color: #000000;
+    --fc-list-event-hover-bg-color: #323232
+}
+
+/* ===== Scrollbar CSS ===== */
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #505050 transparent;
+  }
+
+  /* Chrome, Edge, and Safari */
+  *::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: #505050;
+    border-radius: 10px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: #333333;
+  }
+  *::-webkit-scrollbar-thumb:active {
+    background: #333333;
+  }
+  *::-webkit-scrollbar-button {
+    width: 7px;
+    height: 7px;
+  }

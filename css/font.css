@@ -1,0 +1,108 @@
+@font-face {
+    font-family: "Courier Prime";
+    font-display: swap;
+    src: url(../assets/font/CourierPrime-Regular.ttf) format("truetype");
+}
+@font-face {
+    font-family: "Montserrat";
+    font-display: swap;
+    src: url(../assets/font/Montserrat.woff2) format("woff2");
+}
+@font-face {
+    font-family: "Monoton";
+    font-display: swap;
+    src: url(../assets/font/Monoton-Regular.ttf) format("truetype");
+}
+@font-face {
+    font-family: "Oswald";
+    font-display: swap;
+    src: url(../assets/font/Oswald.ttf) format("truetype");
+}
+@font-face {
+    font-family: "Roboto";
+    font-display: swap;
+    src: url(../assets/font/Roboto-Regular.woff2) format("woff2"), url(../assets/font/Roboto-Regular.woff) format("woff");
+}
+@font-face {
+    font-family: "Inter";
+    font-display: swap;
+    src: url(../assets/font/Inter-Regular.ttf) format("truetype");
+}
+@font-face {
+    font-family: "Archivo Black";
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+    src: url(../assets/font/ArchivoBlack.woff2) format("woff2");
+}
+@font-face {
+    font-family: "Palanquin Dark";
+    font-display: swap;
+    src: url(../assets/font/PalanquinDark.woff2) format("woff2");
+}
+@font-face {
+    font-family: "Palanquin";
+    font-display: swap;
+    src: url(../assets/font/Palanquin.ttf) format("truetype");
+}
+@font-face {
+    font-family: 'Material Icons';
+    font-display: swap;
+    font-style: normal;
+    font-weight: 400;
+    src: url(../assets/font/MaterialIcons-Regular.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'Material Icons Round';
+    font-display: swap;
+    font-style: normal;
+    font-weight: 400;
+    src: url(../assets/font/MaterialIcons-Round.woff2) format('woff2');
+}
+.archivo {
+    font-family: 'Archivo Black';
+}
+.palanquin {
+    font-family: 'Palanquin';
+}
+.palanquin-dark {
+    font-family: 'Palanquin Dark';
+}
+.material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    -moz-user-select: none; 
+    -webkit-user-select: none; 
+    -ms-user-select:none; 
+    user-select:none;
+    -o-user-select:none;
+  }
+.material-icons-round {
+    font-family: 'Material Icons Round';
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    -moz-user-select: none; 
+    -webkit-user-select: none; 
+    -ms-user-select:none; 
+    user-select:none;
+    -o-user-select:none;
+}
