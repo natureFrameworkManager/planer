@@ -345,6 +345,14 @@ function filterIDsHTML() {
         }
     }
 
+    // Modules
+    var modulesIDs = [];
+    for (const element of document.querySelectorAll("#moduleoptions input")) {
+        if (element.checked) {
+            modulesIDs = modulesIDs.concat(events.filter(el => el["ID"] == element.value).map(el => el.eventID));
+        }
+    }
+
     // Course
     var courseIDs = [];
     var courseOptions = [];
@@ -373,7 +381,7 @@ function filterIDsHTML() {
 
     // console.log([...new Set(typeIDs)], [...new Set(stateIDs)], [...new Set(personIDs)], [...new Set(courseIDs)])
     // console.log([...new Set(typeIDs)].length, [...new Set(stateIDs)].length, [...new Set(personIDs)].length, [...new Set(courseIDs)].length)
-    return intersection([...new Set(typeIDs)], intersection([...new Set(stateIDs)], intersection([...new Set(personIDs)], [...new Set(courseIDs)])));
+    return intersection([...new Set(typeIDs)], intersection([...new Set(stateIDs)], intersection([...new Set(personIDs)], intersection([...new Set(modulesIDs)], [...new Set(courseIDs)]))));
 }
 
 function displayEventDetails(event) {
@@ -501,10 +509,10 @@ getHtml().then((html) => {
     document.querySelector("#personoptions").innerHTML += '<div><input type="checkbox" name="person" value="" id="noPerson" checked><label for="noPerson">Keine Lehrkraft angegeben</label></div>';
     
     // Modules
-    // var allModules = [...new Set(modules.map(el => el.info["Titel"]))].filter(el => el.trim().length != 0);
-    // for (const module of allModules.sort()) {
-    //     document.querySelector("#moduleoptions").innerHTML += '<div><input type="checkbox" name="module" value="' + module + '" id="' + module + '"><label for="' + module + '">' + module + '</label></div>';
-    // }
+    var allModules = modules.map(el => el.info).filter((el, i, arr) => i === arr.findIndex((el2) => el2["ID"] == el["ID"])).filter(el => el["Titel"].trim().length > 0);
+    for (const module of allModules.sort((a,b) => a["Titel"].localeCompare(b["Titel"]))) {
+        document.querySelector("#moduleoptions").innerHTML += '<div><input type="checkbox" name="module" value="' + module["ID"] + '" id="' + module["ID"] + '" checked><label for="' + module["ID"] + '">' + module["Titel"] + " (" + module["ModulNr"] + ')</label></div>';
+    }
 
     // Courses and Course Options
     var allCoursesOptions = [...new Set(modules.map(el => el.info.Studiengang).flat().map(el => el.replace(/Semester.*/, "Semester").replace(/\s*\(?[0-9]?[0-9]\sPlätze\)?/, "").replace(/\[.*\]:.*/, "")).filter(el => el.trim().length != 0))];
