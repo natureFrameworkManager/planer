@@ -117,6 +117,26 @@ let events = [
     }
 ];
 
+// Service Worker
+const registerServiceWorker = async () => {
+    if ("serviceWorker" in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.register("/planer/service-worker.js", {
+          scope: "/planer/",
+        });
+        if (registration.installing) {
+          console.log("Service worker installing");
+        } else if (registration.waiting) {
+          console.log("Service worker installed");
+        } else if (registration.active) {
+          console.log("Service worker active");
+        }
+      } catch (error) {
+        console.error(`Registration failed with ${error}`);
+      }
+    }
+  };
+
 /**
  * Request HTML Document from Proxy Server and parse to Document Object
  * @returns {Document} Parsed HTML Document
@@ -448,6 +468,8 @@ function renderCal(events, IDs) {
     });
     calendar.render();
 }
+
+registerServiceWorker();
 
 getHtml().then((html) => {
     document.querySelector("#title").innerText = html.querySelector("h1").innerText;
