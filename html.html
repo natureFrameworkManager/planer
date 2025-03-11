@@ -63,23 +63,25 @@
         <button id="filter" onclick="document.querySelector('#filter_con').classList.replace('hidden', 'shown')">Filter <span class="material-icons-round">filter_list</span></button>
         <div id="filter_con" class="modal hidden">
             <div class="modal-container">
-                <button onclick="document.querySelector('#filter_con').classList.add('hidden')" class="w-fit flex items-center gap-x-2"><span class="material-icons-round">close</span> Schließen</button>
-                <div class="option-con"><div class="title-con">Status</div></div>
-                <div id="stateoptions"></div>
-                <div class="option-con"><div class="title-con">Veranstaltungstyp</div></div>
-                <div id="typeoptions"></div>
-                <div class="option-con"><div class="title-con" onclick="document.querySelector('#moduleoptions-con').classList.toggle('hidden')"><span class="material-icons-round">keyboard_arrow_down</span>Module</div><div class="btn-con"><button class="btnAll" data-con-id="moduleoptions">Alle</button><button class="btnNone" data-con-id="moduleoptions">Keine</button></div></div>
-                <div id="moduleoptions-con" class="hidden">
-                    <div id="moduleoptions"></div>
+                <div id="overflow-con">
+                    <div class="option-con"><div class="title-con">Status</div></div>
+                    <div id="stateoptions"></div>
+                    <div class="option-con"><div class="title-con">Veranstaltungstyp</div></div>
+                    <div id="typeoptions"></div>
+                    <div class="option-con"><div class="title-con" onclick="document.querySelector('#moduleoptions-con').classList.toggle('hidden')"><span class="material-icons-round">keyboard_arrow_down</span>Module</div><div class="btn-con"><button class="btnAll" data-con-id="moduleoptions">Alle</button><button class="btnNone" data-con-id="moduleoptions">Keine</button></div></div>
+                    <div id="moduleoptions-con" class="hidden">
+                        <div id="moduleoptions"></div>
+                    </div>
+                    <div class="option-con"><div class="title-con" onclick="document.querySelector('#courseoptions-con').classList.toggle('hidden')"><span class="material-icons-round">keyboard_arrow_down</span>Studiengänge</div><div class="btn-con"><button class="btnAll" data-con-id="courseoptions">Alle</button><button class="btnNone" data-con-id="courseoptions">Keine</button></div></div>
+                    <div id="courseoptions-con" class="hidden">
+                        <div id="courseoptions"></div>
+                    </div>
+                    <div class="option-con"><div class="title-con" onclick="document.querySelector('#personoptions-con').classList.toggle('hidden')"><span class="material-icons-round">keyboard_arrow_down</span>Lehrkräfte</div><div class="btn-con"><button class="btnAll" data-con-id="personoptions">Alle</button><button class="btnNone" data-con-id="personoptions">Keine</button></div></div>
+                    <div id="personoptions-con" class="hidden">
+                        <div id="personoptions"></div>
+                    </div>
                 </div>
-                <div class="option-con"><div class="title-con" onclick="document.querySelector('#courseoptions-con').classList.toggle('hidden')"><span class="material-icons-round">keyboard_arrow_down</span>Studiengänge</div><div class="btn-con"><button class="btnAll" data-con-id="courseoptions">Alle</button><button class="btnNone" data-con-id="courseoptions">Keine</button></div></div>
-                <div id="courseoptions-con" class="hidden">
-                    <div id="courseoptions"></div>
-                </div>
-                <div class="option-con"><div class="title-con" onclick="document.querySelector('#personoptions-con').classList.toggle('hidden')"><span class="material-icons-round">keyboard_arrow_down</span>Lehrkräfte</div><div class="btn-con"><button class="btnAll" data-con-id="personoptions">Alle</button><button class="btnNone" data-con-id="personoptions">Keine</button></div></div>
-                <div id="personoptions-con" class="hidden">
-                    <div id="personoptions"></div>
-                </div>
+                <button onclick="document.querySelector('#filter_con').classList.replace('shown', 'hidden')" class="flex items-center justify-center gap-x-2"><span class="material-icons-round">close</span> Schließen</button>
             </div>
         </div>
         <div id="info_con" class="modal hidden">
