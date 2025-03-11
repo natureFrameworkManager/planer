@@ -32,7 +32,7 @@
         @apply mb-2
     }
     button {
-        @apply bg-blue-500 rounded px-2 py-1 me-1
+        @apply bg-blue-500 rounded px-2 py-1
     }
     
     #calendar {
@@ -46,7 +46,7 @@
         @apply ms-1 me-4 
     }
 
-    body:has(#filter_con.shown) {
+    body:has(#filter_con.shown, #info_con.shown) {
         @apply overflow-y-hidden;
     }
     #filter_con.modal {
@@ -59,7 +59,7 @@
         @apply overflow-y-auto h-full w-full flex flex-col gap-y-2
     }
     #filter_con.modal div.option-con {
-        @apply flex justify-between cursor-pointer
+        @apply flex justify-between cursor-pointer sticky top-0 ps-2 pe-1 py-1 rounded bg-[#121212]
     }
     #filter_con.modal div.option-con div.title-con {
         @apply flex gap-x-2 items-center text-[15px] w-full
@@ -68,7 +68,7 @@
         @apply text-icon
     }
     #filter_con.modal div.option-con div.btn-con {
-        @apply flex 
+        @apply flex gap-x-1
     }
     #filter_con.modal #moduleoptions {
         @apply grid gap-y-2 md:grid-cols-2 grid-cols-1
@@ -86,10 +86,13 @@
         @apply grid gap-y-3 smd:grid-cols-4 sm:grid-cols-3 grid-cols-2
     }
     #info_con.modal {
-        @apply w-full h-full z-20 absolute top-0 left-0 items-center justify-center bg-[#000000d6]
+        @apply w-full h-full z-50 fixed top-0 right-0 left-0 items-center justify-center bg-[#000000d6]
     } 
     #info_con.modal .modal-container {
-        @apply rounded-2xl m-6 p-4 flex flex-col max-h-[90vh] gap-y-2 overflow-y-auto max-h-[90vh]
+        @apply rounded-2xl m-6 p-4 flex flex-col max-h-[90vh] h-full gap-y-2
+    }
+    #info_con.modal .modal-container #overflow-con {
+        @apply overflow-y-auto h-full w-full flex flex-col gap-y-2
     }
     #info_con.modal .modal-container h1 {
         @apply text-[15px]

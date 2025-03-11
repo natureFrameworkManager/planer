@@ -405,7 +405,7 @@ function filterIDsHTML() {
 }
 
 function displayEventDetails(event) {
-    document.querySelector("#info_con").classList.remove("hidden");
+    document.querySelector("#info_con").classList.replace("hidden", "shown");
     document.querySelector("#info_con .event #title").innerHTML = event.Titel;
     document.querySelector("#info_con .event #state").innerHTML = event.Status;
     document.querySelector("#info_con .event #location").innerHTML = "Ort: " + event.Ort;
