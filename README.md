@@ -19,7 +19,7 @@ It also gives the option to filter the data by useful filter options e.g. course
 
 ## Installation
 Install Apache Web Server (or any oher Web Server) with PHP support and copy contents to the html directory or the desired location.  
-Change the proxy url in js/js.js in the function `getHTML`.
+Change the proxy url in [js/js.js](https://github.com/natureFrameworkManager/planer/blob/main/js/js.js) in the function `getHTML` to your own URL on your Server of the [getHtml.php](https://github.com/natureFrameworkManager/planer/blob/main/getHtml.php) file or **leave the original URL**.
 
 ## Feature ideas
 - [x] Parse Data
