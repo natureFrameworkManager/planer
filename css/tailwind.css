@@ -22,10 +22,13 @@
     h2#updateTimestamp {
         @apply text-[12px]
     }
-    h2#source {
-        @apply text-[10px] mb-4
+    h3#github, h3#source {
+        @apply text-[10px] 
     }
-    h2#source a {
+    h3#github {
+        @apply mb-6
+    }
+    h3 a {
         @apply underline
     }
     button#filter {
