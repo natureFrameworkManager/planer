@@ -28,8 +28,8 @@ Change the proxy url in [js/js.js](https://github.com/natureFrameworkManager/pla
 - [x] PWA
 - [x] Offline Usage
 - [ ] Deselect not possible selections in filter (don't uncheck human-selected)
-- [ ] Generate final time table from selectable events
-  - [ ] Hide selected events 
+- [x] Generate final time table from selectable events
+  - [x] Hide selected events 
 
 ## Tech Stack
 **Client:** HTML, TailwindCSS, Plain JavaScript, Material Icons
