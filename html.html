@@ -140,7 +140,11 @@
                         </tbody>
                     </table>
                 </div>
-                <button onclick="document.querySelector('#info_con').classList.replace('shown','hidden')" class="flex items-center justify-center gap-x-2 mt-4"><span class="material-icons-round">close</span> Schließen</button>
+                <div class="flex w-full gap-x-1">
+                    <button class="w-full flex items-center justify-center gap-x-2 mt-4 bg-red-700" id="deselect-btn"><span class="material-icons-round">cancel</span> Veranstaltung abwählen</button>
+                    <button class="w-full flex items-center justify-center gap-x-2 mt-4 bg-green-700" id="select-btn"><span class="material-icons-round">task_alt</span> Veranstaltung auswählen</button>
+                </div>
+                <button onclick="document.querySelector('#info_con').classList.replace('shown','hidden')" class="flex items-center justify-center gap-x-2 mt-2"><span class="material-icons-round">close</span> Schließen</button>
             </div>
         </div>
         <div id="calendar"><a class="fc-event"></a></div>

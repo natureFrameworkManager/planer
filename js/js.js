@@ -116,6 +116,8 @@ let events = [
         "eventID": "studium/ScaDS.ADL#1"
     }
 ];
+let selectedEvents = [];
+let deselectedEvents = [];
 
 // Service Worker
 const registerServiceWorker = async () => {
@@ -404,6 +406,17 @@ function filterIDsHTML() {
     return intersection([...new Set(typeIDs)], intersection([...new Set(stateIDs)], intersection([...new Set(personIDs)], intersection([...new Set(modulesIDs)], [...new Set(courseIDs)]))));
 }
 
+function filterIDsSelected(filteredIDs) {
+    var results = events.filter(el => filteredIDs.includes(el.eventID));
+    for (const event of selectedEvents) {
+        results = results.filter(el => !(el.ID == event.ID && el.Typ == event.Typ) || el.eventID == event.eventID);
+    }
+    for (const event of deselectedEvents) {
+        results = results.filter(el => el.eventID !== event.eventID);
+    }
+    return results.map(el => el.eventID);
+}
+
 function displayEventDetails(event) {
     document.querySelector("#info_con").classList.replace("hidden", "shown");
     document.querySelector("#info_con .event #title").innerHTML = event.Titel;
@@ -432,6 +445,16 @@ function displayEventDetails(event) {
             '<td>' + (Array.isArray(even.Lehrkraft) ? even.Lehrkraft.join("; ") : even.Lehrkraft) + '</td>'+
         '</tr>';
     }
+    document.querySelector("#info_con button#select-btn").dataset.id = event.eventID;
+}
+
+/**
+ * 
+ * @param {{"Unit": String, "Lehrkraft": String, "Titel": String, "Zeit": { "dayIndex": Number, "startTime": Date, "endTime": Date, "day": String "fullDay": String, "time": String }, "Ort": String, "vorjahr/Ø/max": String, "Status": String, "LV-Typ": String, "Typ": String, "ID": String, "eventID": String }} event 
+ */
+function selectEvent(event) {
+    console.log(event);
+    console.log(events.filter(el => el.ID == event.ID && el.Typ == event.Typ));
 }
 
 /**
@@ -573,7 +596,7 @@ getHtml().then((html) => {
                     document.getElementById(element.value.split("-")[0]).checked = true;
                 }
             }
-            renderCal(events, filterIDsHTML());
+            renderCal(events, filterIDsSelected(filterIDsHTML()));
         })
     }
 
@@ -582,7 +605,7 @@ getHtml().then((html) => {
             for (const input of document.querySelectorAll("#" + element.dataset.conId + " input:not([disabled])")) {
                 input.checked = true;
             }
-            renderCal(events, filterIDsHTML());
+            renderCal(events, filterIDsSelected(filterIDsHTML()));
         }) 
     }
     for (const element of document.querySelectorAll("button.btnNone")) {
@@ -590,7 +613,18 @@ getHtml().then((html) => {
             for (const input of document.querySelectorAll("#" + element.dataset.conId + " input:not([disabled])")) {
                 input.checked = false;
             }
-            renderCal(events, filterIDsHTML());
+            renderCal(events, filterIDsSelected(filterIDsHTML()));
         }) 
     }
+
+    document.querySelector("#info_con button#select-btn").addEventListener("click", () => {
+        selectedEvents.push(events.filter(el => el.eventID == document.querySelector("#info_con button#select-btn").dataset.id)[0]);
+        renderCal(events, filterIDsSelected(filterIDsHTML()));
+        document.querySelector("#info_con").classList.add("hidden");
+    })
+    document.querySelector("#info_con button#deselect-btn").addEventListener("click", () => {
+        deselectedEvents.push(events.filter(el => el.eventID == document.querySelector("#info_con button#select-btn").dataset.id)[0]);
+        renderCal(events, filterIDsSelected(filterIDsHTML()));
+        document.querySelector("#info_con").classList.add("hidden");
+    })
 })
