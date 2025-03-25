@@ -90,6 +90,14 @@
                     <div id="personoptions-con" class="hidden">
                         <div id="personoptions"></div>
                     </div>
+                    <div class="option-con"><div class="title-con" onclick="document.querySelector('#selected-con').classList.toggle('hidden')"><span class="material-icons-round">keyboard_arrow_down</span>Ausgewählte Veranstaltungen</div><div class="btn-con"><button id="btnClearSelected" data-con-id="selected">Leeren</button></div></div>
+                    <div id="selected-con" class="hidden">
+                        <div id="selected"></div>
+                    </div>
+                    <div class="option-con"><div class="title-con" onclick="document.querySelector('#deselected-con').classList.toggle('hidden')"><span class="material-icons-round">keyboard_arrow_down</span>Abgewählte Veranstaltungen</div><div class="btn-con"><button id="btnClearDeselected" data-con-id="selected">Leeren</button></div></div>
+                    <div id="deselected-con" class="hidden">
+                        <div id="deselected"></div>
+                    </div>
                 </div>
                 <button onclick="document.querySelector('#filter_con').classList.replace('shown', 'hidden')" class="flex items-center justify-center gap-x-2"><span class="material-icons-round">close</span> Schließen</button>
             </div>

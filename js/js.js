@@ -424,7 +424,7 @@ function displayEventDetails(event) {
     document.querySelector("#info_con .event #location").innerHTML = "Ort: " + event.Ort;
     document.querySelector("#info_con .event #location-type").innerHTML = event["LV-Typ"];
     document.querySelector("#info_con .event#time").innerHTML = "Tag: " + event.Zeit.fullDay;
-    document.querySelector("#info_con .event#day").innerHTML = "Uhrzet: " + event.Zeit.time;
+    document.querySelector("#info_con .event#day").innerHTML = "Uhrzeit: " + event.Zeit.time;
     document.querySelector("#info_con .event#person").innerHTML = "Lehrkraft: " + (Array.isArray(event.Lehrkraft) ? event.Lehrkraft.join("; ") : event.Lehrkraft);
     var module = modules.filter(el => el.info.ID == event.ID)[0].info;
     document.querySelector("#info_con .module#title").innerHTML = "Titel: " + module.Titel;
@@ -448,9 +448,37 @@ function displayEventDetails(event) {
     document.querySelector("#info_con button#select-btn").dataset.id = event.eventID;
 }
 
+function displaySelectedAndDeselected() {
+    var html = "";
+    for (const event of selectedEvents) {
+        html += '<div class="flex justify-between px-2"><label>' + event.Zeit.day + ", " + event.Zeit.time + " # " + event.Titel + " [" + event.Unit + "]" + " # " + event.Ort + " # " + event.Lehrkraft + '</label><button class="material-icons-round selected-delete-btn px-2 py-1" data-id="' + event.eventID + '">delete</button></div'
+    }
+    document.querySelector("#selected-con #selected").innerHTML = html;
+    var html = "";
+    for (const event of deselectedEvents) {
+        html += '<div class="flex justify-between px-2"><label>' + event.Zeit.day + ", " + event.Zeit.time + " # " + event.Titel + " [" + event.Unit + "]" + " # " + event.Ort + " # " + event.Lehrkraft + '</label><button class="material-icons-round deselected-delete-btn px-2 py-1" data-id="' + event.eventID + '">delete</button></div'
+    }
+    document.querySelector("#deselected-con #deselected").innerHTML = html;
+    
+    for (const element of document.querySelectorAll("#selected-con #selected div button.selected-delete-btn")) {
+        element.addEventListener("click", () => {
+            selectedEvents = selectedEvents.filter(el => el.eventID !== element.dataset.id);
+            displaySelectedAndDeselected();
+            renderCal(events, filterIDsSelected(filterIDsHTML()));
+        })
+    }  
+    for (const element of document.querySelectorAll("#deselected-con #deselected div button.deselected-delete-btn")) {
+        element.addEventListener("click", () => {
+            deselectedEvents = deselectedEvents.filter(el => el.eventID !== element.dataset.id);
+            displaySelectedAndDeselected();
+            renderCal(events, filterIDsSelected(filterIDsHTML()));
+        })
+    }  
+}
+
 /**
  * 
- * @param {{"Unit": String, "Lehrkraft": String, "Titel": String, "Zeit": { "dayIndex": Number, "startTime": Date, "endTime": Date, "day": String "fullDay": String, "time": String }, "Ort": String, "vorjahr/Ø/max": String, "Status": String, "LV-Typ": String, "Typ": String, "ID": String, "eventID": String }} event 
+ * @param {{"Unit": String, "Lehrkraft": String, "Titel": String, "Zeit": { "dayIndex": Number, "startTime": Date, "endTime": Date, "day": String, "fullDay": String, "time": String }, "Ort": String, "vorjahr/Ø/max": String, "Status": String, "LV-Typ": String, "Typ": String, "ID": String, "eventID": String }} event 
  */
 function selectEvent(event) {
     console.log(event);
@@ -620,11 +648,23 @@ getHtml().then((html) => {
     document.querySelector("#info_con button#select-btn").addEventListener("click", () => {
         selectedEvents.push(events.filter(el => el.eventID == document.querySelector("#info_con button#select-btn").dataset.id)[0]);
         renderCal(events, filterIDsSelected(filterIDsHTML()));
+        displaySelectedAndDeselected();
         document.querySelector("#info_con").classList.add("hidden");
     })
     document.querySelector("#info_con button#deselect-btn").addEventListener("click", () => {
         deselectedEvents.push(events.filter(el => el.eventID == document.querySelector("#info_con button#select-btn").dataset.id)[0]);
         renderCal(events, filterIDsSelected(filterIDsHTML()));
+        displaySelectedAndDeselected();
         document.querySelector("#info_con").classList.add("hidden");
+    })
+    document.querySelector("#filter_con button#btnClearSelected").addEventListener("click", () => {
+        selectedEvents = [];
+        renderCal(events, filterIDsSelected(filterIDsHTML()));
+        displaySelectedAndDeselected();
+    })
+    document.querySelector("#filter_con button#btnClearDeselected").addEventListener("click", () => {
+        deselectedEvents = [];
+        renderCal(events, filterIDsSelected(filterIDsHTML()));
+        displaySelectedAndDeselected();
     })
 })
