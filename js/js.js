@@ -154,12 +154,10 @@ async function getHtml() {
  * @returns {Date} Parsed Date
  */
 function parseUpdateDate(dateString) {
-    var [date, time] = dateString.split(" ");
-    var [month, day, year] = date.split("/");
-    var [hour, minute, second] = time.slice(0, -2).split(":");
-    if (time.match("PM")) {
-        hour += 12;
-    }
+    console.log(dateString)
+    var [day_string, date, time] = dateString.split(" ");
+    var [day, month, year] = date.split(".");
+    var [hour, minute, second] = time.split(":");
     return new Date([year, month.padStart(2, "0"), day.padStart(2, "0")].join("-") + "T" + [hour.padStart(2, "0"), minute.padStart(2, "0"), second.padStart(2, "0")].join(":"));
 }
 
@@ -248,6 +246,10 @@ function getModuleData(htmlGroup) {
             }
         }
         if (Array.isArray(data["Zeit"]) && data["Zeit"].length >= 2) {
+            if (!data["Zeit"][1].match(/\s-\s/)) {
+                console.log("Zeit not right format", data["Zeit"])
+                continue;
+            }
             var startTime = data["Zeit"][1].split(" - ")[0];
             var endTime = data["Zeit"][1].split(" - ")[1];
             data["Zeit"] = {
@@ -524,14 +526,18 @@ registerServiceWorker();
 
 getHtml().then((html) => {
     document.querySelector("#title").innerText = html.querySelector("h1").innerText;
-    document.querySelector("#updateTimestamp").innerText = "Letzte Aktualisierung durch Fakultät: " + parseUpdateDate(html.querySelector("p").innerText.split("Aktualisierung")[1].trim()).toLocaleString("de-DE", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-    });
+    try {
+        document.querySelector("#updateTimestamp").innerText = "Letzte Aktualisierung durch Fakultät: " + parseUpdateDate(html.querySelector("p").innerText.split("Aktualisierung")[1].trim()).toLocaleString("de-DE", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+        });
+    } catch (error) {
+        console.log("Date not parsable")
+    }
 
     var splitHtml = splitHtmlModule(html.body.children);
     modules = splitHtml.map(el => getModuleData(el));
