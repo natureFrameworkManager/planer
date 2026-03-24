@@ -11,6 +11,7 @@ from database.models import (
     ModuleDegreeLink, ModuleEventLink, EventStaffLink,
     EventType, Weekday, Status,
 )
+from my_logging import get_logger
 
 SOURCE_URL = "https://casparkroll.de/planer/getHtml.php"
 
@@ -26,6 +27,7 @@ WEEKDAY_MAP = {
 
 EVENT_TYPE_MAP = {v.value: v for v in EventType}
 STATUS_MAP = {v.value: v for v in Status}
+logger = get_logger(__name__)
 
 
 def fetch_html(url: str) -> str:
@@ -36,6 +38,8 @@ def fetch_html(url: str) -> str:
 
 def get_semester_from_html(soup: BeautifulSoup) -> str:
     h1 = soup.find("h1")
+    if not h1:
+        logger.warning("get_semester_from_html: no <h1> found, returning empty semester name")
     return h1.get_text(strip=True) if h1 else ""
 
 
@@ -50,10 +54,16 @@ def split_html_modules(soup: BeautifulSoup) -> list[list[Tag]]:
       1. Walk direct body children to find the last H2 preceded by HR
          (the first module heading), then stop at the first H2 *not* preceded by HR.
       2. Slice from that split point.
-      3. Use the "BACK TO TOP" <a> direct children as separators between modules.
+      3. Group remaining elements into consecutive pairs.
     """
+    if not soup.body:
+        logger.warning("split_html_modules: soup has no <body>, returning empty module groups")
+        return []
+
     children = [el for el in soup.body.children if isinstance(el, Tag)]
 
+    # Finds the index where the actual contents begin. This is the last occurrence of h2 directly after hr
+    # After that, h2 always follows a p tag. This is what we search for.
     split_index = -1
     prev = None
     for i, el in enumerate(children):
@@ -67,26 +77,21 @@ def split_html_modules(soup: BeautifulSoup) -> list[list[Tag]]:
         prev = el
 
     if split_index == -1:
+        logger.warning("split_html_modules: no module start marker found, returning empty module groups")
         return []
 
     children = children[split_index:]
+    if not children:
+        logger.warning("split_html_modules: split produced no children, returning empty module groups")
+        return []
 
-    # "BACK TO TOP" anchors are direct body children between module sections
-    a_indices = [i for i, el in enumerate(children) if el.name == "a"]
-
-    groups: list[list[Tag]] = []
-    prev_index = None
-    for idx in a_indices:
-        start = 0 if prev_index is None else prev_index + 2
-        groups.append(children[start:idx])
-        prev_index = idx
-
-    # Filter out whitespace-only elements; each group should be [h2, info_table, events_table]
-    return [
-        [el for el in group if el.get_text(strip=True)]
-        for group in groups
-    ]
-
+    groups = []
+    for i in range(0, len(children), 2):
+        p_tag = children[i + 1].contents
+        group = [children[i], p_tag[1], p_tag[3]]  # headline
+        if group:
+            groups.append(group)
+    return groups
 
 def _parse_cell_values(cell: Tag) -> str | list[str]:
     """Return plain text or a list of strings when the cell contains <br>-separated values."""
@@ -114,6 +119,10 @@ def parse_module_data(html_group: list[Tag]) -> dict | None:
     Event table columns: Unit, Lehrkraft, Titel, Zeit, Ort, vorjahr/Ø/max, Status, LV-Typ
     """
     if len(html_group) < 3:
+        logger.warning(
+            "parse_module_data: expected at least 3 tags (h2/info/events), got %s; returning None",
+            len(html_group),
+        )
         return None
 
     # Anchor name from h2 (path-like ID, e.g. "studium/Num.ACPDE")
@@ -152,6 +161,11 @@ def parse_module_data(html_group: list[Tag]) -> dict | None:
     events = []
     event_rows = html_group[2].select("tr[align=center]")
     if not event_rows:
+        logger.warning(
+            "parse_module_data: no event rows found for module '%s' (anchor '%s'), returning empty events",
+            title,
+            anchor_id,
+        )
         return {"info": info, "events": events}
 
     headers = [th.get_text(strip=True) for th in event_rows[0].find_all("th")]
@@ -167,15 +181,30 @@ def parse_module_data(html_group: list[Tag]) -> dict | None:
         # Parse Zeit — format: ["montags", "11:15 - 12:45"]
         zeit = data.get("Zeit")
         if not isinstance(zeit, list) or len(zeit) < 2:
+            logger.warning(
+                "parse_module_data: skipping event in module '%s' due to invalid Zeit value: %r",
+                title,
+                zeit,
+            )
             continue
 
         time_match = re.match(r"(.+?)\s+-\s+(.+)", zeit[1])
         if not time_match:
+            logger.warning(
+                "parse_module_data: skipping event in module '%s' due to invalid time range: %r",
+                title,
+                zeit[1],
+            )
             continue
 
         day_str = zeit[0].split(" ")[0]
         weekday = WEEKDAY_MAP.get(day_str)
         if weekday is None:
+            logger.warning(
+                "parse_module_data: skipping event in module '%s' due to unknown weekday token: %r",
+                title,
+                day_str,
+            )
             continue
 
         try:
@@ -184,6 +213,11 @@ def parse_module_data(html_group: list[Tag]) -> dict | None:
             data["parsed_start_time"] = time(int(sh), int(sm))
             data["parsed_end_time"] = time(int(eh), int(em))
         except (ValueError, IndexError):
+            logger.warning(
+                "parse_module_data: skipping event in module '%s' due to unparseable time values: %r",
+                title,
+                zeit,
+            )
             continue
 
         data["parsed_weekday"] = weekday
@@ -361,6 +395,8 @@ def parse_and_populate(url: str = SOURCE_URL):
             session.commit()
 
         groups = split_html_modules(soup)
+        if not groups:
+            logger.warning("parse_and_populate: no module groups extracted from source HTML")
         for group in groups:
             module_data = parse_module_data(group)
             if module_data:
