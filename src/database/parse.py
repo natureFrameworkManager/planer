@@ -3,7 +3,7 @@ from datetime import time
 
 import httpx
 from bs4 import BeautifulSoup, Tag
-from sqlmodel import Session, select
+from sqlmodel import Session, SQLModel, select
 
 from database.database import engine
 from database.models import (
@@ -30,6 +30,38 @@ STATUS_MAP = {v.value: v for v in Status}
 logger = get_logger(__name__)
 
 
+# ---------------------------------------------------------------------------
+# Generic helpers
+# ---------------------------------------------------------------------------
+
+def _first_string(value: str | list[str], default: str = "") -> str:
+    """Extract a single string from a value that may be a list."""
+    if isinstance(value, list):
+        return value[0] if value else default
+    return value or default
+
+
+def _get_or_create(session: Session, model: type[SQLModel], name: str) -> SQLModel:
+    """Look up a record by name, or create and flush it if it doesn't exist."""
+    record = session.exec(select(model).where(model.name == name)).first()
+    if not record:
+        record = model(name=name)
+        session.add(record)
+        session.flush()
+    return record
+
+
+def _parse_credits(raw: str | None) -> int:
+    if not raw:
+        return 0
+    match = re.search(r"\d+", str(raw))
+    return int(match.group()) if match else 0
+
+
+# ---------------------------------------------------------------------------
+# HTML fetching & semester detection
+# ---------------------------------------------------------------------------
+
 def fetch_html(url: str) -> str:
     response = httpx.get(url, follow_redirects=True, timeout=30)
     response.raise_for_status()
@@ -37,11 +69,15 @@ def fetch_html(url: str) -> str:
 
 
 def get_semester_from_html(soup: BeautifulSoup) -> str:
-    h1 = soup.find("h1")
-    if not h1:
+    heading = soup.find("h1")
+    if not heading:
         logger.warning("get_semester_from_html: no <h1> found, returning empty semester name")
-    return h1.get_text(strip=True) if h1 else ""
+    return heading.get_text(strip=True) if heading else ""
 
+
+# ---------------------------------------------------------------------------
+# HTML → raw data structures
+# ---------------------------------------------------------------------------
 
 def split_html_modules(soup: BeautifulSoup) -> list[list[Tag]]:
     """
@@ -60,21 +96,21 @@ def split_html_modules(soup: BeautifulSoup) -> list[list[Tag]]:
         logger.warning("split_html_modules: soup has no <body>, returning empty module groups")
         return []
 
-    children = [el for el in soup.body.children if isinstance(el, Tag)]
+    children = [element for element in soup.body.children if isinstance(element, Tag)]
 
-    # Finds the index where the actual contents begin. This is the last occurrence of h2 directly after hr
-    # After that, h2 always follows a p tag. This is what we search for.
+    # Finds the index where the actual contents begin. This is the last occurrence
+    # of h2 directly after hr. After that, h2 always follows a p tag.
     split_index = -1
-    prev = None
-    for i, el in enumerate(children):
+    previous_element = None
+    for i, element in enumerate(children):
         if i == 0:
-            prev = el
+            previous_element = element
             continue
-        if el.name == "h2" and prev and prev.name == "hr":
+        if element.name == "h2" and previous_element and previous_element.name == "hr":
             split_index = i
-        elif el.name == "h2" and prev and prev.name != "hr":
+        elif element.name == "h2" and previous_element and previous_element.name != "hr":
             break
-        prev = el
+        previous_element = element
 
     if split_index == -1:
         logger.warning("split_html_modules: no module start marker found, returning empty module groups")
@@ -87,30 +123,100 @@ def split_html_modules(soup: BeautifulSoup) -> list[list[Tag]]:
 
     groups = []
     for i in range(0, len(children), 2):
-        p_tag = children[i + 1].contents
-        group = [children[i], p_tag[1], p_tag[3]]  # headline
-        if group:
-            groups.append(group)
+        # Each module pair: children[i] = <h2> heading, children[i+1] = <p> wrapper.
+        # Inside the <p>, index 1 = info table, index 3 = events table
+        # (indices 0 and 2 are whitespace/text nodes).
+        wrapper_contents = children[i + 1].contents
+        heading = children[i]
+        info_table = wrapper_contents[1]
+        events_table = wrapper_contents[3]
+        groups.append([heading, info_table, events_table])
     return groups
+
 
 def _parse_cell_values(cell: Tag) -> str | list[str]:
     """Return plain text or a list of strings when the cell contains <br>-separated values."""
     inner = cell.decode_contents()
     if "<br" in inner:
         parts = [
-            BeautifulSoup(p, "html.parser").get_text(strip=True)
-            for p in re.split(r"<br\s*/?>", inner)
+            BeautifulSoup(part, "html.parser").get_text(strip=True)
+            for part in re.split(r"<br\s*/?>", inner)
         ]
-        parts = [p for p in parts if p]
+        parts = [part for part in parts if part]
         if len(parts) > 1:
             return parts
     return cell.get_text(strip=True)
 
 
+def _parse_event_row(headers: list[str], row: Tag, module_title: str) -> dict | None:
+    """Parse a single event <tr> into a dict with parsed_weekday, parsed_start_time, etc.
+
+    Returns None if the row is invalid and should be skipped.
+    """
+    columns = row.find_all("td")
+    data: dict = {}
+    for i, header in enumerate(headers):
+        if i >= len(columns):
+            break
+        data[header] = _parse_cell_values(columns[i])
+
+    # Parse Zeit — format: ["montags", "11:15 - 12:45"]
+    zeit = data.get("Zeit")
+    if not isinstance(zeit, list) or len(zeit) < 2:
+        logger.warning(
+            "parse_module_data: skipping event in module '%s' due to invalid Zeit value: %r",
+            module_title, zeit,
+        )
+        return None
+
+    time_match = re.match(r"(.+?)\s+-\s+(.+)", zeit[1])
+    if not time_match:
+        logger.warning(
+            "parse_module_data: skipping event in module '%s' due to invalid time range: %r",
+            module_title, zeit[1],
+        )
+        return None
+
+    day_string = zeit[0].split(" ")[0]
+    weekday = WEEKDAY_MAP.get(day_string)
+    if weekday is None:
+        logger.warning(
+            "parse_module_data: skipping event in module '%s' due to unknown weekday token: %r",
+            module_title, day_string,
+        )
+        return None
+
+    try:
+        start_hour, start_minute = time_match.group(1).strip().split(":")
+        end_hour, end_minute = time_match.group(2).strip().split(":")
+        data["parsed_start_time"] = time(int(start_hour), int(start_minute))
+        data["parsed_end_time"] = time(int(end_hour), int(end_minute))
+    except (ValueError, IndexError):
+        logger.warning(
+            "parse_module_data: skipping event in module '%s' due to unparseable time values: %r",
+            module_title, zeit,
+        )
+        return None
+
+    data["parsed_weekday"] = weekday
+
+    # Extract event type from Titel — "Module Name - Vorlesung mit integrierter Übung"
+    title = _first_string(data.get("Titel", ""))
+    type_string = ""
+    if title:
+        first_part = title.split(",")[0]
+        parts = first_part.split(" - ")
+        if len(parts) >= 2:
+            type_string = parts[-1].strip()
+    data["parsed_type"] = EVENT_TYPE_MAP.get(type_string, EventType.NO_TYPE_SPECIFIED)
+
+    return data
+
+
 def parse_module_data(html_group: list[Tag]) -> dict | None:
     """
     html_group layout (after filtering empty elements):
-      [0] <h2>  — module title + anchor name (anchor name = path-like ID, e.g. studium/Num.ACPDE)
+      [0] <h2>  — module title + anchor name
       [1] <table class="maintable"> — outer info table containing two inner tables
       [2] <table class="maintable" border=""> — events table
 
@@ -125,10 +231,8 @@ def parse_module_data(html_group: list[Tag]) -> dict | None:
         )
         return None
 
-    # Anchor name from h2 (path-like ID, e.g. "studium/Num.ACPDE")
     anchor = html_group[0].find("a")
     anchor_id = anchor.get("name", "") if anchor else ""
-
     title = html_group[0].get_text(strip=True)
 
     # Info tables — select recursively from both nested tables
@@ -149,7 +253,7 @@ def parse_module_data(html_group: list[Tag]) -> dict | None:
     studiengang = info.get("Studiengang", "")
     if isinstance(studiengang, list):
         info["cleanStudiengang"] = [
-            re.sub(r"\(\d+\s*Plätze\)", "", s).strip() for s in studiengang
+            re.sub(r"\(\d+\s*Plätze\)", "", entry).strip() for entry in studiengang
         ]
     elif studiengang:
         info["cleanStudiengang"] = re.sub(r"\(\d+\s*Plätze\)", "", studiengang).strip()
@@ -157,121 +261,86 @@ def parse_module_data(html_group: list[Tag]) -> dict | None:
         info["cleanStudiengang"] = ""
 
     # Events table
-    # Headers: Unit, Lehrkraft, Titel, Zeit, Ort, vorjahr/Ø/max, Status, LV-Typ
     events = []
     event_rows = html_group[2].select("tr[align=center]")
     if not event_rows:
         logger.warning(
             "parse_module_data: no event rows found for module '%s' (anchor '%s'), returning empty events",
-            title,
-            anchor_id,
+            title, anchor_id,
         )
         return {"info": info, "events": events}
 
-    headers = [th.get_text(strip=True) for th in event_rows[0].find_all("th")]
+    headers = [header.get_text(strip=True) for header in event_rows[0].find_all("th")]
 
     for row in event_rows[1:]:
-        cols = row.find_all("td")
-        data: dict = {}
-        for j, header in enumerate(headers):
-            if j >= len(cols):
-                break
-            data[header] = _parse_cell_values(cols[j])
-
-        # Parse Zeit — format: ["montags", "11:15 - 12:45"]
-        zeit = data.get("Zeit")
-        if not isinstance(zeit, list) or len(zeit) < 2:
-            logger.warning(
-                "parse_module_data: skipping event in module '%s' due to invalid Zeit value: %r",
-                title,
-                zeit,
-            )
-            continue
-
-        time_match = re.match(r"(.+?)\s+-\s+(.+)", zeit[1])
-        if not time_match:
-            logger.warning(
-                "parse_module_data: skipping event in module '%s' due to invalid time range: %r",
-                title,
-                zeit[1],
-            )
-            continue
-
-        day_str = zeit[0].split(" ")[0]
-        weekday = WEEKDAY_MAP.get(day_str)
-        if weekday is None:
-            logger.warning(
-                "parse_module_data: skipping event in module '%s' due to unknown weekday token: %r",
-                title,
-                day_str,
-            )
-            continue
-
-        try:
-            sh, sm = time_match.group(1).strip().split(":")
-            eh, em = time_match.group(2).strip().split(":")
-            data["parsed_start_time"] = time(int(sh), int(sm))
-            data["parsed_end_time"] = time(int(eh), int(em))
-        except (ValueError, IndexError):
-            logger.warning(
-                "parse_module_data: skipping event in module '%s' due to unparseable time values: %r",
-                title,
-                zeit,
-            )
-            continue
-
-        data["parsed_weekday"] = weekday
-
-        # Extract event type from Titel — "Module Name - Vorlesung mit integrierter Übung"
-        # Split by "," first (JS compat), then by " - " to get type
-        titel = data.get("Titel", "")
-        if isinstance(titel, list):
-            titel = titel[0] if titel else ""
-        typ_str = ""
-        if isinstance(titel, str):
-            first_part = titel.split(",")[0]
-            parts = first_part.split(" - ")
-            if len(parts) >= 2:
-                typ_str = parts[-1].strip()
-        data["parsed_type"] = EVENT_TYPE_MAP.get(typ_str, EventType.NO_TYPE_SPECIFIED)
-
-        events.append(data)
+        event_data = _parse_event_row(headers, row, title)
+        if event_data:
+            events.append(event_data)
 
     return {"info": info, "events": events}
 
 
-def _get_or_create_location(session: Session, name: str) -> Location:
-    loc = session.exec(select(Location).where(Location.name == name)).first()
-    if not loc:
-        loc = Location(name=name)
-        session.add(loc)
-        session.flush()
-    return loc
+# ---------------------------------------------------------------------------
+# Database persistence
+# ---------------------------------------------------------------------------
+
+def _link_degrees(session: Session, module: Module, degree_names: list[str]):
+    """Create degree records and link them to the module."""
+    for degree_name in degree_names:
+        if degree_name:
+            degree = _get_or_create(session, Degree, degree_name)
+            module.degrees.append(degree)
 
 
-def _get_or_create_staff(session: Session, name: str) -> Staff:
-    staff = session.exec(select(Staff).where(Staff.name == name)).first()
-    if not staff:
-        staff = Staff(name=name)
-        session.add(staff)
-        session.flush()
-    return staff
+def _save_event(session: Session, module: Module, event_data: dict):
+    """Create or deduplicate an event and link it to the module."""
+    # Location — column "Ort", value like "Paulinum, P-701 (28)"; strip capacity annotation
+    raw_location = _first_string(event_data.get("Ort", ""))
+    location_name = re.sub(r"\s*\(\d+\)\s*$", "", raw_location).strip() or "Unbekannt"
+    location = _get_or_create(session, Location, location_name)
 
+    status_raw = _first_string(event_data.get("Status", ""))
+    status = STATUS_MAP.get(status_raw.strip().lower(), Status.OK)
 
-def _get_or_create_degree(session: Session, name: str) -> Degree:
-    degree = session.exec(select(Degree).where(Degree.name == name)).first()
-    if not degree:
-        degree = Degree(name=name)
-        session.add(degree)
-        session.flush()
-    return degree
+    event_title = _first_string(event_data.get("Titel", ""))
 
+    # Dedup: an event with identical title+weekday+times+location is the same physical event
+    existing_event = session.exec(
+        select(Event).where(
+            Event.title == event_title,
+            Event.weekday == event_data["parsed_weekday"],
+            Event.start_time == event_data["parsed_start_time"],
+            Event.end_time == event_data["parsed_end_time"],
+            Event.location_id == location.id,
+        )
+    ).first()
+    if existing_event:
+        if existing_event not in module.events:
+            module.events.append(existing_event)
+        return
 
-def _parse_credits(raw: str | None) -> int:
-    if not raw:
-        return 0
-    match = re.search(r"\d+", str(raw))
-    return int(match.group()) if match else 0
+    event = Event(
+        type=event_data.get("parsed_type", EventType.NO_TYPE_SPECIFIED),
+        title=event_title,
+        weekday=event_data["parsed_weekday"],
+        start_time=event_data["parsed_start_time"],
+        end_time=event_data["parsed_end_time"],
+        location=location,
+        status=status,
+    )
+    session.add(event)
+    session.flush()
+
+    # Staff — column "Lehrkraft", may be a list for multiple lecturers
+    raw_staff = event_data.get("Lehrkraft", "") or ""
+    staff_names = raw_staff if isinstance(raw_staff, list) else ([raw_staff] if raw_staff else [])
+    for staff_name in staff_names:
+        staff_name = staff_name.strip()
+        if staff_name:
+            staff = _get_or_create(session, Staff, staff_name)
+            event.staff.append(staff)
+
+    module.events.append(event)
 
 
 def clear_database(session: Session):
@@ -284,9 +353,6 @@ def clear_database(session: Session):
 
 def save_module_to_db(session: Session, module_data: dict):
     info = module_data["info"]
-
-    # "ModulNr" holds the real module ID like "10-MAT-MM2CPDE";
-    # "anchor_id" is the path-like key used to identify the module in the HTML
     module_number = info.get("ModulNr", info.get("anchor_id", "")).strip()
 
     # Skip if this module is already stored
@@ -308,73 +374,18 @@ def save_module_to_db(session: Session, module_data: dict):
     # Degrees
     studiengang = info.get("cleanStudiengang", "")
     degree_names = studiengang if isinstance(studiengang, list) else ([studiengang] if studiengang else [])
-    for dname in degree_names:
-        if dname:
-            degree = _get_or_create_degree(session, dname)
-            module.degrees.append(degree)
+    _link_degrees(session, module, degree_names)
 
     # Events
-    # Event table columns: Unit, Lehrkraft, Titel, Zeit, Ort, vorjahr/Ø/max, Status, LV-Typ
-    for ev_data in module_data["events"]:
-        # Location — column "Ort", value like "Paulinum, P-701 (28)"; strip capacity annotation
-        raw_location = ev_data.get("Ort", "") or ""
-        if isinstance(raw_location, list):
-            raw_location = raw_location[0]
-        location_name = re.sub(r"\s*\(\d+\)\s*$", "", raw_location).strip()
-        if not location_name:
-            location_name = "Unbekannt"
-        location = _get_or_create_location(session, location_name)
-
-        status_raw = ev_data.get("Status", "")
-        if isinstance(status_raw, list):
-            status_raw = status_raw[0]
-        status = STATUS_MAP.get(status_raw.strip().lower(), Status.OK)
-
-        event_title = ev_data.get("Titel", "")
-        if isinstance(event_title, list):
-            event_title = event_title[0] if event_title else ""
-
-        # Dedup: an event with identical title+weekday+times+location is the same physical event
-        # (occurs for shared events listed in multiple modules, e.g. "What is...? Seminar")
-        existing_event = session.exec(
-            select(Event).where(
-                Event.title == event_title,
-                Event.weekday == ev_data["parsed_weekday"],
-                Event.start_time == ev_data["parsed_start_time"],
-                Event.end_time == ev_data["parsed_end_time"],
-                Event.location_id == location.id,
-            )
-        ).first()
-        if existing_event:
-            if existing_event not in module.events:
-                module.events.append(existing_event)
-            continue
-
-        event = Event(
-            type=ev_data.get("parsed_type", EventType.NO_TYPE_SPECIFIED),
-            title=event_title,
-            weekday=ev_data["parsed_weekday"],
-            start_time=ev_data["parsed_start_time"],
-            end_time=ev_data["parsed_end_time"],
-            location=location,
-            status=status,
-        )
-        session.add(event)
-        session.flush()
-
-        # Staff — column "Lehrkraft", may be a list for multiple lecturers
-        lehrkraft = ev_data.get("Lehrkraft", "") or ""
-        staff_names = lehrkraft if isinstance(lehrkraft, list) else ([lehrkraft] if lehrkraft else [])
-        for sname in staff_names:
-            sname = sname.strip()
-            if sname:
-                staff = _get_or_create_staff(session, sname)
-                event.staff.append(staff)
-
-        module.events.append(event)
+    for event_data in module_data["events"]:
+        _save_event(session, module, event_data)
 
     session.commit()
 
+
+# ---------------------------------------------------------------------------
+# Main entry point
+# ---------------------------------------------------------------------------
 
 def parse_and_populate(url: str = SOURCE_URL):
     html = fetch_html(url)
@@ -386,7 +397,6 @@ def parse_and_populate(url: str = SOURCE_URL):
         current = session.exec(select(Semester)).first()
 
         if current and current.name != semester_name:
-            # New semester detected — clear all data and start fresh
             clear_database(session)
             current = None
 
