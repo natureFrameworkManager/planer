@@ -80,5 +80,10 @@ class Location(SQLModel, table=True):
 
 class Degree(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(unique=True)
     modules: list[Module] = Relationship(back_populates="degrees", link_model=ModuleDegreeLink)
+
+class Semester(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(unique=True)
 
