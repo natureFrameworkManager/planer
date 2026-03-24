@@ -4,6 +4,7 @@ node_modules/
 /composer.lock
 /package-lock.json
 .idea
+.vscode
 .venv
 database.db
 __pycache__/
