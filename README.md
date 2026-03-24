@@ -28,6 +28,9 @@ Change the proxy url in [js/js.js](https://github.com/natureFrameworkManager/pla
 - [x] PWA
 - [x] Offline Usage
 - [ ] Deselect not possible selections in filter (don't uncheck human-selected)
+- [ ] Save degree and other selection for each client
+  - [ ] Create personal link from selection
+- [ ] Diffrent color styles (based on event type, module, ...)  
 - [x] Generate final time table from selectable events
   - [x] Hide selected events 
 
