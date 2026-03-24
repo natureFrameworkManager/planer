@@ -23,15 +23,23 @@ class Module(SQLModel, table=True):
     events: list["Event"] = Relationship(back_populates="module", link_model=ModuleEventLink)
 
 class EventType(str, Enum):
-    LECTURE = "lecture"
-    SEMINAR = "seminar"
-    LAB = "lab"
-    EXERCISE = "exercise"
+    E_LEARNING = "E-Learning-Veranstaltung"
+    COLLOQUIUM = "Kolloquium"
+    PRACTICAL_COURSE = "Praktikum"
+    PROJECT_SEMINAR = "Projektseminar"
+    SCHOOL_PRACTICAL_STUDIES = "Schulpraktische Studien"
+    SEMINAR = "Seminar"
+    SEMINAR_WITH_EXERCISES = "Seminar mit Übungsanteil"
+    LECTURE = "Vorlesung"
+    LECTURE_WITH_INTEGRATED_EXERCISES = "Vorlesung mit integrierter Übung"
+    LECTURE_WITH_SEMINAR_COMPONENT = "Vorlesung mit seminaristischem Anteil"
+    EXERCISE = "Übung"
+    NO_TYPE_SPECIFIED = "Kein Typ angegeben"
 
 class Event(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     module: list[Module] = Relationship(back_populates="events", link_model=ModuleEventLink)
-    typ: EventType
+    type: EventType
 
 class Degree(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
