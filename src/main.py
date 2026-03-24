@@ -1,6 +1,5 @@
-from fastapi import FastAPI, Depends
-from fastapi.responses import JSONResponse
-from sqlmodel import Session, select
+from fastapi import FastAPI
+from sqlmodel import select
 from contextlib import asynccontextmanager
 
 from database.database import create_db_and_tables, get_session, SessionDep
