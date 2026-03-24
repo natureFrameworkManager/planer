@@ -70,7 +70,7 @@ class Event(SQLModel, table=True):
     start_time: time
     end_time: time
     location_id: int  = Field(foreign_key="location.id")
-    location: Location = Relationship(back_populates="events")
+    location: "Location" = Relationship(back_populates="events")
     status: Status
 
 class Location(SQLModel, table=True):
