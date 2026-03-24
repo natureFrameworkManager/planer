@@ -69,8 +69,8 @@ class Event(SQLModel, table=True):
     weekday: Weekday
     start_time: time
     end_time: time
-    location_id: int | None = Field(default=None, foreign_key="location.id")
-    location: Location | None = Relationship(back_populates="events")
+    location_id: int  = Field(foreign_key="location.id")
+    location: Location = Relationship(back_populates="events")
     status: Status
 
 class Location(SQLModel, table=True):
