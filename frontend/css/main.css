@@ -3,6 +3,7 @@
 @source "../index.html";
 
 /* ===== Tailwind v4 Theme ===== */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
     --font-sans: 'Montserrat', system-ui, -apple-system, sans-serif;
@@ -67,7 +68,7 @@ html.dark {
     --hidden-border: #ff7a6b;
     --hidden-text: #ff7a6b;
     --pin-color: #ffd166;
-    --pin-bg: rgba(255, 209, 102, 0.10);
+    --pin-bg: #2a284a;
     --glass: rgba(15, 14, 23, 0.75);
     --glass-border: rgba(46, 44, 74, 0.40);
 }
@@ -157,8 +158,8 @@ body {
 }
 
 .vbtn.active {
+    @apply text-white dark:text-black;
     background: var(--accent2);
-    color: #fff;
 }
 
 /* ===== Icon Buttons ===== */
