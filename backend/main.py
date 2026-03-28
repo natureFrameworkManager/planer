@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import time
 
 from fastapi import APIRouter, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import select
 from sqlalchemy.orm import selectinload, aliased
 from contextlib import asynccontextmanager
@@ -36,6 +37,13 @@ app = FastAPI(
     summary="University Schedule API",
     description="API for accessing university schedule data including modules, events, staff, locations, degrees, and semesters.",
     version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET"],
+    allow_headers=["*"],
 )
 
 prefix_router = APIRouter(prefix="/api")
@@ -478,7 +486,7 @@ def get_degree(degree_id: int, session: SessionDep, include_relationships: bool 
             modules=[
                 ModuleInDegreeResponse(
                     **m.model_dump(),
-                    semesters=sorted(lnk.semester for lnk in module_links.get(m.id, []) if lnk.semester is not None),
+                    semesters=sorted(int(lnk.semester) for lnk in module_links.get(m.id, []) if lnk.semester is not None),
                     note=next((lnk.note for lnk in module_links.get(m.id, []) if lnk.note is not None), None),
                 )
                 for m in unique_modules
