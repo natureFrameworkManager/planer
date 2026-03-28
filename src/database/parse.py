@@ -100,6 +100,7 @@ def _parse_time_cell(td: Tag) -> tuple[Weekday | None, time | None, time | None]
             weekday = wd
             break
 
+    # Format: "8:00 - 9:30" or "08:00 - 09:30", possibly with extra spaces
     m = re.search(r"(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})", text)
     if m:
         start = time(int(m.group(1)), int(m.group(2)))
@@ -205,14 +206,20 @@ def parse_and_populate() -> None:
     if not h1:
         logger.warning("No <h1> found – aborting parse")
         return
-    semester_name = h1.get_text(strip=True)
+    # h1 text example: "LV-Planung Sommersemester 2026" or "LV-Planung Wintersemester 2026/27" -> extract "SoSe 2026" or "WiSe 2026/27"
+    semester_name = h1.get_text(strip=True).replace("LV-Planung ", "")
+    if (not semester_name.startswith("Sommersemester") and not semester_name.startswith("Wintersemester")):
+        logger.warning("Unexpected <h1> format: '%s' – using raw text as semester name", semester_name)
+    if semester_name.startswith("Sommersemester"):
+        semester_name = semester_name.replace("Sommersemester", "SoSe")
+    elif semester_name.startswith("Wintersemester"):
+        semester_name = semester_name.replace("Wintersemester", "WiSe")
 
     with Session(engine) as session:
         existing = session.exec(select(Semester)).first()
         if existing and existing.name == semester_name:
-            logger.info("Semester '%s' already in database – skipping", semester_name)
-            return
-        if existing and existing.name != semester_name:
+            logger.info("Semester '%s' already in database – updating", semester_name)
+        elif existing and existing.name != semester_name:
             logger.info(
                 "New semester '%s' detected (was '%s') – clearing database",
                 semester_name,
@@ -220,10 +227,11 @@ def parse_and_populate() -> None:
             )
             session.close()
             _clear_database()
+        else: # No semester in DB yet
+            logger.info("Adding new semester '%s' to database", semester_name)
+            session.add(Semester(name=semester_name))
 
     with Session(engine) as session:
-        session.add(Semester(name=semester_name))
-
         for h2 in soup.find_all("h2"):
             anchor = h2.find("a", attrs={"name": True})
             if not anchor or anchor["name"] == "top":
