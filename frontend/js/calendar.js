@@ -160,7 +160,7 @@ function renderEventContent(arg) {
 
     // Apply color to parent event element
     requestAnimationFrame(() => {
-        const fcEl = arg.el;
+        const fcEl = el.closest(".fc-event");
         if (fcEl) {
             fcEl.style.setProperty('--ev-color', color);
         }
