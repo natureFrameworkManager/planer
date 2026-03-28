@@ -1,8 +1,11 @@
 from collections import defaultdict
 from datetime import time
+from pathlib import Path
 
-from fastapi import APIRouter, FastAPI, HTTPException, Query
+from fastapi import APIRouter, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlmodel import select
 from sqlalchemy.orm import selectinload, aliased
 from contextlib import asynccontextmanager
@@ -527,3 +530,27 @@ def get_semester(semester_id: int, session: SessionDep):
 
 
 app.include_router(prefix_router)
+
+# --- Frontend Static Files ---
+
+frontend_dir = Path(__file__).parent.parent / "frontend"
+
+# Mount assets directory
+app.mount("/assets", StaticFiles(directory=frontend_dir / "assets"), name="assets")
+app.mount("/css", StaticFiles(directory=frontend_dir / "css"), name="css")
+app.mount("/js", StaticFiles(directory=frontend_dir / "js"), name="js")
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_spa(full_path: str):
+    """
+    Serve frontend files. For any path that doesn't match /api/...,
+    try to serve the file. If it doesn't exist, serve index.html (SPA routing).
+    """
+    # Try to serve the requested file
+    file_path = frontend_dir / full_path
+    if file_path.is_file():
+        return FileResponse(file_path)
+    
+    # Fallback to index.html for SPA routing
+    return FileResponse(frontend_dir / "index.html")
