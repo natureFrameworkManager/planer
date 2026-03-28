@@ -299,6 +299,10 @@ export function loadStateFromUrlParams() {
 export function computeVisibleEvents() {
     const allEvents = data.events;
 
+    // Degree/semester module filter
+    const allowedModuleIds = getDegreeSemesterModuleIds();
+    const hasDegreeFilter = allowedModuleIds !== null;
+
     // Compute excluded events (pin group exclusion)
     const newExcluded = new Set();
     for (const pinnedId of sel.pinnedEventIds) {
@@ -353,6 +357,9 @@ export function computeVisibleEvents() {
         // Excluded events never visible
         if (newExcluded.has(ev.id)) continue;
 
+        // Filter by degree/semester: event must belong to at least one allowed module
+        if (hasDegreeFilter && !ev.module_ids.some(mid => allowedModuleIds.includes(mid))) continue;
+
         // Check all categories
         const passModule = passesCategory(ev, sel.modules, e => e.module_ids.map(String));
         const passType = passesCategory(ev, sel.types, e => [e.type]);
@@ -382,10 +389,15 @@ export function getDegreeSemesterModuleIds() {
 // ===== Cascading: get available items in a category based on visible events =====
 export function getAvailableInCategory(category) {
     const available = new Map(); // key → count
+    const allowedModuleIds = getDegreeSemesterModuleIds();
+    const hasDegreeFilter = allowedModuleIds !== null;
 
     for (const ev of data.events) {
         // Skip excluded
         if (excludedEventIds.has(ev.id)) continue;
+
+        // Filter by degree/semester
+        if (hasDegreeFilter && !ev.module_ids.some(mid => allowedModuleIds.includes(mid))) continue;
 
         // Check if event passes all OTHER categories (not this one)
         const passOther = passesAllExcept(ev, category);
