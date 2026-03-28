@@ -246,10 +246,10 @@ function renderLocationList() {
 // ===== Create a filter row with tri-state =====
 function createFilterRow(key, label, triMap, count, isWeitere = false, typeColor = null, statusColor = null) {
     const state = triMap[key] || TRI.NEUTRAL;
-    const isDimmed = count === 0 && state === TRI.NEUTRAL;
+    const isDimmed = count === 0 && state === TRI.NEUTRAL && !isWeitere;
 
     const row = document.createElement('div');
-    row.className = `frow${isDimmed ? ' dimmed' : ''}${isWeitere ? ' weitere-italic' : ''}`;
+    row.className = `frow${isDimmed ? ' dimmed' : ''}`;
     row.setAttribute('data-s', state);
     row.setAttribute('data-key', key);
 
