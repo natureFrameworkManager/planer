@@ -35,6 +35,7 @@ export function initCalendar() {
         slotDuration: '00:30:00',
         slotLabelInterval: '01:00:00',
         expandRows: true,
+        slotEventOverlap: false,
         hiddenDays: [0, 6], // hide Sun/Sat
         dayHeaderFormat: { weekday: 'short' },
         // Generic week: use a fixed Monday. Events use daysOfWeek for recurring.
