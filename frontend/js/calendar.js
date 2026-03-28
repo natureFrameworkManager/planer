@@ -124,10 +124,13 @@ export function buildCalendarEvents() {
  * @param {string} arg.event.id - String event ID
  * @param {string} arg.event.title - Event title
  * @param {Object} arg.event.extendedProps - Custom event properties
+ * @param {Object} arg.event.extendedProps.eventData - Event
+ * @param {boolean} arg.event.extendedProps.isPinned - Event
+ * @param {boolean} arg.event.extendedProps.isExcluded - Event
  * @param {string} arg.event.extendedProps.color - Event color
- * @param {string} arg.event.extendedProps.typeShort - Event short type
- * @param {string[]} arg.event.extendedProps.moduleNames - Event modules
  * @param {string} arg.event.extendedProps.statusColor - Event status color
+ * @param {string[]} arg.event.extendedProps.moduleNames - Event modules
+ * @param {string} arg.event.extendedProps.typeShort - Event short type
  * @returns {{ domNodes: HTMLElement[] }}
  */
 function renderEventContent(arg) {
