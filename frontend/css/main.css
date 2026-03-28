@@ -85,7 +85,7 @@ body {
 }
 
 ::-webkit-scrollbar {
-    @apply w-[5px] h-[5px];
+    @apply w-1.25 h-1.25;
 }
 
 ::-webkit-scrollbar-track {
@@ -146,7 +146,7 @@ body {
 /* ===== View Buttons ===== */
 
 .vbtn {
-    @apply rounded-[6px] text-[0.72rem] font-medium cursor-pointer border-none bg-transparent;
+    @apply rounded-md text-[0.72rem] font-medium cursor-pointer border-none bg-transparent;
     padding: 4px 12px;
     color: var(--text-secondary);
     transition: all 0.15s;
@@ -164,7 +164,7 @@ body {
 /* ===== Icon Buttons ===== */
 
 .icon-btn {
-    @apply flex items-center justify-center w-[34px] h-[34px] rounded-sm border-none bg-transparent cursor-pointer;
+    @apply flex items-center justify-center w-8.5 h-8.5 rounded-sm border-none bg-transparent cursor-pointer;
     color: var(--text-secondary);
     transition: background 0.15s;
 }
@@ -186,7 +186,7 @@ body {
 /* ===== Sidebar ===== */
 
 .sidebar {
-    @apply w-[280px] shrink-0 flex flex-col overflow-hidden;
+    @apply w-70 shrink-0 flex flex-col overflow-hidden;
     background: var(--bg-surface);
     border-right: 1px solid var(--border);
     transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
@@ -268,7 +268,7 @@ body {
 }
 
 .chip {
-    @apply inline-flex items-center gap-[3px] text-[0.62rem] rounded-full whitespace-nowrap cursor-default;
+    @apply inline-flex items-center gap-0.75 text-[0.62rem] rounded-full whitespace-nowrap cursor-default;
     padding: 2px 6px 2px 4px;
 }
 
@@ -358,7 +358,7 @@ body {
 }
 
 .search-wrap .search-icon {
-    @apply absolute left-[7px] top-1/2 -translate-y-1/2 text-[0.75rem] pointer-events-none;
+    @apply absolute left-1.75 top-1/2 -translate-y-1/2 text-[0.75rem] pointer-events-none;
     color: var(--text-muted);
 }
 
@@ -425,7 +425,7 @@ body {
 /* ===== Filter Rows ===== */
 
 .frow {
-    @apply flex items-center gap-[5px] text-[0.7rem] rounded-xs cursor-pointer;
+    @apply flex items-center gap-1.25 text-[0.7rem] rounded-xs cursor-pointer;
     padding: 3px 5px;
     color: var(--text-primary);
     transition: background 0.1s;
@@ -650,14 +650,14 @@ body {
 }
 
 .list-event .le-time {
-    @apply text-[0.6rem] w-[42px] shrink-0;
+    @apply text-[0.6rem] w-10.5 shrink-0;
     color: var(--text-muted);
     padding-top: 2px;
     line-height: 1.3;
 }
 
 .list-event .le-bar {
-    @apply w-[3px] rounded-[2px] self-stretch shrink-0 min-h-7;
+    @apply w-0.75 rounded-[2px] self-stretch shrink-0 min-h-7;
 }
 
 .list-event .le-body {
@@ -700,7 +700,7 @@ body {
 /* ===== Event Detail Popup ===== */
 
 .popup-overlay {
-    @apply hidden fixed inset-0 z-[100] justify-center items-center;
+    @apply hidden fixed inset-0 z-100 justify-center items-center;
     background: rgba(0, 0, 0, 0.55);
 }
 
@@ -936,7 +936,7 @@ body {
 /* ===== Loading Spinner ===== */
 
 .loading-overlay {
-    @apply fixed inset-0 z-[200] flex flex-col items-center justify-center gap-3;
+    @apply fixed inset-0 z-200 flex flex-col items-center justify-center gap-3;
     background: var(--bg-page);
     transition: opacity 0.3s;
 }
@@ -991,7 +991,7 @@ body {
     }
 
     .sidebar {
-        @apply fixed top-0 bottom-0 left-0 z-[60];
+        @apply fixed top-0 bottom-0 left-0 z-60;
         width: 88vw;
         max-width: 320px;
         transform: translateX(-110%);
@@ -1036,13 +1036,13 @@ body {
     }
 
     .sb-backdrop {
-        @apply !hidden;
+        @apply hidden!;
     }
 }
 
 @media (min-width: 640px) {
     .sb-backdrop {
-        @apply !hidden;
+        @apply hidden!;
     }
 }
 
