@@ -397,6 +397,7 @@ def get_location(location_id: int, session: SessionDep, include_relationships: b
 def get_degrees(
     session: SessionDep,
     include_relationships: bool = False,
+    include_semesters: bool = False,
     name: str | None = Query(None, description="Filter by degree name (case-insensitive substring match)"),
     module_id: int | None = Query(None, description="Filter by associated module ID"),
 ):
@@ -407,6 +408,7 @@ def get_degrees(
 
     - **include_relationships=false** (default): Returns flat degree data only.
     - **include_relationships=true**: Each degree also includes `module_ids`.
+    - **include_semesters=true**: Includes `semesters` (list of all semesters for the degree).
     """
     query = select(Degree)
     if name is not None:
@@ -414,14 +416,20 @@ def get_degrees(
     if module_id is not None:
         query = query.join(ModuleDegreeLink).where(ModuleDegreeLink.module_id == module_id)
 
-    if include_relationships:
+    if include_relationships or include_semesters:
         degrees = session.exec(
             query.options(selectinload(Degree.modules))
         ).all()
         return [
             DegreeWithRelationshipsResponse(
                 **d.model_dump(),
-                module_ids=list({m.id for m in d.modules if m.id is not None}),
+                module_ids=list({m.id for m in d.modules if m.id is not None}) if include_relationships else [],
+                semesters=sorted(set(
+                    lnk.semester for lnk in session.exec(
+                        select(ModuleDegreeLink).where(ModuleDegreeLink.degree_id == d.id)
+                    ).all()
+                    if lnk.semester is not None and isinstance(lnk.semester, int)
+                )) if include_semesters else [],
             )
             for d in degrees
         ]
@@ -429,16 +437,17 @@ def get_degrees(
 
 
 @app.get("/degrees/{degree_id}", response_model=DegreeDetailResponse | DegreeResponse, summary="Get a degree by ID")
-def get_degree(degree_id: int, session: SessionDep, include_relationships: bool = False):
+def get_degree(degree_id: int, session: SessionDep, include_relationships: bool = False, include_semesters: bool = False):
     """
     Retrieve a single degree program by its ID.
 
     - **include_relationships=false** (default): Returns flat degree data only.
     - **include_relationships=true**: Also includes full `modules` objects.
+    - **include_semesters=true**: Includes `semesters` (list of all semesters for the degree).
 
     Returns **404** if the degree does not exist.
     """
-    if include_relationships:
+    if include_relationships or include_semesters:
         degree = session.exec(
             select(Degree).where(Degree.id == degree_id)
             .options(selectinload(Degree.modules))
@@ -449,7 +458,7 @@ def get_degree(degree_id: int, session: SessionDep, include_relationships: bool 
     if degree is None:
         raise HTTPException(status_code=404, detail="Degree not found")
 
-    if include_relationships:
+    if include_relationships or include_semesters:
         links = session.exec(
             select(ModuleDegreeLink).where(ModuleDegreeLink.degree_id == degree.id)
         ).all()
@@ -471,7 +480,11 @@ def get_degree(degree_id: int, session: SessionDep, include_relationships: bool 
                     note=next((lnk.note for lnk in module_links.get(m.id, []) if lnk.note is not None), None),
                 )
                 for m in unique_modules
-            ],
+            ] if include_relationships else [],
+            semesters=sorted(set(
+                lnk.semester for lnk in links
+                if lnk.semester is not None and isinstance(lnk.semester, int)
+            )) if include_semesters else [],
         )
     return DegreeResponse.model_validate(degree)
 

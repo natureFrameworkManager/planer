@@ -58,6 +58,7 @@ class LocationWithRelationshipsResponse(LocationResponse):
 
 class DegreeWithRelationshipsResponse(DegreeResponse):
     module_ids: list[int] = []
+    semesters: list[int] = []
 
 
 # --- Detail schemas (full nested objects, using flat base schemas to avoid circular refs) ---
@@ -86,3 +87,4 @@ class LocationDetailResponse(LocationResponse):
 
 class DegreeDetailResponse(DegreeResponse):
     modules: list[ModuleInDegreeResponse] = []
+    semesters: list[int] = []
