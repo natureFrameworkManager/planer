@@ -34,9 +34,10 @@ class EventType(str, Enum):
 
 
 class ModuleDegreeLink(SQLModel, table=True):
-    module_id: int | None = Field(default=None, foreign_key="module.id", primary_key=True)
-    degree_id: int | None = Field(default=None, foreign_key="degree.id", primary_key=True)
-    semester: str | None = Field(default=None)
+    id: int | None = Field(default=None, primary_key=True)
+    module_id: int = Field(foreign_key="module.id")
+    degree_id: int = Field(foreign_key="degree.id")
+    semester: int | None = Field(default=None)
     note: str | None = Field(default=None)
 
 class ModuleEventLink(SQLModel, table=True):

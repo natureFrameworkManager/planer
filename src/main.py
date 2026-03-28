@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import time
 
 from fastapi import FastAPI, HTTPException, Query
@@ -51,6 +52,7 @@ def get_modules(
     credits_min: int | None = Query(None, description="Filter by minimum credits (inclusive)"),
     credits_max: int | None = Query(None, description="Filter by maximum credits (inclusive)"),
     degree_id: int | None = Query(None, description="Filter by associated degree ID"),
+    semester: int | None = Query(None, description="Filter by semester number (used with degree_id)"),
 ):
     """
     Retrieve a list of all modules with optional filtering.
@@ -75,6 +77,10 @@ def get_modules(
         query = query.where(Module.credits <= credits_max)
     if degree_id is not None:
         query = query.join(ModuleDegreeLink).where(ModuleDegreeLink.degree_id == degree_id)
+        if semester is not None:
+            query = query.where(ModuleDegreeLink.semester == semester)
+    elif semester is not None:
+        query = query.join(ModuleDegreeLink).where(ModuleDegreeLink.semester == semester)
 
     if include_relationships:
         modules = session.exec(
@@ -83,7 +89,7 @@ def get_modules(
         return [
             ModuleWithRelationshipsResponse(
                 **m.model_dump(),
-                degree_ids=[d.id for d in m.degrees if d.id is not None],
+                degree_ids=list({d.id for d in m.degrees if d.id is not None}),
                 event_ids=[e.id for e in m.events if e.id is not None],
             )
             for m in modules
@@ -116,16 +122,24 @@ def get_module(module_id: int, session: SessionDep, include_relationships: bool 
         links = session.exec(
             select(ModuleDegreeLink).where(ModuleDegreeLink.module_id == module.id)
         ).all()
-        link_map = {link.degree_id: link for link in links}
+        degree_links: dict[int, list[ModuleDegreeLink]] = defaultdict(list)
+        for link in links:
+            degree_links[link.degree_id].append(link)
+        seen_degree_ids: set[int] = set()
+        unique_degrees = []
+        for d in module.degrees:
+            if d.id not in seen_degree_ids:
+                seen_degree_ids.add(d.id)
+                unique_degrees.append(d)
         return ModuleDetailResponse(
             **module.model_dump(),
             degrees=[
                 DegreeInModuleResponse(
                     **d.model_dump(),
-                    semester=link_map[d.id].semester if d.id in link_map else None,
-                    note=link_map[d.id].note if d.id in link_map else None,
+                    semesters=sorted(lnk.semester for lnk in degree_links.get(d.id, []) if lnk.semester is not None),
+                    note=next((lnk.note for lnk in degree_links.get(d.id, []) if lnk.note is not None), None),
                 )
-                for d in module.degrees
+                for d in unique_degrees
             ],
             events=[EventResponse.model_validate(e) for e in module.events],
         )
@@ -150,6 +164,7 @@ def get_events(
     module_id: list[int] | None = Query(None, description="Filter by associated module ID(s). Multiple values combined with OR."),
     staff_id: list[int] | None = Query(None, description="Filter by associated staff ID(s). Multiple values combined with OR."),
     degree_id: list[int] | None = Query(None, description="Filter by associated degree ID(s) (via modules). Multiple values combined with OR."),
+    semester: int | None = Query(None, description="Filter by semester number (used with degree_id filter)"),
 ):
     """
     Retrieve a list of all scheduled events with optional filtering.
@@ -189,6 +204,16 @@ def get_events(
             .join(mel_alias, mel_alias.event_id == Event.id)
             .join(ModuleDegreeLink, ModuleDegreeLink.module_id == mel_alias.module_id)
             .where(ModuleDegreeLink.degree_id.in_(degree_id))  # type: ignore[union-attr]
+        )
+        if semester is not None:
+            query = query.where(ModuleDegreeLink.semester == semester)
+    elif semester is not None:
+        mel_alias = aliased(ModuleEventLink)
+        query = (
+            query
+            .join(mel_alias, mel_alias.event_id == Event.id)
+            .join(ModuleDegreeLink, ModuleDegreeLink.module_id == mel_alias.module_id)
+            .where(ModuleDegreeLink.semester == semester)
         )
     query = query.distinct()
 
@@ -396,7 +421,7 @@ def get_degrees(
         return [
             DegreeWithRelationshipsResponse(
                 **d.model_dump(),
-                module_ids=[m.id for m in d.modules if m.id is not None],
+                module_ids=list({m.id for m in d.modules if m.id is not None}),
             )
             for d in degrees
         ]
@@ -428,16 +453,24 @@ def get_degree(degree_id: int, session: SessionDep, include_relationships: bool 
         links = session.exec(
             select(ModuleDegreeLink).where(ModuleDegreeLink.degree_id == degree.id)
         ).all()
-        link_map = {link.module_id: link for link in links}
+        module_links: dict[int, list[ModuleDegreeLink]] = defaultdict(list)
+        for link in links:
+            module_links[link.module_id].append(link)
+        seen_module_ids: set[int] = set()
+        unique_modules = []
+        for m in degree.modules:
+            if m.id not in seen_module_ids:
+                seen_module_ids.add(m.id)
+                unique_modules.append(m)
         return DegreeDetailResponse(
             **degree.model_dump(),
             modules=[
                 ModuleInDegreeResponse(
                     **m.model_dump(),
-                    semester=link_map[m.id].semester if m.id in link_map else None,
-                    note=link_map[m.id].note if m.id in link_map else None,
+                    semesters=sorted(lnk.semester for lnk in module_links.get(m.id, []) if lnk.semester is not None),
+                    note=next((lnk.note for lnk in module_links.get(m.id, []) if lnk.note is not None), None),
                 )
-                for m in degree.modules
+                for m in unique_modules
             ],
         )
     return DegreeResponse.model_validate(degree)

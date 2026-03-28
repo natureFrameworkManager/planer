@@ -63,11 +63,11 @@ class DegreeWithRelationshipsResponse(DegreeResponse):
 # --- Detail schemas (full nested objects, using flat base schemas to avoid circular refs) ---
 
 class DegreeInModuleResponse(DegreeResponse):
-    semester: str | None = None
+    semesters: list[int] = []
     note: str | None = None
 
 class ModuleInDegreeResponse(ModuleResponse):
-    semester: str | None = None
+    semesters: list[int] = []
     note: str | None = None
 
 class ModuleDetailResponse(ModuleResponse):

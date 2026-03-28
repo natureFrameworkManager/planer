@@ -77,18 +77,18 @@ def _get_or_create_degree(session: Session, name: str) -> Degree:
     return degree
 
 
-def _parse_degree_string(raw: str) -> tuple[str, str | None, str | None]:
-    """Parse a raw degree string into (degree_name, semester, note).
+def _parse_degree_string(raw: str) -> tuple[str, list[int], str | None]:
+    """Parse a raw degree string into (degree_name, semesters, note).
 
     Examples:
         'B.Sc. Informatik 2. Semester [Pflichtmodul]'
-            -> ('B.Sc. Informatik', '2. Semester', 'Pflichtmodul')
+            -> ('B.Sc. Informatik', [2], 'Pflichtmodul')
         'M.Sc. Informatik 2. Semester [Kernmodul]\\xa0(25 Plätze)'
-            -> ('M.Sc. Informatik', '2. Semester', 'Kernmodul, 25 Plätze')
+            -> ('M.Sc. Informatik', [2], 'Kernmodul, 25 Plätze')
         'Dipl. Mathematik 5., 6. Semester'
-            -> ('Dipl. Mathematik', '5., 6. Semester', None)
+            -> ('Dipl. Mathematik', [5, 6], None)
         'Senioren-Studium'
-            -> ('Senioren-Studium', None, None)
+            -> ('Senioren-Studium', [], None)
     """
     text = raw.strip().replace("\xa0", " ")
 
@@ -104,37 +104,58 @@ def _parse_degree_string(raw: str) -> tuple[str, str | None, str | None]:
     note = ", ".join(notes) if notes else None
 
     # Extract semester info: "2. Semester" or "5., 6. Semester" or "1., 2., 3. Semester"
-    semester = None
+    semesters: list[int] = []
     m_sem = re.search(r"\s+(\d+\.(?:,\s*\d+\.)*\s*Semester)\s*$", text)
     if m_sem:
-        semester = m_sem.group(1).strip()
+        semester_str = m_sem.group(1)
+        semesters = [int(n) for n in re.findall(r"(\d+)\.", semester_str)]
         text = text[: m_sem.start()].strip()
 
-    return text, semester, note
+    return text, semesters, note
 
 
 def _link_module_degree(
     session: Session,
     module: Module,
     degree: Degree,
-    semester: str | None,
+    semesters: list[int],
     note: str | None,
 ) -> None:
-    existing = session.exec(
-        select(ModuleDegreeLink).where(
-            ModuleDegreeLink.module_id == module.id,
-            ModuleDegreeLink.degree_id == degree.id,
-        )
-    ).first()
-    if existing is None:
-        link = ModuleDegreeLink(
-            module_id=module.id,
-            degree_id=degree.id,
-            semester=semester,
-            note=note,
-        )
-        session.add(link)
-        session.flush()
+    if not semesters:
+        existing = session.exec(
+            select(ModuleDegreeLink).where(
+                ModuleDegreeLink.module_id == module.id,
+                ModuleDegreeLink.degree_id == degree.id,
+                ModuleDegreeLink.semester == None,  # noqa: E711
+            )
+        ).first()
+        if existing is None:
+            link = ModuleDegreeLink(
+                module_id=module.id,
+                degree_id=degree.id,
+                semester=None,
+                note=note,
+            )
+            session.add(link)
+            session.flush()
+    else:
+        for sem in semesters:
+            existing = session.exec(
+                select(ModuleDegreeLink).where(
+                    ModuleDegreeLink.module_id == module.id,
+                    ModuleDegreeLink.degree_id == degree.id,
+                    ModuleDegreeLink.semester == sem,
+                )
+            ).first()
+            if existing is None:
+                link = ModuleDegreeLink(
+                    module_id=module.id,
+                    degree_id=degree.id,
+                    semester=sem,
+                    note=note,
+                )
+                session.add(link)
+                session.flush()
 
 
 def _get_or_create_module(
@@ -332,7 +353,7 @@ def parse_and_populate() -> None:
             )
 
             for deg_raw in info["degree_names"]:
-                deg_name, semester, note = _parse_degree_string(deg_raw)
+                deg_name, semesters, note = _parse_degree_string(deg_raw)
                 if not deg_name:
                     logger.warning(
                         "Skipping empty degree name parsed from '%s' in module '%s'",
@@ -348,7 +369,7 @@ def parse_and_populate() -> None:
                     )
                     continue
                 degree = _get_or_create_degree(session, deg_name)
-                _link_module_degree(session, module, degree, semester, note)
+                _link_module_degree(session, module, degree, semesters, note)
 
             event_table = info_table.find_next(
                 "table", class_="maintable", attrs={"border": True}
