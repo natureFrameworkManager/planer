@@ -113,6 +113,23 @@ export function buildCalendarEvents() {
     return fcEvents;
 }
 
+
+/**
+ * Custom FullCalendar `eventContent` renderer.
+ *
+ * The `--ev-color` CSS variable is set both on the inner element and on the parent `.fc-event` (via `requestAnimationFrame`) so the border and background tint are correctly coloured.
+ *
+ * @param {Object} arg - FullCalendar event render argument
+ * @param {Object} arg.event - FullCalendar event object
+ * @param {string} arg.event.id - String event ID
+ * @param {string} arg.event.title - Event title
+ * @param {Object} arg.event.extendedProps - Custom event properties
+ * @param {string} arg.event.extendedProps.color - Event color
+ * @param {string} arg.event.extendedProps.typeShort - Event short type
+ * @param {string[]} arg.event.extendedProps.moduleNames - Event modules
+ * @param {string} arg.event.extendedProps.statusColor - Event status color
+ * @returns {{ domNodes: HTMLElement[] }}
+ */
 function renderEventContent(arg) {
     const props = arg.event.extendedProps;
     const color = props.color;
