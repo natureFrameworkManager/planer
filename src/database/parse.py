@@ -83,21 +83,25 @@ def _parse_degree_string(raw: str) -> tuple[str, str | None, str | None]:
     Examples:
         'B.Sc. Informatik 2. Semester [Pflichtmodul]'
             -> ('B.Sc. Informatik', '2. Semester', 'Pflichtmodul')
-        'B.A. Linguistik 2. Semester (10 Plätze)'
-            -> ('B.A. Linguistik', '2. Semester', '10 Plätze')
+        'M.Sc. Informatik 2. Semester [Kernmodul]\\xa0(25 Plätze)'
+            -> ('M.Sc. Informatik', '2. Semester', 'Kernmodul, 25 Plätze')
         'Dipl. Mathematik 5., 6. Semester'
             -> ('Dipl. Mathematik', '5., 6. Semester', None)
         'Senioren-Studium'
             -> ('Senioren-Studium', None, None)
     """
-    text = raw.strip()
+    text = raw.strip().replace("\xa0", " ")
 
-    # Extract trailing bracket/paren info: [Pflichtmodul] or (10 Plätze)
-    note = None
-    m_note = re.search(r"\s*[\[\(]([^\]\)]+)[\]\)]\s*$", text)
-    if m_note:
-        note = m_note.group(1).strip()
-        text = text[: m_note.start()].strip()
+    # Iteratively extract all trailing [bracket] and (paren) notes
+    notes: list[str] = []
+    while True:
+        m = re.search(r"\s*[\[\(]([^\]\)]+)[\]\)]\s*$", text)
+        if not m:
+            break
+        notes.insert(0, m.group(1).strip())
+        text = text[: m.start()].strip()
+
+    note = ", ".join(notes) if notes else None
 
     # Extract semester info: "2. Semester" or "5., 6. Semester" or "1., 2., 3. Semester"
     semester = None
@@ -332,6 +336,13 @@ def parse_and_populate() -> None:
                 if not deg_name:
                     logger.warning(
                         "Skipping empty degree name parsed from '%s' in module '%s'",
+                        deg_raw,
+                        module_name,
+                    )
+                    continue
+                if re.match(r"^\[.*\]:", deg_name):
+                    logger.warning(
+                        "Skipping group label '%s' in module '%s'",
                         deg_raw,
                         module_name,
                     )
