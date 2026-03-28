@@ -186,10 +186,10 @@
                 <div class="flex items-center gap-2 min-w-0">
                     <!-- Hamburger — always visible on < 640px, hidden on >= 640px -->
                     <button id="hamburger" onclick="toggleSidebar()"
-                            class="sm:hidden flex items-center justify-center w-9 h-9 rounded-lg dark:hover:bg-[#313244] transition flex-shrink-0">
+                            class="sm:hidden flex items-center justify-center w-9 h-9 rounded-lg dark:hover:bg-[#313244] transition shrink-0">
                         <span class="material-icons-round text-xl">menu</span>
                     </button>
-                    <span class="material-icons-round text-blue-500 text-xl flex-shrink-0">school</span>
+                    <span class="material-icons-round text-blue-500 text-xl shrink-0">school</span>
                     <h1 class="text-sm font-bold tracking-tight whitespace-nowrap">Uni Planer</h1>
                     <!-- Semester badge: hidden on mobile, shown sm+ -->
                     <span class="hidden sm:inline text-xs dark:text-[#a6adc8] dark:bg-[#313244] px-2 py-0.5 rounded-md">SoSe 2026</span>
@@ -203,7 +203,7 @@
                 </div>
 
                 <!-- Right group -->
-                <div class="flex items-center gap-1 flex-shrink-0">
+                <div class="flex items-center gap-1 shrink-0">
                     <!-- Color mode dropdown -->
                     <div class="cdrop relative" id="cdrop">
                         <button id="colorBtn" onclick="document.getElementById('cdrop').classList.toggle('open')"
@@ -823,10 +823,10 @@
                     <h3 class="font-bold text-lg leading-tight">Algorithmen & Datenstrukturen</h3>
                 </div>
                 <div class="flex items-center gap-1">
-                    <button class="p-1.5 rounded-lg dark:bg-amber-500/20 dark:text-amber-400 transition min-w-[44px] min-h-[44px] flex items-center justify-center">
+                    <button class="p-1.5 rounded-lg dark:bg-amber-500/20 dark:text-amber-400 transition min-w-11 min-h-11 flex items-center justify-center">
                         <span class="material-icons-round text-lg">push_pin</span>
                     </button>
-                    <button onclick="closePopup()" class="p-1.5 rounded-lg dark:hover:bg-[#313244] transition min-w-[44px] min-h-[44px] flex items-center justify-center">
+                    <button onclick="closePopup()" class="p-1.5 rounded-lg dark:hover:bg-[#313244] transition min-w-11 min-h-11 flex items-center justify-center">
                         <span class="material-icons-round text-lg">close</span>
                     </button>
                 </div>
