@@ -1,10 +1,21 @@
-vendor/
-node_modules/
 .env
-/composer.lock
-/package-lock.json
-.idea
-.vscode
-.venv
 database.db
+
+# Node
+node_modules/
+/package-lock.json
+
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Virtual environments
+.venv
+env/
+venv/
+
+# IDE
+.vscode
+.idea
