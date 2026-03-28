@@ -179,9 +179,7 @@ export function refreshCalendarEvents() {
     if (!calendarInstance) return;
     calendarInstance.removeAllEvents();
     const events = buildCalendarEvents();
-    for (const ev of events) {
-        calendarInstance.addEvent(ev);
-    }
+    calendarInstance.addEventSource(events)
 }
 
 export function changeCalendarView(viewName) {
