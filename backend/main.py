@@ -1,7 +1,7 @@
 from collections import defaultdict
 from datetime import time
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import APIRouter, FastAPI, HTTPException, Query
 from sqlmodel import select
 from sqlalchemy.orm import selectinload, aliased
 from contextlib import asynccontextmanager
@@ -38,10 +38,12 @@ app = FastAPI(
     version="1.0.0",
 )
 
+prefix_router = APIRouter(prefix="/api")
+
 
 # --- Modules ---
 
-@app.get("/modules", response_model=list[ModuleWithRelationshipsResponse] | list[ModuleResponse], summary="List all modules")
+@prefix_router.get("/modules", response_model=list[ModuleWithRelationshipsResponse] | list[ModuleResponse], summary="List all modules")
 def get_modules(
     session: SessionDep,
     include_relationships: bool = False,
@@ -97,7 +99,7 @@ def get_modules(
     return [ModuleResponse.model_validate(m) for m in session.exec(query).all()]
 
 
-@app.get("/modules/{module_id}", response_model=ModuleDetailResponse | ModuleResponse, summary="Get a module by ID")
+@prefix_router.get("/modules/{module_id}", response_model=ModuleDetailResponse | ModuleResponse, summary="Get a module by ID")
 def get_module(module_id: int, session: SessionDep, include_relationships: bool = False):
     """
     Retrieve a single module by its ID.
@@ -148,7 +150,7 @@ def get_module(module_id: int, session: SessionDep, include_relationships: bool 
 
 # --- Events ---
 
-@app.get("/events", response_model=list[EventWithRelationshipsResponse] | list[EventResponse], summary="List all events")
+@prefix_router.get("/events", response_model=list[EventWithRelationshipsResponse] | list[EventResponse], summary="List all events")
 def get_events(
     session: SessionDep,
     include_relationships: bool = False,
@@ -232,7 +234,7 @@ def get_events(
     return [EventResponse.model_validate(e) for e in session.exec(query).all()]
 
 
-@app.get("/events/{event_id}", response_model=EventDetailResponse | EventResponse, summary="Get an event by ID")
+@prefix_router.get("/events/{event_id}", response_model=EventDetailResponse | EventResponse, summary="Get an event by ID")
 def get_event(event_id: int, session: SessionDep, include_relationships: bool = False):
     """
     Retrieve a single event by its ID.
@@ -264,7 +266,7 @@ def get_event(event_id: int, session: SessionDep, include_relationships: bool = 
 
 # --- Staff ---
 
-@app.get("/staff", response_model=list[StaffWithRelationshipsResponse] | list[StaffResponse], summary="List all staff members")
+@prefix_router.get("/staff", response_model=list[StaffWithRelationshipsResponse] | list[StaffResponse], summary="List all staff members")
 def get_staff(
     session: SessionDep,
     include_relationships: bool = False,
@@ -299,7 +301,7 @@ def get_staff(
     return [StaffResponse.model_validate(s) for s in session.exec(query).all()]
 
 
-@app.get("/staff/{staff_id}", response_model=StaffDetailResponse | StaffResponse, summary="Get a staff member by ID")
+@prefix_router.get("/staff/{staff_id}", response_model=StaffDetailResponse | StaffResponse, summary="Get a staff member by ID")
 def get_staff_member(staff_id: int, session: SessionDep, include_relationships: bool = False):
     """
     Retrieve a single staff member by their ID.
@@ -330,7 +332,7 @@ def get_staff_member(staff_id: int, session: SessionDep, include_relationships: 
 
 # --- Locations ---
 
-@app.get("/locations", response_model=list[LocationWithRelationshipsResponse] | list[LocationResponse], summary="List all locations")
+@prefix_router.get("/locations", response_model=list[LocationWithRelationshipsResponse] | list[LocationResponse], summary="List all locations")
 def get_locations(
     session: SessionDep,
     include_relationships: bool = False,
@@ -362,7 +364,7 @@ def get_locations(
     return [LocationResponse.model_validate(l) for l in session.exec(query).all()]
 
 
-@app.get("/locations/{location_id}", response_model=LocationDetailResponse | LocationResponse, summary="Get a location by ID")
+@prefix_router.get("/locations/{location_id}", response_model=LocationDetailResponse | LocationResponse, summary="Get a location by ID")
 def get_location(location_id: int, session: SessionDep, include_relationships: bool = False):
     """
     Retrieve a single location by its ID.
@@ -393,7 +395,7 @@ def get_location(location_id: int, session: SessionDep, include_relationships: b
 
 # --- Degrees ---
 
-@app.get("/degrees", response_model=list[DegreeWithRelationshipsResponse] | list[DegreeResponse], summary="List all degrees")
+@prefix_router.get("/degrees", response_model=list[DegreeWithRelationshipsResponse] | list[DegreeResponse], summary="List all degrees")
 def get_degrees(
     session: SessionDep,
     include_relationships: bool = False,
@@ -436,7 +438,7 @@ def get_degrees(
     return [DegreeResponse.model_validate(d) for d in session.exec(query).all()]
 
 
-@app.get("/degrees/{degree_id}", response_model=DegreeDetailResponse | DegreeResponse, summary="Get a degree by ID")
+@prefix_router.get("/degrees/{degree_id}", response_model=DegreeDetailResponse | DegreeResponse, summary="Get a degree by ID")
 def get_degree(degree_id: int, session: SessionDep, include_relationships: bool = False, include_semesters: bool = False):
     """
     Retrieve a single degree program by its ID.
@@ -491,7 +493,7 @@ def get_degree(degree_id: int, session: SessionDep, include_relationships: bool 
 
 # --- Semesters (no relationships) ---
 
-@app.get("/semesters", response_model=list[SemesterResponse], summary="List all semesters")
+@prefix_router.get("/semesters", response_model=list[SemesterResponse], summary="List all semesters")
 def get_semesters(
     session: SessionDep,
     name: str | None = Query(None, description="Filter by semester name (case-insensitive substring match)"),
@@ -503,7 +505,7 @@ def get_semesters(
     return [SemesterResponse.model_validate(s) for s in session.exec(query).all()]
 
 
-@app.get("/semesters/{semester_id}", response_model=SemesterResponse, summary="Get a semester by ID")
+@prefix_router.get("/semesters/{semester_id}", response_model=SemesterResponse, summary="Get a semester by ID")
 def get_semester(semester_id: int, session: SessionDep):
     """
     Retrieve a single semester by its ID.
@@ -514,3 +516,6 @@ def get_semester(semester_id: int, session: SessionDep):
     if semester is None:
         raise HTTPException(status_code=404, detail="Semester not found")
     return SemesterResponse.model_validate(semester)
+
+
+app.include_router(prefix_router)
