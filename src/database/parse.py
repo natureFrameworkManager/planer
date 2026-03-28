@@ -175,6 +175,11 @@ def _parse_module_info(info_table: Tag) -> dict:
     for row in info_table.find_all("tr", class_="row-module-info"):
         tds = row.find_all("td")
         if len(tds) < 2:
+            logger.warning(
+                "Skipping module info row: expected at least 2 cells but got %d. Raw HTML: %s",
+                len(tds),
+                str(row),
+            )
             continue
         label = tds[0].get_text(strip=True)
         value_td = tds[1]
@@ -245,6 +250,10 @@ def parse_and_populate() -> None:
 
             info = _parse_module_info(info_table)
             if not info["module_number"]:
+                logger.warning(
+                    "Skipping module '%s': module number is missing or empty",
+                    module_name,
+                )
                 continue
 
             module = _get_or_create_module(
@@ -265,6 +274,11 @@ def parse_and_populate() -> None:
                 "table", class_="maintable", attrs={"border": True}
             )
             if not event_table:
+                logger.warning(
+                    "Skipping module '%s' (module_number: %s): event table not found",
+                    module_name,
+                    info["module_number"],
+                )
                 continue
 
             for row in event_table.find_all("tr"):
@@ -273,18 +287,44 @@ def parse_and_populate() -> None:
                     (c for c in row_classes if c in STATUS_MAP), None
                 )
                 if status_key is None:
+                    logger.warning(
+                        "Skipping event row in module '%s': no valid status found. Available row classes: %s",
+                        module_name,
+                        row_classes,
+                    )
                     continue
 
                 tds = row.find_all("td")
                 if len(tds) < 8:
+                    logger.warning(
+                        "Skipping event row in module '%s': expected 8+ cells but got %d",
+                        module_name,
+                        len(tds),
+                    )
                     continue
 
                 weekday, start_t, end_t = _parse_time_cell(tds[3])
                 if weekday is None or start_t is None or end_t is None:
+                    title = tds[2].get_text(strip=True)
+                    logger.warning(
+                        "Skipping event '%s' in module '%s': invalid or missing time format - weekday=%s, start_time=%s, end_time=%s. Raw text: %s",
+                        title,
+                        module_name,
+                        weekday,
+                        start_t,
+                        end_t,
+                        tds[3].get_text("\n"),
+                    )
                     continue
 
                 loc_name = _parse_location_name(tds[4])
                 if not loc_name:
+                    title = tds[2].get_text(strip=True)
+                    logger.warning(
+                        "Skipping event '%s' in module '%s': location name is missing or empty",
+                        title,
+                        module_name,
+                    )
                     continue
 
                 location = _get_or_create_location(session, loc_name)
