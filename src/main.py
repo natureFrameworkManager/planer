@@ -18,6 +18,7 @@ from database.schemas import (
     EventResponse, EventWithRelationshipsResponse, EventDetailResponse,
     LocationResponse, LocationWithRelationshipsResponse, LocationDetailResponse,
     DegreeResponse, DegreeWithRelationshipsResponse, DegreeDetailResponse,
+    DegreeInModuleResponse, ModuleInDegreeResponse,
     SemesterResponse,
 )
 
@@ -112,9 +113,20 @@ def get_module(module_id: int, session: SessionDep, include_relationships: bool 
         raise HTTPException(status_code=404, detail="Module not found")
 
     if include_relationships:
+        links = session.exec(
+            select(ModuleDegreeLink).where(ModuleDegreeLink.module_id == module.id)
+        ).all()
+        link_map = {link.degree_id: link for link in links}
         return ModuleDetailResponse(
             **module.model_dump(),
-            degrees=[DegreeResponse.model_validate(d) for d in module.degrees],
+            degrees=[
+                DegreeInModuleResponse(
+                    **d.model_dump(),
+                    semester=link_map[d.id].semester if d.id in link_map else None,
+                    note=link_map[d.id].note if d.id in link_map else None,
+                )
+                for d in module.degrees
+            ],
             events=[EventResponse.model_validate(e) for e in module.events],
         )
     return ModuleResponse.model_validate(module)
@@ -413,9 +425,20 @@ def get_degree(degree_id: int, session: SessionDep, include_relationships: bool 
         raise HTTPException(status_code=404, detail="Degree not found")
 
     if include_relationships:
+        links = session.exec(
+            select(ModuleDegreeLink).where(ModuleDegreeLink.degree_id == degree.id)
+        ).all()
+        link_map = {link.module_id: link for link in links}
         return DegreeDetailResponse(
             **degree.model_dump(),
-            modules=[ModuleResponse.model_validate(m) for m in degree.modules],
+            modules=[
+                ModuleInDegreeResponse(
+                    **m.model_dump(),
+                    semester=link_map[m.id].semester if m.id in link_map else None,
+                    note=link_map[m.id].note if m.id in link_map else None,
+                )
+                for m in degree.modules
+            ],
         )
     return DegreeResponse.model_validate(degree)
 

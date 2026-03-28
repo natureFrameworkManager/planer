@@ -62,8 +62,16 @@ class DegreeWithRelationshipsResponse(DegreeResponse):
 
 # --- Detail schemas (full nested objects, using flat base schemas to avoid circular refs) ---
 
+class DegreeInModuleResponse(DegreeResponse):
+    semester: str | None = None
+    note: str | None = None
+
+class ModuleInDegreeResponse(ModuleResponse):
+    semester: str | None = None
+    note: str | None = None
+
 class ModuleDetailResponse(ModuleResponse):
-    degrees: list[DegreeResponse] = []
+    degrees: list[DegreeInModuleResponse] = []
     events: list[EventResponse] = []
 
 class StaffDetailResponse(StaffResponse):
@@ -77,4 +85,4 @@ class LocationDetailResponse(LocationResponse):
     events: list[EventResponse] = []
 
 class DegreeDetailResponse(DegreeResponse):
-    modules: list[ModuleResponse] = []
+    modules: list[ModuleInDegreeResponse] = []

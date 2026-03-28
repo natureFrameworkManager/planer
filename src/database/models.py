@@ -11,6 +11,13 @@ class Weekday(int, Enum):
     SATURDAY = 6
     SUNDAY = 7
 
+class Status(str, Enum):
+    OK = "ok" # alles ist bestätigt
+    POK = "pok" # Termin nicht bestätigt
+    TOK = "tok" # Dozent nicht bestätigt
+    ALT = "alt" # Aus letztem Semester übernommen, noch nicht bestätigt
+    RESERVE = "reserve" # Wird nicht mehr angeboten
+
 class EventType(str, Enum):
     E_LEARNING = "E-Learning-Veranstaltung"
     COLLOQUIUM = "Kolloquium"
@@ -25,17 +32,12 @@ class EventType(str, Enum):
     EXERCISE = "Übung"
     NO_TYPE_SPECIFIED = "Kein Typ angegeben"
 
-class Status(str, Enum):
-    OK = "ok" # alles ist bestätigt
-    POK = "pok" # Termin nicht bestätigt
-    TOK = "tok" # Dozent nicht bestätigt
-    ALT = "alt" # Aus letztem Semester übernommen, noch nicht bestätigt
-    RESERVE = "reserve" # Wird nicht mehr angeboten
-
 
 class ModuleDegreeLink(SQLModel, table=True):
     module_id: int | None = Field(default=None, foreign_key="module.id", primary_key=True)
     degree_id: int | None = Field(default=None, foreign_key="degree.id", primary_key=True)
+    semester: str | None = Field(default=None)
+    note: str | None = Field(default=None)
 
 class ModuleEventLink(SQLModel, table=True):
     module_id: int | None = Field(default=None, foreign_key="module.id", primary_key=True)
