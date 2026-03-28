@@ -1,334 +1,291 @@
 <!DOCTYPE html>
 <html lang="de" class="dark">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Uni Planer</title>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Uni Planer</title>
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="assets/img/small_logo.svg">
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/img/small_logo_192.png">
-  <link rel="apple-touch-icon" href="assets/img/small_logo_192.png">
+        <link rel="icon" type="image/svg+xml" href="assets/img/small_logo.svg">
+        <link rel="icon" type="image/png" sizes="192x192" href="assets/img/small_logo_192.png">
+        <link rel="apple-touch-icon" href="assets/img/small_logo_192.png">
 
-  <!-- FullCalendar CSS (CDN) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.css">
 
-  <!-- Compiled Tailwind CSS + custom styles -->
-  <link rel="stylesheet" href="css/css.css">
-</head>
-<body>
+        <link rel="stylesheet" href="css/css.css">
+    </head>
 
-  <!-- Loading Overlay -->
-  <div id="loadingOverlay" class="loading-overlay">
-    <div class="spinner"></div>
-    <span style="font-size:0.8rem;color:var(--text-secondary)">Daten werden geladen…</span>
-  </div>
-
-  <!-- App Shell -->
-  <div id="app">
-
-    <!-- ===== HEADER ===== -->
-    <header class="app-header">
-      <!-- Left -->
-      <div class="header-left">
-        <button id="hamburgerBtn" class="icon-btn hamburger-btn" aria-label="Menü öffnen">
-          <span class="material-icons-round">menu</span>
-        </button>
-        <img src="assets/img/small_logo.svg" alt="Logo" class="header-logo">
-        <span class="header-title">Uni Planer</span>
-        <span id="semesterBadge" class="semester-badge">–</span>
-      </div>
-
-      <!-- Center: view toggles (hidden on mobile) -->
-      <div class="header-center">
-        <button class="vbtn active" data-view="week">Woche</button>
-        <button class="vbtn" data-view="day">Tag</button>
-        <button class="vbtn" data-view="list">Liste</button>
-      </div>
-
-      <!-- Right -->
-      <div class="header-right">
-        <!-- Color mode dropdown -->
-        <div class="color-drop" id="colorDrop">
-          <button id="colorDropBtn" class="icon-btn" style="width:auto;padding:4px 8px;gap:4px;display:flex;align-items:center;font-size:0.72rem;color:var(--text-secondary)">
-            <span class="material-icons-round" style="font-size:1.1rem">palette</span>
-            <span id="colorModeLabel">Typ</span>
-            <span class="material-icons-round" style="font-size:0.85rem">expand_more</span>
-          </button>
-          <div class="color-menu">
-            <button class="color-menu-item active" data-mode="type">
-              <span class="material-icons-round check-icon" style="font-size:0.85rem">check</span> Nach Typ
-            </button>
-            <button class="color-menu-item" data-mode="module">
-              <span class="material-icons-round check-icon" style="font-size:0.85rem"></span> Nach Modul
-            </button>
-            <button class="color-menu-item" data-mode="status">
-              <span class="material-icons-round check-icon" style="font-size:0.85rem"></span> Nach Status
-            </button>
-            <button class="color-menu-item" data-mode="staff">
-              <span class="material-icons-round check-icon" style="font-size:0.85rem"></span> Nach Dozent
-            </button>
-            <div style="border-top:1px solid var(--border)"></div>
-            <button class="color-menu-item" data-mode="custom">
-              <span class="material-icons-round check-icon" style="font-size:0.85rem"></span> Benutzerdefiniert…
-            </button>
-          </div>
+    <body>
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="spinner"></div>
+            <span style="font-size:0.8rem;color:var(--text-secondary)">Daten werden geladen…</span>
         </div>
-
-        <!-- Theme toggle -->
-        <button id="themeToggle" class="icon-btn" aria-label="Theme wechseln">
-          <span id="themeIcon" class="material-icons-round" style="font-size:1.2rem">light_mode</span>
-        </button>
-      </div>
-    </header>
-
-    <!-- ===== BODY ===== -->
-    <div class="app-body">
-
-      <!-- Sidebar backdrop (mobile) -->
-      <div class="sb-backdrop" id="sbBackdrop"></div>
-
-      <!-- ===== SIDEBAR ===== -->
-      <aside id="sidebar" class="sidebar">
-
-        <!-- Mobile-only sidebar header -->
-        <div class="sidebar-mobile-header">
-          <div style="display:flex;align-items:center;gap:8px">
-            <img src="assets/img/small_logo.svg" alt="" style="width:20px;height:20px">
-            <span style="font-size:0.82rem;font-weight:700">Uni Planer</span>
-            <span id="semesterBadgeMobile" class="semester-badge" style="font-size:0.62rem">–</span>
-          </div>
-          <button id="sidebarCloseBtn" class="icon-btn" aria-label="Schließen">
-            <span class="material-icons-round">close</span>
-          </button>
-        </div>
-
-        <!-- Scrollable filter content -->
-        <div class="sidebar-scroll">
-
-          <!-- Active Selection Chips -->
-          <div id="chipsSection" class="chips-section" style="display:none">
-            <div class="chips-header">
-              <span class="chips-label">Auswahl</span>
-              <button id="chipsResetBtn" class="chips-reset">Alle zurücksetzen</button>
-            </div>
-            <div class="chip-area" id="chipArea"></div>
-          </div>
-
-          <!-- Tri-state legend -->
-          <div class="tri-legend">
-            <strong>Klick:</strong>
-            <span style="display:flex;align-items:center;gap:3px">
-              <span class="tri" data-s="neutral" style="width:11px;height:11px;font-size:0.42rem;pointer-events:none"></span>Neutral
-            </span>
-            <span style="display:flex;align-items:center;gap:3px">
-              <span class="tri" data-s="selected" style="width:11px;height:11px;font-size:0.45rem;pointer-events:none"></span>Anzeigen
-            </span>
-            <span style="display:flex;align-items:center;gap:3px">
-              <span class="tri" data-s="hidden" style="width:11px;height:11px;font-size:0.42rem;pointer-events:none"></span>Verstecken
-            </span>
-          </div>
-
-          <!-- Degree -->
-          <div class="filter-section">
-            <div class="filter-label">Studiengang</div>
-            <select id="degreeSelect" class="filter-select">
-              <option value="">Alle Studiengänge</option>
-            </select>
-          </div>
-
-          <!-- Semester -->
-          <div class="filter-section">
-            <div class="filter-label">Semester</div>
-            <select id="semesterSelect" class="filter-select" disabled>
-              <option value="">Alle Semester</option>
-            </select>
-          </div>
-
-          <!-- Modules -->
-          <div class="filter-section">
-            <div class="filter-label">Module</div>
-            <div class="search-wrap">
-              <span class="search-icon material-icons-round">search</span>
-              <input id="moduleSearch" type="text" placeholder="Modul suchen…" class="search-input">
-            </div>
-            <div id="moduleList" class="filter-list"></div>
-
-            <!-- Weitere Module -->
-            <div id="weitereSection" style="margin-top:6px;display:none">
-              <div id="weitereToggle" class="expand-toggle">
-                <span class="material-icons-round">chevron_right</span>
-                <span>Weitere Module</span>
-                <span style="font-size:0.57rem;color:var(--text-muted)">(alle)</span>
-              </div>
-              <div class="expand-body" id="weitereExp">
-                <div style="margin-top:4px">
-                  <div class="search-wrap">
-                    <span class="search-icon material-icons-round">search</span>
-                    <input id="weitereModuleSearch" type="text" placeholder="Weitere suchen…" class="search-input" style="background:var(--bg-surface-alt)">
-                  </div>
-                  <div id="weitereModuleList" class="filter-list filter-list-short"></div>
+        <div id="app">
+            <header class="app-header">
+                <div class="header-left">
+                    <button id="hamburgerBtn" class="icon-btn hamburger-btn" aria-label="Menü öffnen">
+                        <span class="material-icons-round">menu</span>
+                    </button>
+                    <img src="assets/img/small_logo.svg" alt="Logo" class="header-logo">
+                    <span class="header-title">Uni Planer</span>
+                    <span id="semesterBadge" class="semester-badge">–</span>
                 </div>
-              </div>
+
+                <div class="header-center">
+                    <button class="vbtn active" data-view="week">Woche</button>
+                    <button class="vbtn" data-view="day">Tag</button>
+                    <button class="vbtn" data-view="list">Liste</button>
+                </div>
+
+                <div class="header-right">
+                    <div class="color-drop" id="colorDrop">
+                        <button id="colorDropBtn" class="icon-btn" style="width:auto;padding:4px 8px;gap:4px;display:flex;align-items:center;font-size:0.72rem;color:var(--text-secondary)">
+                            <span class="material-icons-round" style="font-size:1.1rem">palette</span>
+                            <span id="colorModeLabel">Typ</span>
+                            <span class="material-icons-round" style="font-size:0.85rem">expand_more</span>
+                        </button>
+                        <div class="color-menu">
+                            <button class="color-menu-item active" data-mode="type">
+                                <span class="material-icons-round check-icon" style="font-size:0.85rem">check</span> Nach Typ
+                            </button>
+                            <button class="color-menu-item" data-mode="module">
+                                <span class="material-icons-round check-icon" style="font-size:0.85rem"></span> Nach Modul
+                            </button>
+                            <button class="color-menu-item" data-mode="status">
+                                <span class="material-icons-round check-icon" style="font-size:0.85rem"></span> Nach Status
+                            </button>
+                            <button class="color-menu-item" data-mode="staff">
+                                <span class="material-icons-round check-icon" style="font-size:0.85rem"></span> Nach Dozent
+                            </button>
+                            <div style="border-top:1px solid var(--border)"></div>
+                            <button class="color-menu-item" data-mode="custom">
+                                <span class="material-icons-round check-icon" style="font-size:0.85rem"></span>
+                                Benutzerdefiniert…
+                            </button>
+                        </div>
+                    </div>
+
+                    <button id="themeToggle" class="icon-btn" aria-label="Theme wechseln">
+                        <span id="themeIcon" class="material-icons-round" style="font-size:1.2rem">light_mode</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="app-body">
+                <div class="sb-backdrop" id="sbBackdrop"></div>
+                <aside id="sidebar" class="sidebar">
+                    <div class="sidebar-mobile-header">
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <img src="assets/img/small_logo.svg" alt="" style="width:20px;height:20px">
+                            <span style="font-size:0.82rem;font-weight:700">Uni Planer</span>
+                            <span id="semesterBadgeMobile" class="semester-badge" style="font-size:0.62rem">–</span>
+                        </div>
+                        <button id="sidebarCloseBtn" class="icon-btn" aria-label="Schließen">
+                            <span class="material-icons-round">close</span>
+                        </button>
+                    </div>
+                    <div class="sidebar-scroll">
+                        <div id="chipsSection" class="chips-section" style="display:none">
+                            <div class="chips-header">
+                                <span class="chips-label">Auswahl</span>
+                                <button id="chipsResetBtn" class="chips-reset">Alle zurücksetzen</button>
+                            </div>
+                            <div class="chip-area" id="chipArea"></div>
+                        </div>
+
+                        <div class="tri-legend">
+                            <strong>Klick:</strong>
+                            <span style="display:flex;align-items:center;gap:3px">
+                                <span class="tri" data-s="neutral"
+                                    style="width:11px;height:11px;font-size:0.42rem;pointer-events:none"></span>Neutral
+                            </span>
+                            <span style="display:flex;align-items:center;gap:3px">
+                                <span class="tri" data-s="selected"
+                                    style="width:11px;height:11px;font-size:0.45rem;pointer-events:none"></span>Anzeigen
+                            </span>
+                            <span style="display:flex;align-items:center;gap:3px">
+                                <span class="tri" data-s="hidden"
+                                    style="width:11px;height:11px;font-size:0.42rem;pointer-events:none"></span>Verstecken
+                            </span>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-label">Studiengang</div>
+                            <select id="degreeSelect" class="filter-select">
+                                <option value="">Alle Studiengänge</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-label">Semester</div>
+                            <select id="semesterSelect" class="filter-select" disabled>
+                                <option value="">Alle Semester</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-label">Module</div>
+                            <div class="search-wrap">
+                                <span class="search-icon material-icons-round">search</span>
+                                <input id="moduleSearch" type="text" placeholder="Modul suchen…" class="search-input">
+                            </div>
+                            <div id="moduleList" class="filter-list"></div>
+
+                            <div id="weitereSection" style="margin-top:6px;display:none">
+                                <div id="weitereToggle" class="expand-toggle">
+                                    <span class="material-icons-round">chevron_right</span>
+                                    <span>Weitere Module</span>
+                                    <span style="font-size:0.57rem;color:var(--text-muted)">(alle)</span>
+                                </div>
+                                <div class="expand-body" id="weitereExp">
+                                    <div style="margin-top:4px">
+                                        <div class="search-wrap">
+                                            <span class="search-icon material-icons-round">search</span>
+                                            <input id="weitereModuleSearch" type="text" placeholder="Weitere suchen…"
+                                                class="search-input" style="background:var(--bg-surface-alt)">
+                                        </div>
+                                        <div id="weitereModuleList" class="filter-list filter-list-short"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <div class="filter-label">Veranstaltungstyp</div>
+                            <div id="typeList"></div>
+                        </div>
+                        <div class="filter-section">
+                            <div class="filter-label">Status</div>
+                            <div id="statusList"></div>
+                        </div>
+                        <div class="filter-section">
+                            <div class="filter-label">
+                                Dozent <span class="cross-tag">↕ cross-filter</span>
+                            </div>
+                            <div class="search-wrap">
+                                <span class="search-icon material-icons-round">search</span>
+                                <input id="staffSearch" type="text" placeholder="Dozent suchen…" class="search-input">
+                            </div>
+                            <div id="staffList" class="filter-list filter-list-short"></div>
+                        </div>
+                        <div class="filter-section">
+                            <div class="filter-label">
+                                Ort <span class="cross-tag">↕ cross-filter</span>
+                            </div>
+                            <div class="search-wrap">
+                                <span class="search-icon material-icons-round">search</span>
+                                <input id="locationSearch" type="text" placeholder="Ort suchen…" class="search-input">
+                            </div>
+                            <div id="locationList" class="filter-list filter-list-short"></div>
+                        </div>
+
+                    </div>
+                    <div class="sidebar-footer">
+                        <button id="resetAllBtn" class="sidebar-footer-btn btn-reset">
+                            <span class="material-icons-round" style="font-size:0.9rem">restart_alt</span> Zurücksetzen
+                        </button>
+                        <button id="shareLinkBtn" class="sidebar-footer-btn btn-share">
+                            <span class="material-icons-round" style="font-size:0.9rem">link</span> Teilen
+                        </button>
+                    </div>
+                </aside>
+
+                <div class="main-content">
+                    <div class="color-config" id="colorConfig">
+                        <div class="color-config-header">
+                            <span class="label">Benutzerdefinierte Farben</span>
+                            <button id="colorConfigCloseBtn" class="close-btn">Schließen</button>
+                        </div>
+                        <div class="color-config-grid" id="colorConfigGrid"></div>
+                    </div>
+                    <div class="mobile-view-bar">
+                        <div
+                            style="display:flex;align-items:center;gap:2px;background:var(--bg-input);border-radius:var(--radius-sm);padding:2px">
+                            <button class="vbtn" data-view="week">Woche</button>
+                            <button class="vbtn" data-view="day">Tag</button>
+                            <button class="vbtn active" data-view="list">Liste</button>
+                        </div>
+                        <div class="mobile-filter-summary">
+                            <span class="material-icons-round" style="color:var(--pin-color)">push_pin</span>
+                            <span id="mobilePinCount">0</span>
+                            <span class="material-icons-round" style="color:var(--selected-text)">check_circle</span>
+                            <span id="mobileSelCount">0</span>
+                            <span class="material-icons-round" style="color:var(--hidden-text)">cancel</span>
+                            <span id="mobileHidCount">0</span>
+                        </div>
+                    </div>
+
+                    <div class="calendar-wrap" id="mainArea">
+                        <div id="calendar"></div>
+                    </div>
+                </div>
             </div>
-          </div>
+            <footer class="app-footer">
+                Daten von 
+                <a href="https://stdplan.informatik.uni-leipzig.de/modul.html" target="_blank" rel="noopener">informatik.uni-leipzig.de</a>
+            </footer>
+        </div>
 
-          <!-- Event Type -->
-          <div class="filter-section">
-            <div class="filter-label">Veranstaltungstyp</div>
-            <div id="typeList"></div>
-          </div>
+        <div class="popup-overlay" id="popup">
+            <div class="popup-box">
+                <div class="popup-header">
+                    <div>
+                        <div id="popupTitle" class="popup-title"></div>
+                        <div id="popupType" class="popup-type"></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:4px">
+                        <button id="popupPinBtn" class="popup-pin-btn">
+                            <span class="material-icons-round" style="font-size:0.9rem">push_pin</span>
+                            <span class="pin-label" style="font-size:0.65rem">Anheften</span>
+                        </button>
+                        <button id="popupCloseBtn" class="popup-close">
+                            <span class="material-icons-round">close</span>
+                        </button>
+                    </div>
+                </div>
 
-          <!-- Status -->
-          <div class="filter-section">
-            <div class="filter-label">Status</div>
-            <div id="statusList"></div>
-          </div>
+                <div style="display:flex;flex-direction:column;gap:4px">
+                    <div class="popup-row">
+                        <span class="material-icons-round">schedule</span>
+                        <span id="popupTime"></span>
+                    </div>
+                    <div class="popup-row">
+                        <span class="material-icons-round">location_on</span>
+                        <span id="popupLocation"></span>
+                    </div>
+                    <div class="popup-row">
+                        <span class="material-icons-round">person</span>
+                        <span id="popupStaff"></span>
+                    </div>
+                    <div class="popup-row">
+                        <span class="material-icons-round">circle</span>
+                        <span style="display:flex;align-items:center;gap:4px">
+                            <span id="popupStatusDot" class="sdot"></span>
+                            <span id="popupStatusLabel"></span>
+                        </span>
+                    </div>
+                    <div class="popup-row">
+                        <span class="material-icons-round">menu_book</span>
+                        <span id="popupModules"></span>
+                    </div>
+                    <div class="popup-row">
+                        <span class="material-icons-round">star</span>
+                        <span id="popupCredits"></span>
+                    </div>
+                </div>
 
-          <!-- Staff (cross-filter) -->
-          <div class="filter-section">
-            <div class="filter-label">
-              Dozent <span class="cross-tag">↕ cross-filter</span>
+                <div class="popup-degrees" id="popupDegreesSection">
+                    <span class="material-icons-round" style="font-size:0.8rem;vertical-align:middle">school</span>
+                    <span id="popupDegrees"></span>
+                </div>
+
+                <div class="popup-exclusion-note" id="popupExclusionNote" style="display:none">
+                    <span class="material-icons-round">info</span>
+                    <span class="ex-text"></span>
+                </div>
             </div>
-            <div class="search-wrap">
-              <span class="search-icon material-icons-round">search</span>
-              <input id="staffSearch" type="text" placeholder="Dozent suchen…" class="search-input">
-            </div>
-            <div id="staffList" class="filter-list filter-list-short"></div>
-          </div>
-
-          <!-- Location (cross-filter) -->
-          <div class="filter-section">
-            <div class="filter-label">
-              Ort <span class="cross-tag">↕ cross-filter</span>
-            </div>
-            <div class="search-wrap">
-              <span class="search-icon material-icons-round">search</span>
-              <input id="locationSearch" type="text" placeholder="Ort suchen…" class="search-input">
-            </div>
-            <div id="locationList" class="filter-list filter-list-short"></div>
-          </div>
-
-        </div><!-- /sidebar-scroll -->
-
-        <!-- Sidebar footer -->
-        <div class="sidebar-footer">
-          <button id="resetAllBtn" class="sidebar-footer-btn btn-reset">
-            <span class="material-icons-round" style="font-size:0.9rem">restart_alt</span> Zurücksetzen
-          </button>
-          <button id="shareLinkBtn" class="sidebar-footer-btn btn-share">
-            <span class="material-icons-round" style="font-size:0.9rem">link</span> Teilen
-          </button>
-        </div>
-      </aside>
-
-      <!-- ===== MAIN CONTENT ===== -->
-      <div class="main-content">
-
-        <!-- Custom color config bar -->
-        <div class="color-config" id="colorConfig">
-          <div class="color-config-header">
-            <span class="label">Benutzerdefinierte Farben</span>
-            <button id="colorConfigCloseBtn" class="close-btn">Schließen</button>
-          </div>
-          <div class="color-config-grid" id="colorConfigGrid"></div>
         </div>
 
-        <!-- Mobile view toggle bar -->
-        <div class="mobile-view-bar">
-          <div style="display:flex;align-items:center;gap:2px;background:var(--bg-input);border-radius:var(--radius-sm);padding:2px">
-            <button class="vbtn" data-view="week">Woche</button>
-            <button class="vbtn" data-view="day">Tag</button>
-            <button class="vbtn active" data-view="list">Liste</button>
-          </div>
-          <div class="mobile-filter-summary">
-            <span class="material-icons-round" style="color:var(--pin-color)">push_pin</span>
-            <span id="mobilePinCount">0</span>
-            <span class="material-icons-round" style="color:var(--selected-text)">check_circle</span>
-            <span id="mobileSelCount">0</span>
-            <span class="material-icons-round" style="color:var(--hidden-text)">cancel</span>
-            <span id="mobileHidCount">0</span>
-          </div>
-        </div>
-
-        <!-- Calendar container -->
-        <div class="calendar-wrap" id="mainArea">
-          <div id="calendar"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== FOOTER ===== -->
-    <footer class="app-footer">
-      Daten von <a href="https://almweb.uni-leipzig.de/einrichtungen/fakultaet-fuer-mathematik-und-informatik/institut-fuer-informatik/stundenplanung" target="_blank" rel="noopener">informatik.uni-leipzig.de</a>
-    </footer>
-  </div><!-- /app -->
-
-  <!-- ===== EVENT DETAIL POPUP ===== -->
-  <div class="popup-overlay" id="popup">
-    <div class="popup-box">
-      <div class="popup-header">
-        <div>
-          <div id="popupTitle" class="popup-title"></div>
-          <div id="popupType" class="popup-type"></div>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <button id="popupPinBtn" class="popup-pin-btn">
-            <span class="material-icons-round" style="font-size:0.9rem">push_pin</span>
-            <span class="pin-label" style="font-size:0.65rem">Anheften</span>
-          </button>
-          <button id="popupCloseBtn" class="popup-close">
-            <span class="material-icons-round">close</span>
-          </button>
-        </div>
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:4px">
-        <div class="popup-row">
-          <span class="material-icons-round">schedule</span>
-          <span id="popupTime"></span>
-        </div>
-        <div class="popup-row">
-          <span class="material-icons-round">location_on</span>
-          <span id="popupLocation"></span>
-        </div>
-        <div class="popup-row">
-          <span class="material-icons-round">person</span>
-          <span id="popupStaff"></span>
-        </div>
-        <div class="popup-row">
-          <span class="material-icons-round">circle</span>
-          <span style="display:flex;align-items:center;gap:4px">
-            <span id="popupStatusDot" class="sdot"></span>
-            <span id="popupStatusLabel"></span>
-          </span>
-        </div>
-        <div class="popup-row">
-          <span class="material-icons-round">menu_book</span>
-          <span id="popupModules"></span>
-        </div>
-        <div class="popup-row">
-          <span class="material-icons-round">star</span>
-          <span id="popupCredits"></span>
-        </div>
-      </div>
-
-      <div class="popup-degrees" id="popupDegreesSection">
-        <span class="material-icons-round" style="font-size:0.8rem;vertical-align:middle">school</span>
-        <span id="popupDegrees"></span>
-      </div>
-
-      <div class="popup-exclusion-note" id="popupExclusionNote" style="display:none">
-        <span class="material-icons-round">info</span>
-        <span class="ex-text"></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- FullCalendar JS (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
-
-  <!-- App JS (ES modules) -->
-  <script type="module" src="js/app.js"></script>
-</body>
+        <!-- App JS (ES modules) -->
+        <script type="module" src="js/app.js"></script>
+    </body>
 </html>
