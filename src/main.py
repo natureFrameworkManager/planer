@@ -22,13 +22,25 @@ async def lifespan(app: FastAPI):
     parse_and_populate()
     yield
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    lifespan=lifespan,
+    title="Uni Planer API",
+    summary="University Schedule API",
+    description="API for accessing university schedule data including modules, events, staff, locations, degrees, and semesters.",
+    version="1.0.0",
+)
 
 
 # --- Modules ---
 
-@app.get("/modules", response_model=list[ModuleWithRelationshipsResponse] | list[ModuleResponse])
+@app.get("/modules", response_model=list[ModuleWithRelationshipsResponse] | list[ModuleResponse], summary="List all modules")
 def get_modules(session: SessionDep, include_relationships: bool = False):
+    """
+    Retrieve a list of all modules.
+
+    - **include_relationships=false** (default): Returns flat module data only.
+    - **include_relationships=true**: Each module also includes `degree_ids` and `event_ids`.
+    """
     if include_relationships:
         modules = session.exec(
             select(Module).options(selectinload(Module.degrees), selectinload(Module.events))
@@ -44,8 +56,16 @@ def get_modules(session: SessionDep, include_relationships: bool = False):
     return [ModuleResponse.model_validate(m) for m in session.exec(select(Module)).all()]
 
 
-@app.get("/modules/{module_id}", response_model=ModuleDetailResponse | ModuleResponse)
+@app.get("/modules/{module_id}", response_model=ModuleDetailResponse | ModuleResponse, summary="Get a module by ID")
 def get_module(module_id: int, session: SessionDep, include_relationships: bool = False):
+    """
+    Retrieve a single module by its ID.
+
+    - **include_relationships=false** (default): Returns flat module data only.
+    - **include_relationships=true**: Also includes full `degrees` and `events` objects.
+
+    Returns **404** if the module does not exist.
+    """
     if include_relationships:
         module = session.exec(
             select(Module).where(Module.id == module_id)
@@ -68,8 +88,14 @@ def get_module(module_id: int, session: SessionDep, include_relationships: bool 
 
 # --- Events ---
 
-@app.get("/events", response_model=list[EventWithRelationshipsResponse] | list[EventResponse])
+@app.get("/events", response_model=list[EventWithRelationshipsResponse] | list[EventResponse], summary="List all events")
 def get_events(session: SessionDep, include_relationships: bool = False):
+    """
+    Retrieve a list of all scheduled events.
+
+    - **include_relationships=false** (default): Returns flat event data only.
+    - **include_relationships=true**: Each event also includes `module_ids` and `staff_ids`.
+    """
     if include_relationships:
         events = session.exec(
             select(Event).options(selectinload(Event.module), selectinload(Event.staff))
@@ -85,8 +111,16 @@ def get_events(session: SessionDep, include_relationships: bool = False):
     return [EventResponse.model_validate(e) for e in session.exec(select(Event)).all()]
 
 
-@app.get("/events/{event_id}", response_model=EventDetailResponse | EventResponse)
+@app.get("/events/{event_id}", response_model=EventDetailResponse | EventResponse, summary="Get an event by ID")
 def get_event(event_id: int, session: SessionDep, include_relationships: bool = False):
+    """
+    Retrieve a single event by its ID.
+
+    - **include_relationships=false** (default): Returns flat event data only.
+    - **include_relationships=true**: Also includes full `module` and `staff` objects.
+
+    Returns **404** if the event does not exist.
+    """
     if include_relationships:
         event = session.exec(
             select(Event).where(Event.id == event_id)
@@ -109,8 +143,14 @@ def get_event(event_id: int, session: SessionDep, include_relationships: bool = 
 
 # --- Staff ---
 
-@app.get("/staff", response_model=list[StaffWithRelationshipsResponse] | list[StaffResponse])
+@app.get("/staff", response_model=list[StaffWithRelationshipsResponse] | list[StaffResponse], summary="List all staff members")
 def get_staff(session: SessionDep, include_relationships: bool = False):
+    """
+    Retrieve a list of all staff members.
+
+    - **include_relationships=false** (default): Returns flat staff data only.
+    - **include_relationships=true**: Each staff member also includes `event_ids`.
+    """
     if include_relationships:
         staff = session.exec(
             select(Staff).options(selectinload(Staff.events))
@@ -125,8 +165,16 @@ def get_staff(session: SessionDep, include_relationships: bool = False):
     return [StaffResponse.model_validate(s) for s in session.exec(select(Staff)).all()]
 
 
-@app.get("/staff/{staff_id}", response_model=StaffDetailResponse | StaffResponse)
+@app.get("/staff/{staff_id}", response_model=StaffDetailResponse | StaffResponse, summary="Get a staff member by ID")
 def get_staff_member(staff_id: int, session: SessionDep, include_relationships: bool = False):
+    """
+    Retrieve a single staff member by their ID.
+
+    - **include_relationships=false** (default): Returns flat staff data only.
+    - **include_relationships=true**: Also includes full `events` objects.
+
+    Returns **404** if the staff member does not exist.
+    """
     if include_relationships:
         staff_member = session.exec(
             select(Staff).where(Staff.id == staff_id)
@@ -148,8 +196,14 @@ def get_staff_member(staff_id: int, session: SessionDep, include_relationships: 
 
 # --- Locations ---
 
-@app.get("/locations", response_model=list[LocationWithRelationshipsResponse] | list[LocationResponse])
+@app.get("/locations", response_model=list[LocationWithRelationshipsResponse] | list[LocationResponse], summary="List all locations")
 def get_locations(session: SessionDep, include_relationships: bool = False):
+    """
+    Retrieve a list of all locations (rooms/buildings).
+
+    - **include_relationships=false** (default): Returns flat location data only.
+    - **include_relationships=true**: Each location also includes `event_ids`.
+    """
     if include_relationships:
         locations = session.exec(
             select(Location).options(selectinload(Location.events))
@@ -164,8 +218,16 @@ def get_locations(session: SessionDep, include_relationships: bool = False):
     return [LocationResponse.model_validate(l) for l in session.exec(select(Location)).all()]
 
 
-@app.get("/locations/{location_id}", response_model=LocationDetailResponse | LocationResponse)
+@app.get("/locations/{location_id}", response_model=LocationDetailResponse | LocationResponse, summary="Get a location by ID")
 def get_location(location_id: int, session: SessionDep, include_relationships: bool = False):
+    """
+    Retrieve a single location by its ID.
+
+    - **include_relationships=false** (default): Returns flat location data only.
+    - **include_relationships=true**: Also includes full `events` objects.
+
+    Returns **404** if the location does not exist.
+    """
     if include_relationships:
         location = session.exec(
             select(Location).where(Location.id == location_id)
@@ -187,8 +249,14 @@ def get_location(location_id: int, session: SessionDep, include_relationships: b
 
 # --- Degrees ---
 
-@app.get("/degrees", response_model=list[DegreeWithRelationshipsResponse] | list[DegreeResponse])
+@app.get("/degrees", response_model=list[DegreeWithRelationshipsResponse] | list[DegreeResponse], summary="List all degrees")
 def get_degrees(session: SessionDep, include_relationships: bool = False):
+    """
+    Retrieve a list of all degree programs.
+
+    - **include_relationships=false** (default): Returns flat degree data only.
+    - **include_relationships=true**: Each degree also includes `module_ids`.
+    """
     if include_relationships:
         degrees = session.exec(
             select(Degree).options(selectinload(Degree.modules))
@@ -203,8 +271,16 @@ def get_degrees(session: SessionDep, include_relationships: bool = False):
     return [DegreeResponse.model_validate(d) for d in session.exec(select(Degree)).all()]
 
 
-@app.get("/degrees/{degree_id}", response_model=DegreeDetailResponse | DegreeResponse)
+@app.get("/degrees/{degree_id}", response_model=DegreeDetailResponse | DegreeResponse, summary="Get a degree by ID")
 def get_degree(degree_id: int, session: SessionDep, include_relationships: bool = False):
+    """
+    Retrieve a single degree program by its ID.
+
+    - **include_relationships=false** (default): Returns flat degree data only.
+    - **include_relationships=true**: Also includes full `modules` objects.
+
+    Returns **404** if the degree does not exist.
+    """
     if include_relationships:
         degree = session.exec(
             select(Degree).where(Degree.id == degree_id)
@@ -226,13 +302,19 @@ def get_degree(degree_id: int, session: SessionDep, include_relationships: bool 
 
 # --- Semesters (no relationships) ---
 
-@app.get("/semesters", response_model=list[SemesterResponse])
+@app.get("/semesters", response_model=list[SemesterResponse], summary="List all semesters")
 def get_semesters(session: SessionDep):
+    """Retrieve a list of all semesters currently stored in the database."""
     return [SemesterResponse.model_validate(s) for s in session.exec(select(Semester)).all()]
 
 
-@app.get("/semesters/{semester_id}", response_model=SemesterResponse)
+@app.get("/semesters/{semester_id}", response_model=SemesterResponse, summary="Get a semester by ID")
 def get_semester(semester_id: int, session: SessionDep):
+    """
+    Retrieve a single semester by its ID.
+
+    Returns **404** if the semester does not exist.
+    """
     semester = session.get(Semester, semester_id)
     if semester is None:
         raise HTTPException(status_code=404, detail="Semester not found")
