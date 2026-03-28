@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uni Planer – Mockup v2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+
+        /* Calendar grid */
+        .cal-grid { display: grid; grid-template-columns: 52px repeat(5, 1fr); }
+        .cal-header { font-weight: 600; text-align: center; padding: 8px 0; border-bottom: 2px solid; }
+        .cal-time { font-size: 0.7rem; text-align: right; padding-right: 6px; padding-top: 2px; }
+        .cal-cell { min-height: 48px; border-bottom: 1px solid; border-right: 1px solid; position: relative; }
+        .dark .cal-header { border-color: #313244; color: #cdd6f4; }
+        .dark .cal-cell { border-color: #313244; }
+        .dark .cal-time { color: #6c7086; }
+
+        /* Event blocks */
+        .ev-block {
+            position: absolute; left: 2px; right: 2px; border-radius: 6px;
+            padding: 3px 5px; font-size: 0.68rem; line-height: 1.2;
+            overflow: hidden; cursor: pointer; border-left: 3px solid;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .ev-block:hover { transform: scale(1.03); box-shadow: 0 4px 14px rgba(0,0,0,0.3); z-index: 10; }
+        .ev-block .ev-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ev-block .ev-meta { opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.62rem; }
+
+        /* Pinned event style */
+        .ev-block.pinned { box-shadow: 0 0 0 2px #f59e0b; }
+        .ev-block .pin-icon {
+            position: absolute; top: 2px; right: 2px; font-size: 0.7rem;
+            opacity: 0; transition: opacity 0.15s; cursor: pointer;
+            background: rgba(0,0,0,0.3); border-radius: 3px; padding: 1px 2px; line-height: 1;
+        }
+        .ev-block:hover .pin-icon { opacity: 1; }
+        .ev-block.pinned .pin-icon { opacity: 1; color: #f59e0b; background: rgba(245,158,11,0.2); }
+
+        /* Status dot */
+        .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+        /* Active chip */
+        .chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.7rem; padding: 2px 8px 2px 6px; border-radius: 9999px;
+            background: #313244; color: #cdd6f4; white-space: nowrap;
+        }
+        .chip .chip-x { cursor: pointer; font-size: 0.8rem; opacity: 0.6; transition: opacity 0.1s; line-height: 1; }
+        .chip .chip-x:hover { opacity: 1; }
+        .chip.pin-chip { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+
+        /* Filter sections */
+        .filter-section { margin-bottom: 0.85rem; }
+        .filter-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 0.3rem; color: #a6adc8; }
+
+        /* Disabled filter option */
+        .filter-option.disabled { opacity: 0.35; pointer-events: none; }
+        .filter-option.disabled-user { opacity: 0.5; }
+        .filter-option.disabled-user::after {
+            content: '0'; font-size: 0.6rem; margin-left: 4px;
+            background: #45475a; border-radius: 4px; padding: 0 4px; color: #6c7086;
+        }
+
+        /* Expandable section */
+        .expand-trigger { cursor: pointer; user-select: none; }
+        .expand-content { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
+        .expand-content.open { max-height: 500px; }
+
+        /* View toggle */
+        .view-btn { padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 500; transition: all 0.15s; }
+        .view-btn.active { background: #3b82f6; color: white; }
+
+        /* Popup */
+        .popup-overlay { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .popup-overlay.show { display: flex; }
+
+        /* Mobile drawer */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); position: fixed; z-index: 50; top: 0; bottom: 0; left: 0; transition: transform 0.3s; width: 300px; }
+            .sidebar.open { transform: translateX(0); }
+            .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
+            .sidebar.open ~ .overlay { display: block; }
+        }
+
+        /* Color mode dropdown */
+        .color-dropdown { position: relative; }
+        .color-menu { display: none; position: absolute; top: 100%; right: 0; margin-top: 4px; border-radius: 8px; overflow: hidden; z-index: 30; min-width: 160px; }
+        .color-dropdown.open .color-menu { display: block; }
+    </style>
+</head>
+<body class="dark:bg-[#1e1e2e] bg-gray-50 dark:text-[#cdd6f4] text-gray-900 h-screen flex flex-col overflow-hidden">
+
+    <!-- ===== HEADER ===== -->
+    <header class="flex items-center justify-between px-4 py-2.5 dark:bg-[#181825] bg-white border-b dark:border-[#313244] border-gray-200 shrink-0">
+        <div class="flex items-center gap-3">
+            <button id="menuBtn" class="md:hidden material-icons-round text-2xl">menu</button>
+            <span class="material-icons-round text-blue-500 text-xl">school</span>
+            <h1 class="text-base font-bold tracking-tight">Uni Planer</h1>
+            <span class="text-xs dark:text-[#a6adc8] text-gray-500 dark:bg-[#313244] bg-gray-100 px-2 py-0.5 rounded-md hidden sm:inline">SoSe 2026</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+            <!-- View toggles -->
+            <div class="hidden sm:flex items-center gap-0.5 dark:bg-[#313244] bg-gray-100 rounded-lg p-0.5">
+                <button class="view-btn active">Woche</button>
+                <button class="view-btn dark:text-[#a6adc8] text-gray-500">Tag</button>
+                <button class="view-btn dark:text-[#a6adc8] text-gray-500">Liste</button>
+            </div>
+            <!-- Color mode -->
+            <div class="color-dropdown" id="colorDropdown">
+                <button id="colorBtn" class="p-1.5 rounded-lg dark:hover:bg-[#313244] hover:bg-gray-100 transition flex items-center gap-1 text-xs dark:text-[#a6adc8]" title="Farbmodus">
+                    <span class="material-icons-round text-lg">palette</span>
+                    <span class="hidden sm:inline">Typ</span>
+                </button>
+                <div class="color-menu dark:bg-[#313244] bg-white border dark:border-[#45475a] border-gray-200 shadow-xl">
+                    <button class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:dark:bg-[#45475a] hover:bg-gray-100 dark:text-blue-400 font-medium">
+                        <span class="material-icons-round text-sm">check</span> Nach Typ
+                    </button>
+                    <button class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:dark:bg-[#45475a] hover:bg-gray-100 dark:text-[#cdd6f4]">
+                        <span class="material-icons-round text-sm opacity-0">check</span> Nach Modul
+                    </button>
+                </div>
+            </div>
+            <!-- Theme toggle -->
+            <button id="themeBtn" class="p-1.5 rounded-lg dark:hover:bg-[#313244] hover:bg-gray-100 transition" title="Design wechseln">
+                <span class="material-icons-round text-lg dark:text-yellow-300 text-gray-600">light_mode</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar w-72 shrink-0 dark:bg-[#181825] bg-white border-r dark:border-[#313244] border-gray-200 overflow-y-auto hidden md:flex flex-col">
+            <div class="p-3 flex-1 overflow-y-auto">
+
+                <!-- ACTIVE SELECTION SUMMARY -->
+                <div class="mb-3 pb-3 border-b dark:border-[#313244]">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold dark:text-[#a6adc8] uppercase tracking-wider">Auswahl</span>
+                        <button class="text-[0.65rem] dark:text-red-400 text-red-500 hover:underline">Alle zurücksetzen</button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <!-- Filter chips -->
+                        <span class="chip">
+                            <span class="material-icons-round" style="font-size:0.7rem">school</span>
+                            B.Sc. DH · 2. Sem
+                            <span class="chip-x">×</span>
+                        </span>
+                        <span class="chip">
+                            <span class="w-2 h-2 rounded-sm bg-blue-500"></span>
+                            Vorlesung
+                            <span class="chip-x">×</span>
+                        </span>
+                        <span class="chip">
+                            <span class="w-2 h-2 rounded-sm bg-amber-500"></span>
+                            Übung
+                            <span class="chip-x">×</span>
+                        </span>
+                        <!-- Pinned chips -->
+                        <span class="chip pin-chip">
+                            <span class="material-icons-round" style="font-size:0.7rem">push_pin</span>
+                            Algorithmen VL
+                            <span class="chip-x">×</span>
+                        </span>
+                        <span class="chip pin-chip">
+                            <span class="material-icons-round" style="font-size:0.7rem">push_pin</span>
+                            Datenbanken ÜB
+                            <span class="chip-x">×</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- DEGREE -->
+                <div class="filter-section">
+                    <div class="filter-label">Studiengang</div>
+                    <select class="w-full text-xs rounded-lg dark:bg-[#313244] bg-gray-100 border-0 dark:text-[#cdd6f4] px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500">
+                        <option value="">Alle Studiengänge</option>
+                        <option>B.Sc. Informatik</option>
+                        <option>M.Sc. Informatik</option>
+                        <option selected>B.Sc. Digital Humanities</option>
+                        <option>M.Sc. Data Science</option>
+                        <option>Lehramt Informatik</option>
+                    </select>
+                </div>
+
+                <!-- SEMESTER -->
+                <div class="filter-section">
+                    <div class="filter-label">Semester</div>
+                    <select class="w-full text-xs rounded-lg dark:bg-[#313244] bg-gray-100 border-0 dark:text-[#cdd6f4] px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500">
+                        <option value="">Alle Semester</option>
+                        <option>1. Semester</option>
+                        <option selected>2. Semester</option>
+                        <option>3. Semester</option>
+                        <option>4. Semester</option>
+                        <option>5. Semester</option>
+                        <option>6. Semester</option>
+                    </select>
+                </div>
+
+                <!-- MODULES -->
+                <div class="filter-section">
+                    <div class="filter-label">Module</div>
+                    <div class="space-y-1 max-h-36 overflow-y-auto dark:bg-[#313244]/40 bg-gray-50 rounded-lg p-1.5">
+                        <label class="flex items-center gap-1.5 text-xs cursor-pointer hover:dark:bg-[#45475a] hover:bg-gray-100 rounded px-1 py-0.5">
+                            <input type="checkbox" checked class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                            <span>Algorithmen & Datenstrukturen</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs cursor-pointer hover:dark:bg-[#45475a] hover:bg-gray-100 rounded px-1 py-0.5">
+                            <input type="checkbox" checked class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                            <span>Datenbanksysteme</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs cursor-pointer hover:dark:bg-[#45475a] hover:bg-gray-100 rounded px-1 py-0.5">
+                            <input type="checkbox" checked class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                            <span>Softwaretechnik</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 text-xs cursor-pointer hover:dark:bg-[#45475a] hover:bg-gray-100 rounded px-1 py-0.5">
+                            <input type="checkbox" class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                            <span>Web-Technologien</span>
+                        </label>
+                    </div>
+                    <!-- Weitere Module (expandable) -->
+                    <div class="mt-1.5">
+                        <div class="expand-trigger flex items-center gap-1 text-xs dark:text-[#a6adc8] hover:dark:text-[#cdd6f4] transition" id="expandTrigger">
+                            <span class="material-icons-round text-sm transition-transform" id="expandArrow">chevron_right</span>
+                            <span>Weitere Module</span>
+                            <span class="text-[0.6rem] dark:text-[#6c7086]">(alle Studiengänge)</span>
+                        </div>
+                        <div class="expand-content" id="expandContent">
+                            <div class="space-y-1 dark:bg-[#313244]/20 rounded-lg p-1.5 mt-1">
+                                <label class="flex items-center gap-1.5 text-xs cursor-pointer hover:dark:bg-[#45475a] rounded px-1 py-0.5 dark:text-[#a6adc8] italic">
+                                    <input type="checkbox" class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                                    <span>Rechnerarchitektur</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 text-xs cursor-pointer hover:dark:bg-[#45475a] rounded px-1 py-0.5 dark:text-[#a6adc8] italic">
+                                    <input type="checkbox" class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                                    <span>Lineare Algebra</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 text-xs cursor-pointer hover:dark:bg-[#45475a] rounded px-1 py-0.5 dark:text-[#a6adc8] italic">
+                                    <input type="checkbox" checked class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                                    <span>Maschinelles Lernen</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 text-xs cursor-pointer hover:dark:bg-[#45475a] rounded px-1 py-0.5 dark:text-[#a6adc8] italic">
+                                    <input type="checkbox" class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                                    <span>Computergrafik</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 text-xs cursor-pointer hover:dark:bg-[#45475a] rounded px-1 py-0.5 dark:text-[#a6adc8] italic">
+                                    <input type="checkbox" class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                                    <span>Betriebssysteme</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EVENT TYPE — cascaded -->
+                <div class="filter-section">
+                    <div class="filter-label">Veranstaltungstyp</div>
+                    <div class="space-y-1">
+                        <label class="filter-option flex items-center gap-1.5 text-xs cursor-pointer">
+                            <input type="checkbox" checked class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                            <span class="w-2 h-2 rounded-sm bg-blue-500 shrink-0"></span>
+                            <span>Vorlesung</span>
+                            <span class="text-[0.6rem] dark:text-[#6c7086] ml-auto">4</span>
+                        </label>
+                        <label class="filter-option flex items-center gap-1.5 text-xs cursor-pointer">
+                            <input type="checkbox" checked class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                            <span class="w-2 h-2 rounded-sm bg-amber-500 shrink-0"></span>
+                            <span>Übung</span>
+                            <span class="text-[0.6rem] dark:text-[#6c7086] ml-auto">3</span>
+                        </label>
+                        <label class="filter-option flex items-center gap-1.5 text-xs cursor-pointer">
+                            <input type="checkbox" checked class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                            <span class="w-2 h-2 rounded-sm bg-violet-500 shrink-0"></span>
+                            <span>Praktikum</span>
+                            <span class="text-[0.6rem] dark:text-[#6c7086] ml-auto">2</span>
+                        </label>
+                        <!-- Disabled but user-checked: no matching events currently -->
+                        <label class="filter-option disabled-user flex items-center gap-1.5 text-xs cursor-pointer">
+                            <input type="checkbox" checked disabled class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3 opacity-50">
+                            <span class="w-2 h-2 rounded-sm bg-emerald-500 shrink-0 opacity-50"></span>
+                            <span class="dark:text-[#6c7086]">Seminar</span>
+                            <span class="text-[0.6rem] dark:text-[#585b70] ml-auto">0</span>
+                        </label>
+                        <label class="filter-option flex items-center gap-1.5 text-xs cursor-pointer">
+                            <input type="checkbox" class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                            <span class="w-2 h-2 rounded-sm bg-indigo-500 shrink-0"></span>
+                            <span>Kolloquium</span>
+                            <span class="text-[0.6rem] dark:text-[#6c7086] ml-auto">1</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- STATUS — cascaded -->
+                <div class="filter-section">
+                    <div class="filter-label">Status</div>
+                    <div class="space-y-1">
+                        <label class="filter-option flex items-center gap-1.5 text-xs cursor-pointer">
+                            <input type="checkbox" checked class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                            <span class="status-dot bg-green-500"></span>
+                            <span>Bestätigt</span>
+                            <span class="text-[0.6rem] dark:text-[#6c7086] ml-auto">7</span>
+                        </label>
+                        <label class="filter-option flex items-center gap-1.5 text-xs cursor-pointer">
+                            <input type="checkbox" checked class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                            <span class="status-dot bg-yellow-400"></span>
+                            <span>VA offen</span>
+                            <span class="text-[0.6rem] dark:text-[#6c7086] ml-auto">1</span>
+                        </label>
+                        <label class="filter-option flex items-center gap-1.5 text-xs cursor-pointer">
+                            <input type="checkbox" checked class="rounded text-blue-500 dark:bg-[#45475a] w-3 h-3">
+                            <span class="status-dot bg-orange-400"></span>
+                            <span>Dozent offen</span>
+                            <span class="text-[0.6rem] dark:text-[#6c7086] ml-auto">1</span>
+                        </label>
+                        <!-- Disabled: no events with this status -->
+                        <label class="filter-option disabled flex items-center gap-1.5 text-xs">
+                            <input type="checkbox" disabled class="rounded dark:bg-[#45475a] w-3 h-3 opacity-30">
+                            <span class="status-dot bg-gray-400 opacity-30"></span>
+                            <span class="dark:text-[#585b70]">Vorsemester</span>
+                        </label>
+                        <label class="filter-option disabled flex items-center gap-1.5 text-xs">
+                            <input type="checkbox" disabled class="rounded dark:bg-[#45475a] w-3 h-3 opacity-30">
+                            <span class="status-dot bg-red-500 opacity-30"></span>
+                            <span class="dark:text-[#585b70]">Entfällt</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- STAFF — cascaded -->
+                <div class="filter-section">
+                    <div class="filter-label">Dozent</div>
+                    <div class="relative">
+                        <span class="material-icons-round absolute left-2 top-1.5 text-sm dark:text-[#6c7086]">search</span>
+                        <input type="text" placeholder="Dozent suchen..." class="w-full text-xs rounded-lg dark:bg-[#313244] bg-gray-100 border-0 dark:text-[#cdd6f4] pl-7 pr-2 py-1.5 focus:ring-2 focus:ring-blue-500 placeholder:dark:text-[#6c7086]">
+                    </div>
+                </div>
+
+                <!-- LOCATION — cascaded -->
+                <div class="filter-section">
+                    <div class="filter-label">Ort</div>
+                    <select class="w-full text-xs rounded-lg dark:bg-[#313244] bg-gray-100 border-0 dark:text-[#cdd6f4] px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500">
+                        <option>Alle Orte</option>
+                        <option>Felix-Klein-HS</option>
+                        <option>SG 3-10</option>
+                        <option>SG 1-09</option>
+                        <option>Paulinum P-702</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Bottom actions -->
+            <div class="p-3 border-t dark:border-[#313244] flex gap-2 shrink-0">
+                <button class="flex-1 text-xs dark:bg-[#313244] bg-gray-200 px-3 py-1.5 rounded-lg font-medium hover:dark:bg-[#45475a] transition flex items-center justify-center gap-1">
+                    <span class="material-icons-round text-sm">restart_alt</span> Zurücksetzen
+                </button>
+                <button class="flex-1 text-xs dark:bg-blue-600/20 bg-blue-50 dark:text-blue-400 text-blue-600 px-3 py-1.5 rounded-lg font-medium hover:dark:bg-blue-600/30 transition flex items-center justify-center gap-1">
+                    <span class="material-icons-round text-sm">link</span> Link teilen
+                </button>
+            </div>
+        </aside>
+        <div class="overlay"></div>
+
+        <!-- ===== MAIN CALENDAR ===== -->
+        <main class="flex-1 overflow-auto p-3">
+            <!-- No date nav — generic week view toggle only on mobile -->
+            <div class="flex items-center justify-between mb-2 sm:hidden">
+                <div class="flex items-center gap-0.5 dark:bg-[#313244] bg-gray-100 rounded-lg p-0.5">
+                    <button class="view-btn active">Woche</button>
+                    <button class="view-btn dark:text-[#a6adc8] text-gray-500">Tag</button>
+                    <button class="view-btn dark:text-[#a6adc8] text-gray-500">Liste</button>
+                </div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="dark:bg-[#181825] bg-white rounded-xl border dark:border-[#313244] border-gray-200 overflow-hidden">
+                <!-- Header Row -->
+                <div class="cal-grid">
+                    <div class="cal-header text-xs dark:text-[#6c7086]"></div>
+                    <div class="cal-header text-xs">Montag</div>
+                    <div class="cal-header text-xs">Dienstag</div>
+                    <div class="cal-header text-xs">Mittwoch</div>
+                    <div class="cal-header text-xs">Donnerstag</div>
+                    <div class="cal-header text-xs">Freitag</div>
+                </div>
+
+                <!-- Time slots -->
+                <div class="cal-grid">
+                    <!-- 08:00 -->
+                    <div class="cal-time">08:00</div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+
+                    <!-- 09:00 -->
+                    <div class="cal-time">09:00</div>
+                    <div class="cal-cell">
+                        <!-- PINNED: VL Algorithmen -->
+                        <div class="ev-block pinned bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:96px;" onclick="showPopup()">
+                            <div class="ev-title">Algorithmen & DS</div>
+                            <div class="ev-meta">VL · Felix-Klein-HS</div>
+                            <div class="ev-meta">Prof. Müller</div>
+                            <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                            <span class="pin-icon material-icons-round" title="Angeheftet">push_pin</span>
+                        </div>
+                    </div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell">
+                        <!-- VL Softwaretechnik -->
+                        <div class="ev-block bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:96px;">
+                            <div class="ev-title">Softwaretechnik</div>
+                            <div class="ev-meta">VL · SG 3-10</div>
+                            <div class="ev-meta">Dr. Weber</div>
+                            <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                            <span class="pin-icon material-icons-round">push_pin</span>
+                        </div>
+                    </div>
+                    <div class="cal-cell">
+                        <!-- VL Datenbanksysteme -->
+                        <div class="ev-block bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:96px;">
+                            <div class="ev-title">Datenbanksysteme</div>
+                            <div class="ev-meta">VL · Paulinum P-702</div>
+                            <div class="ev-meta">Prof. Schmidt</div>
+                            <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                            <span class="pin-icon material-icons-round">push_pin</span>
+                        </div>
+                    </div>
+                    <div class="cal-cell"></div>
+
+                    <!-- 10:00 -->
+                    <div class="cal-time">10:00</div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+
+                    <!-- 11:00 -->
+                    <div class="cal-time">11:00</div>
+                    <div class="cal-cell">
+                        <!-- ÜB Algorithmen -->
+                        <div class="ev-block bg-amber-500/20 border-amber-500 text-amber-300" style="top:0;height:72px;">
+                            <div class="ev-title">Algorithmen & DS</div>
+                            <div class="ev-meta">ÜB · SG 1-09</div>
+                            <span class="status-dot bg-yellow-400 absolute bottom-2 right-2"></span>
+                            <span class="pin-icon material-icons-round">push_pin</span>
+                        </div>
+                    </div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell">
+                        <!-- PINNED: ÜB Datenbanken -->
+                        <div class="ev-block pinned bg-amber-500/20 border-amber-500 text-amber-300" style="top:0;height:72px;">
+                            <div class="ev-title">Datenbanksysteme</div>
+                            <div class="ev-meta">ÜB · SG 3-10</div>
+                            <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                            <span class="pin-icon material-icons-round" title="Angeheftet">push_pin</span>
+                        </div>
+                    </div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell">
+                        <!-- VL Masch. Lernen (cross-degree, italic in module list) -->
+                        <div class="ev-block bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:96px;">
+                            <div class="ev-title">Maschinelles Lernen</div>
+                            <div class="ev-meta">VL · Felix-Klein-HS</div>
+                            <div class="ev-meta">Prof. Rahm</div>
+                            <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                            <span class="pin-icon material-icons-round">push_pin</span>
+                        </div>
+                    </div>
+
+                    <!-- 12:00 -->
+                    <div class="cal-time">12:00</div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+
+                    <!-- 13:00 -->
+                    <div class="cal-time">13:00</div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell">
+                        <!-- PR Softwaretechnik -->
+                        <div class="ev-block bg-violet-500/20 border-violet-500 text-violet-300" style="top:0;height:144px;">
+                            <div class="ev-title">Softwaretechnik</div>
+                            <div class="ev-meta">PR · SG 1-09</div>
+                            <div class="ev-meta">Dr. Weber</div>
+                            <span class="status-dot bg-orange-400 absolute bottom-2 right-2"></span>
+                            <span class="pin-icon material-icons-round">push_pin</span>
+                        </div>
+                    </div>
+                    <div class="cal-cell">
+                        <!-- ÜB Softwaretechnik -->
+                        <div class="ev-block bg-amber-500/20 border-amber-500 text-amber-300" style="top:0;height:72px;">
+                            <div class="ev-title">Softwaretechnik</div>
+                            <div class="ev-meta">ÜB · SG 3-10</div>
+                            <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                            <span class="pin-icon material-icons-round">push_pin</span>
+                        </div>
+                    </div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+
+                    <!-- 14:00 -->
+                    <div class="cal-time">14:00</div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell">
+                        <!-- PR Datenbanken -->
+                        <div class="ev-block bg-violet-500/20 border-violet-500 text-violet-300" style="top:0;height:144px;">
+                            <div class="ev-title">Datenbanksysteme</div>
+                            <div class="ev-meta">PR · SG 3-10</div>
+                            <div class="ev-meta">Dr. Fischer</div>
+                            <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                            <span class="pin-icon material-icons-round">push_pin</span>
+                        </div>
+                    </div>
+                    <div class="cal-cell"></div>
+
+                    <!-- 15:00 -->
+                    <div class="cal-time">15:00</div>
+                    <div class="cal-cell">
+                        <!-- VL Algorithmen (second session) -->
+                        <div class="ev-block bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:96px;">
+                            <div class="ev-title">Algorithmen & DS</div>
+                            <div class="ev-meta">VL · Felix-Klein-HS</div>
+                            <div class="ev-meta">Prof. Müller</div>
+                            <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                            <span class="pin-icon material-icons-round">push_pin</span>
+                        </div>
+                    </div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+
+                    <!-- 16:00 -->
+                    <div class="cal-time">16:00</div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+
+                    <!-- 17:00 -->
+                    <div class="cal-time">17:00</div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell">
+                        <!-- Kolloquium -->
+                        <div class="ev-block bg-indigo-500/20 border-indigo-500 text-indigo-300" style="top:0;height:72px;">
+                            <div class="ev-title">Forschungskolloquium</div>
+                            <div class="ev-meta">KO · SG 3-10</div>
+                            <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                            <span class="pin-icon material-icons-round">push_pin</span>
+                        </div>
+                    </div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+
+                    <!-- 18:00 -->
+                    <div class="cal-time">18:00</div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                    <div class="cal-cell"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ===== EVENT DETAIL POPUP ===== -->
+    <div class="popup-overlay" id="eventPopup">
+        <div class="dark:bg-[#1e1e2e] bg-white rounded-2xl shadow-2xl border dark:border-[#313244] border-gray-200 w-full max-w-sm mx-4 p-4">
+            <div class="flex items-start justify-between mb-3">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2.5 h-2.5 rounded-sm bg-blue-500"></span>
+                        <span class="text-xs font-medium dark:text-blue-400">Vorlesung</span>
+                        <span class="status-dot bg-green-500 ml-0.5"></span>
+                        <span class="text-xs dark:text-green-400">Bestätigt</span>
+                    </div>
+                    <h3 class="font-bold text-lg leading-tight">Algorithmen & Datenstrukturen</h3>
+                </div>
+                <div class="flex items-center gap-1">
+                    <!-- Pin button in popup -->
+                    <button class="p-1 rounded-lg dark:bg-amber-500/20 dark:text-amber-400 hover:dark:bg-amber-500/30 transition" title="Angeheftet">
+                        <span class="material-icons-round text-lg">push_pin</span>
+                    </button>
+                    <button id="closePopup" class="p-1 rounded-lg dark:hover:bg-[#313244] hover:bg-gray-100 transition">
+                        <span class="material-icons-round text-lg">close</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">book</span>
+                    <span>10-201-2001 · 5 ECTS</span>
+                </div>
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">schedule</span>
+                    <span>Montag, 09:00 – 11:00</span>
+                </div>
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">location_on</span>
+                    <span>Felix-Klein-Hörsaal</span>
+                </div>
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">person</span>
+                    <span>Prof. Müller</span>
+                </div>
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">school</span>
+                    <div>
+                        <span>B.Sc. Digital Humanities · 2. Semester</span><br>
+                        <span class="text-xs dark:text-[#6c7086]">B.Sc. Informatik · 2. Semester</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="text-center text-[0.65rem] dark:text-[#6c7086] text-gray-400 py-1.5 border-t dark:border-[#313244] border-gray-200 shrink-0">
+        Daten von <a href="https://www.informatik.uni-leipzig.de/~stundenplan/modul.html" class="underline hover:dark:text-[#a6adc8]">informatik.uni-leipzig.de</a>
+    </footer>
+
+    <!-- ===== INTERACTIVITY ===== -->
+    <script>
+        // Dark mode toggle
+        const html = document.documentElement;
+        document.getElementById('themeBtn').addEventListener('click', () => html.classList.toggle('dark'));
+
+        // Popup
+        const popup = document.getElementById('eventPopup');
+        window.showPopup = () => popup.classList.add('show');
+        document.getElementById('closePopup').addEventListener('click', () => popup.classList.remove('show'));
+        popup.addEventListener('click', (e) => { if (e.target === popup) popup.classList.remove('show'); });
+
+        // Open popup on any event block click
+        document.querySelectorAll('.ev-block').forEach(el => {
+            el.addEventListener('click', (e) => {
+                // Don't open popup when clicking pin icon
+                if (e.target.classList.contains('pin-icon')) return;
+                popup.classList.add('show');
+            });
+        });
+
+        // Pin toggle on calendar events
+        document.querySelectorAll('.ev-block .pin-icon').forEach(icon => {
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                icon.closest('.ev-block').classList.toggle('pinned');
+            });
+        });
+
+        // Expand "Weitere Module"
+        const trigger = document.getElementById('expandTrigger');
+        const content = document.getElementById('expandContent');
+        const arrow = document.getElementById('expandArrow');
+        trigger.addEventListener('click', () => {
+            content.classList.toggle('open');
+            arrow.style.transform = content.classList.contains('open') ? 'rotate(90deg)' : '';
+        });
+
+        // Color mode dropdown
+        const colorDropdown = document.getElementById('colorDropdown');
+        document.getElementById('colorBtn').addEventListener('click', () => colorDropdown.classList.toggle('open'));
+        document.addEventListener('click', (e) => {
+            if (!colorDropdown.contains(e.target)) colorDropdown.classList.remove('open');
+        });
+
+        // Mobile menu
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.querySelector('.sidebar');
+        if (menuBtn) {
+            menuBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+            document.querySelector('.overlay')?.addEventListener('click', () => sidebar.classList.remove('open'));
+        }
+
+        // View toggle buttons
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.closest('div').querySelectorAll('.view-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.classList.add('dark:text-[#a6adc8]', 'text-gray-500');
+                });
+                btn.classList.add('active');
+                btn.classList.remove('dark:text-[#a6adc8]', 'text-gray-500');
+            });
+        });
+
+        // Chip removal
+        document.querySelectorAll('.chip .chip-x').forEach(x => {
+            x.addEventListener('click', () => x.closest('.chip').remove());
+        });
+    </script>
+</body>
+</html>

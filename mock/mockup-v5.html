@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uni Planer – Mockup v5 (Responsive)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <style>
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #45475a; border-radius: 3px; }
+
+        /* ===== TRI-STATE ===== */
+        .tri { display:inline-flex;align-items:center;justify-content:center;
+               width:16px;height:16px;border-radius:4px;font-size:.6rem;font-weight:700;
+               line-height:1;cursor:pointer;user-select:none;flex-shrink:0;
+               transition:all .12s;border:1.5px solid; }
+        .tri[data-s="neutral"]  { background:#313244;border-color:#45475a;color:#6c7086; }
+        .tri[data-s="neutral"]::after  { content:'—'; }
+        .tri[data-s="selected"] { background:rgba(34,197,94,.18);border-color:#22c55e;color:#22c55e; }
+        .tri[data-s="selected"]::after { content:'✓';font-size:.7rem; }
+        .tri[data-s="hidden"]   { background:rgba(239,68,68,.18);border-color:#ef4444;color:#ef4444; }
+        .tri[data-s="hidden"]::after   { content:'✕'; }
+        .tri.dimmed { opacity:.35; pointer-events:none; }
+
+        /* ===== CALENDAR GRID ===== */
+        .cal-grid { display:grid;grid-template-columns:44px repeat(5,1fr); }
+        .dark .cal-h  { border-color:#313244;color:#cdd6f4; }
+        .dark .cal-c  { border-color:#313244; }
+        .dark .cal-t  { color:#6c7086; }
+        .cal-h  { font-weight:600;text-align:center;padding:6px 0;border-bottom:2px solid;font-size:.7rem; }
+        .cal-t  { font-size:.62rem;text-align:right;padding-right:5px;padding-top:2px; }
+        .cal-c  { min-height:44px;border-bottom:1px solid;border-right:1px solid;position:relative; }
+
+        /* ===== EVENT BLOCKS ===== */
+        .ev { position:absolute;left:2px;right:2px;border-radius:5px;padding:2px 4px;
+              font-size:.62rem;line-height:1.15;overflow:hidden;cursor:pointer;
+              border-left:3px solid;transition:transform .1s,box-shadow .1s; }
+        .ev:hover { transform:scale(1.03);box-shadow:0 3px 12px rgba(0,0,0,.35);z-index:10; }
+        .ev-t { font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .ev-m { opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.57rem; }
+        .pin-ic { position:absolute;top:2px;right:2px;font-size:.63rem;opacity:0;
+                  transition:opacity .15s;cursor:pointer;background:rgba(0,0,0,.3);
+                  border-radius:3px;padding:1px 2px;line-height:1; }
+        .ev:hover .pin-ic { opacity:1; }
+        .ev.pinned .pin-ic { opacity:1;color:#f59e0b;background:rgba(245,158,11,.2); }
+        .ev.excluded { opacity:.2;pointer-events:none; }
+        .ev.excluded .ev-t { text-decoration:line-through; }
+        .sdot { width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0; }
+
+        /* ===== CHIPS ===== */
+        .chip { display:inline-flex;align-items:center;gap:3px;font-size:.62rem;
+                padding:1px 6px 1px 4px;border-radius:9999px;white-space:nowrap; }
+        .chip .cx { cursor:pointer;font-size:.7rem;opacity:.6;transition:opacity .1s; }
+        .chip .cx:hover { opacity:1; }
+        .chip-pin { background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.2); }
+        .chip-sel { background:rgba(34,197,94,.12);color:#22c55e;border:1px solid rgba(34,197,94,.2); }
+        .chip-hid { background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.2);text-decoration:line-through; }
+
+        /* ===== FILTER ROWS ===== */
+        .frow { display:flex;align-items:center;gap:5px;font-size:.7rem;padding:2px 4px;
+                border-radius:4px;cursor:pointer;transition:background .1s; }
+        .frow:hover { background:rgba(69,71,90,.4); }
+        .frow.dimmed { opacity:.35;pointer-events:none; }
+        .frow[data-s="hidden"] .lbl { text-decoration:line-through;color:#6c7086; }
+        .frow .cnt { font-size:.57rem;color:#6c7086;margin-left:auto; }
+
+        /* ===== SEARCH ===== */
+        .sinput { width:100%;font-size:.68rem;border-radius:5px;border:0;
+                   padding:3px 5px 3px 24px;background:#313244;color:#cdd6f4;outline:none; }
+        .sinput:focus { box-shadow:0 0 0 1.5px #3b82f6; }
+        .sinput::placeholder { color:#6c7086; }
+        .swrap { position:relative; }
+        .swrap .sic { position:absolute;left:6px;top:4px;font-size:.72rem;color:#6c7086; }
+
+        /* ===== EXPAND ===== */
+        .exp-body { max-height:0;overflow:hidden;transition:max-height .25s ease; }
+        .exp-body.open { max-height:600px; }
+
+        /* ===== SIDEBAR RESPONSIVE ===== */
+        .sidebar {
+            transition:transform .28s cubic-bezier(.4,0,.2,1);
+            width:280px; flex-shrink:0;
+        }
+        /* Mobile: off-canvas drawer */
+        @media (max-width:639px) {
+            .sidebar {
+                position:fixed;top:0;bottom:0;left:0;z-index:60;
+                width:88vw;max-width:320px;
+                transform:translateX(-110%);
+                padding-top:env(safe-area-inset-top, 0px);
+            }
+            .sidebar.open { transform:translateX(0); }
+        }
+        /* Tablet: narrower sidebar always visible */
+        @media (min-width:640px) and (max-width:1023px) {
+            .sidebar { width:240px; }
+        }
+
+        .sb-backdrop { display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5); }
+        @media (min-width:640px) { .sb-backdrop { display:none!important; } }
+
+        /* ===== VIEW BUTTONS ===== */
+        .vbtn { padding:3px 9px;border-radius:5px;font-size:.7rem;font-weight:500;transition:all .15s; }
+        .vbtn.active { background:#3b82f6;color:#fff; }
+
+        /* ===== LIST VIEW ===== */
+        .lday-hdr { font-size:.6rem;font-weight:700;color:#a6adc8;text-transform:uppercase;
+                    letter-spacing:.07em;padding:8px 0 3px;border-bottom:1px solid #313244;margin-bottom:2px; }
+        .lev { display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:7px;cursor:pointer;transition:background .1s; }
+        .lev:hover { background:#313244; }
+        .lev .ltime { font-size:.58rem;color:#6c7086;width:38px;flex-shrink:0;padding-top:2px;line-height:1.3; }
+        .lev .lbar { width:3px;border-radius:2px;align-self:stretch;flex-shrink:0;min-height:28px; }
+        .lev .lbody { flex:1;min-width:0; }
+        .lev .ltitle { font-size:.72rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .lev .lmeta { font-size:.6rem;color:#a6adc8; }
+        .lev .lpbtn { flex-shrink:0;opacity:0;transition:opacity .15s; }
+        .lev:hover .lpbtn { opacity:1; }
+        .lev.pinned .lpbtn { opacity:1;color:#f59e0b; }
+
+        /* ===== DAY GRID ===== */
+        .day-grid { display:grid;grid-template-columns:44px 1fr; }
+
+        /* ===== POPUP ===== */
+        .popup-ov { display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.55);
+                    justify-content:center;align-items:center; }
+        .popup-ov.show { display:flex; }
+        @media (max-width:639px) {
+            .popup-ov { align-items:flex-end; }
+            .popup-box { border-bottom-left-radius:0!important;border-bottom-right-radius:0!important;
+                          width:100%;max-width:100%!important;margin:0!important;
+                          padding-bottom:env(safe-area-inset-bottom,12px); }
+        }
+
+        /* ===== COLOR MENU ===== */
+        .cmenu { display:none;position:absolute;top:100%;right:0;margin-top:4px;
+                  border-radius:7px;overflow:hidden;z-index:30;min-width:175px; }
+        .cdrop.open .cmenu { display:block; }
+        .cconf { display:none; }
+        .cconf.open { display:block; }
+        .cswatch { width:18px;height:18px;border-radius:3px;border:2px solid transparent;cursor:pointer; }
+        .cswatch:hover { border-color:#cdd6f4; }
+        .cswatch.act { border-color:#f59e0b; }
+
+        /* ===== DEVICE PREVIEW TOOLBAR ===== */
+        .dev-tool { background:#11111b;border-top:1px solid #313244;
+                    padding:4px 12px;display:flex;align-items:center;gap:6px;flex-shrink:0; }
+        .dbtn { font-size:.62rem;padding:2px 8px;border-radius:4px;color:#a6adc8;
+                background:#1e1e2e;border:1px solid #313244;cursor:pointer;
+                transition:all .15s;display:flex;align-items:center;gap:3px; }
+        .dbtn.act { background:#3b82f6;color:#fff;border-color:#3b82f6; }
+        .dlabel { font-size:.57rem;color:#585b70;margin-right:2px; }
+    </style>
+</head>
+
+<!-- OUTER WRAPPER for device preview simulation -->
+<body class="bg-[#11111b] h-screen flex flex-col overflow-hidden">
+
+    <!-- Device preview toolbar (outside the app frame) -->
+    <div class="dev-tool" id="devToolbar">
+        <span class="dlabel material-icons-round text-xs">devices</span>
+        <span class="dlabel">Vorschau:</span>
+        <button class="dbtn" data-w="375" onclick="setPreview(375,this)">
+            <span class="material-icons-round text-xs">smartphone</span> 375px
+        </button>
+        <button class="dbtn" data-w="768" onclick="setPreview(768,this)">
+            <span class="material-icons-round text-xs">tablet</span> 768px
+        </button>
+        <button class="dbtn act" data-w="0" onclick="setPreview(0,this)">
+            <span class="material-icons-round text-xs">desktop_windows</span> Full
+        </button>
+        <span class="dlabel ml-2" id="widthLabel">– Resize browser oder wähle eine Breite –</span>
+    </div>
+
+    <!-- ===== APP FRAME ===== -->
+    <div class="flex-1 overflow-hidden flex justify-center" id="previewOuter">
+        <div id="previewContent" class="w-full h-full flex flex-col overflow-hidden dark:bg-[#1e1e2e] dark:text-[#cdd6f4] transition-all duration-300">
+
+            <!-- ===== HEADER ===== -->
+            <header class="flex items-center justify-between px-3 py-2 dark:bg-[#181825] border-b dark:border-[#313244] shrink-0 gap-2"
+                    style="padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))">
+
+                <!-- Left group -->
+                <div class="flex items-center gap-2 min-w-0">
+                    <!-- Hamburger — always visible on < 640px, hidden on >= 640px -->
+                    <button id="hamburger" onclick="toggleSidebar()"
+                            class="sm:hidden flex items-center justify-center w-9 h-9 rounded-lg dark:hover:bg-[#313244] transition flex-shrink-0">
+                        <span class="material-icons-round text-xl">menu</span>
+                    </button>
+                    <span class="material-icons-round text-blue-500 text-xl flex-shrink-0">school</span>
+                    <h1 class="text-sm font-bold tracking-tight whitespace-nowrap">Uni Planer</h1>
+                    <!-- Semester badge: hidden on mobile, shown sm+ -->
+                    <span class="hidden sm:inline text-xs dark:text-[#a6adc8] dark:bg-[#313244] px-2 py-0.5 rounded-md">SoSe 2026</span>
+                </div>
+
+                <!-- Center: view toggles — hidden on mobile (shown inline on mobile in main area) -->
+                <div class="hidden sm:flex items-center gap-0.5 dark:bg-[#313244] rounded-lg p-0.5">
+                    <button class="vbtn active" data-view="week" onclick="switchView('week',this)">Woche</button>
+                    <button class="vbtn dark:text-[#a6adc8]" data-view="day" onclick="switchView('day',this)">Tag</button>
+                    <button class="vbtn dark:text-[#a6adc8]" data-view="list" onclick="switchView('list',this)">Liste</button>
+                </div>
+
+                <!-- Right group -->
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <!-- Color mode dropdown -->
+                    <div class="cdrop relative" id="cdrop">
+                        <button id="colorBtn" onclick="document.getElementById('cdrop').classList.toggle('open')"
+                                class="p-1.5 rounded-lg dark:hover:bg-[#313244] transition flex items-center gap-0.5 text-xs dark:text-[#a6adc8]">
+                            <span class="material-icons-round text-lg">palette</span>
+                            <!-- text label hidden on mobile -->
+                            <span class="hidden sm:inline">Typ</span>
+                            <span class="material-icons-round text-xs">expand_more</span>
+                        </button>
+                        <div class="cmenu dark:bg-[#313244] border dark:border-[#45475a] shadow-xl">
+                            <button class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:dark:bg-[#45475a] dark:text-blue-400 font-medium">
+                                <span class="material-icons-round text-sm">check</span> Nach Typ
+                            </button>
+                            <button class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:dark:bg-[#45475a]">
+                                <span class="material-icons-round text-sm opacity-0">check</span> Nach Modul
+                            </button>
+                            <button class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:dark:bg-[#45475a]">
+                                <span class="material-icons-round text-sm opacity-0">check</span> Nach Status
+                            </button>
+                            <button class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:dark:bg-[#45475a]">
+                                <span class="material-icons-round text-sm opacity-0">check</span> Nach Dozent
+                            </button>
+                            <div class="border-t dark:border-[#45475a]"></div>
+                            <button class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:dark:bg-[#45475a]" id="customColorBtn">
+                                <span class="material-icons-round text-sm opacity-0">check</span> Benutzerdefiniert…
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Theme toggle -->
+                    <button onclick="document.documentElement.classList.toggle('dark')"
+                            class="p-1.5 rounded-lg dark:hover:bg-[#313244] transition">
+                        <span class="material-icons-round text-lg dark:text-yellow-300">light_mode</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- ===== BODY ===== -->
+            <div class="flex flex-1 overflow-hidden relative">
+
+                <!-- Sidebar backdrop (mobile only) -->
+                <div class="sb-backdrop" id="sbBackdrop" onclick="closeSidebar()"></div>
+
+                <!-- ===== SIDEBAR ===== -->
+                <aside id="sidebar" class="sidebar dark:bg-[#181825] border-r dark:border-[#313244] flex flex-col overflow-hidden">
+
+                    <!-- Mobile-only: sidebar header with close + app branding -->
+                    <div class="sm:hidden flex items-center justify-between px-3 py-2 border-b dark:border-[#313244] shrink-0 dark:bg-[#11111b]">
+                        <div class="flex items-center gap-2">
+                            <span class="material-icons-round text-blue-500 text-base">school</span>
+                            <span class="text-sm font-bold">Uni Planer</span>
+                            <span class="text-xs dark:text-[#a6adc8] dark:bg-[#313244] px-1.5 py-0.5 rounded">SoSe 2026</span>
+                        </div>
+                        <button onclick="closeSidebar()" class="p-1 rounded-lg dark:hover:bg-[#313244] transition">
+                            <span class="material-icons-round text-lg">close</span>
+                        </button>
+                    </div>
+
+                    <!-- Scrollable filter content -->
+                    <div class="flex-1 overflow-y-auto p-3 space-y-0">
+
+                        <!-- ACTIVE SELECTION CHIPS -->
+                        <div class="mb-3 pb-2.5 border-b dark:border-[#313244]">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-[.6rem] font-semibold dark:text-[#a6adc8] uppercase tracking-wider">Auswahl</span>
+                                <button class="text-[.58rem] dark:text-red-400 hover:underline">Alle zurücksetzen</button>
+                            </div>
+                            <div class="flex flex-wrap gap-1" id="chipArea">
+                                <span class="chip chip-pin"><span class="material-icons-round" style="font-size:.6rem">push_pin</span> Algo VL Mo <span class="cx">×</span></span>
+                                <span class="chip chip-pin"><span class="material-icons-round" style="font-size:.6rem">push_pin</span> Algo ÜB Mo <span class="cx">×</span></span>
+                                <span class="chip chip-pin"><span class="material-icons-round" style="font-size:.6rem">push_pin</span> DB ÜB Mi <span class="cx">×</span></span>
+                                <span class="chip chip-sel"><span class="material-icons-round" style="font-size:.58rem">check</span> Vorlesung <span class="cx">×</span></span>
+                                <span class="chip chip-sel"><span class="material-icons-round" style="font-size:.58rem">check</span> Übung <span class="cx">×</span></span>
+                                <span class="chip chip-sel"><span class="material-icons-round" style="font-size:.58rem">check</span> Praktikum <span class="cx">×</span></span>
+                                <span class="chip chip-sel"><span class="material-icons-round" style="font-size:.58rem">person</span> Prof. Müller <span class="cx">×</span></span>
+                                <span class="chip chip-hid"><span class="material-icons-round" style="font-size:.58rem">close</span> Kolloquium <span class="cx">×</span></span>
+                                <span class="chip chip-hid"><span class="material-icons-round" style="font-size:.58rem">close</span> reserve <span class="cx">×</span></span>
+                            </div>
+                        </div>
+
+                        <!-- Tri-state legend -->
+                        <div class="flex gap-2.5 text-[.57rem] dark:text-[#6c7086] mb-2.5 flex-wrap">
+                            <span class="font-semibold dark:text-[#a6adc8]">Klick:</span>
+                            <span class="flex items-center gap-1"><span class="tri" data-s="neutral" style="width:11px;height:11px;font-size:.42rem;pointer-events:none;"></span>Neutral</span>
+                            <span class="flex items-center gap-1"><span class="tri" data-s="selected" style="width:11px;height:11px;font-size:.45rem;pointer-events:none;"></span>Anzeigen</span>
+                            <span class="flex items-center gap-1"><span class="tri" data-s="hidden" style="width:11px;height:11px;font-size:.42rem;pointer-events:none;"></span>Verstecken</span>
+                        </div>
+
+                        <!-- DEGREE -->
+                        <div class="mb-2">
+                            <div class="text-[.58rem] uppercase tracking-wider font-semibold dark:text-[#a6adc8] mb-1">Studiengang</div>
+                            <select class="w-full text-xs rounded-md dark:bg-[#313244] border-0 dark:text-[#cdd6f4] px-2 py-1.5 focus:ring-1 focus:ring-blue-500">
+                                <option>Alle Studiengänge</option>
+                                <option>B.Sc. Informatik</option>
+                                <option selected>B.Sc. Digital Humanities</option>
+                                <option>M.Sc. Informatik</option>
+                                <option>M.Sc. Data Science</option>
+                                <option>Lehramt Informatik</option>
+                            </select>
+                        </div>
+
+                        <!-- SEMESTER -->
+                        <div class="mb-2.5">
+                            <div class="text-[.58rem] uppercase tracking-wider font-semibold dark:text-[#a6adc8] mb-1">Semester</div>
+                            <select class="w-full text-xs rounded-md dark:bg-[#313244] border-0 dark:text-[#cdd6f4] px-2 py-1.5 focus:ring-1 focus:ring-blue-500">
+                                <option>Alle Semester</option>
+                                <option>1. Semester</option>
+                                <option selected>2. Semester</option>
+                                <option>3. Semester</option>
+                                <option>4. Semester</option>
+                            </select>
+                        </div>
+
+                        <!-- MODULES -->
+                        <div class="mb-2.5">
+                            <div class="text-[.58rem] uppercase tracking-wider font-semibold dark:text-[#a6adc8] mb-1">Module</div>
+                            <div class="swrap mb-1.5">
+                                <span class="sic material-icons-round">search</span>
+                                <input type="text" placeholder="Modul suchen…" class="sinput">
+                            </div>
+                            <div class="space-y-0.5 max-h-28 overflow-y-auto dark:bg-[#313244]/40 rounded-md p-1">
+                                <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="lbl flex-1">Algorithmen & DS</span></div>
+                                <div class="frow" data-s="selected"><span class="tri" data-s="selected"></span><span class="lbl flex-1">Datenbanksysteme</span></div>
+                                <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="lbl flex-1">Softwaretechnik</span></div>
+                                <div class="frow" data-s="hidden"><span class="tri" data-s="hidden"></span><span class="lbl flex-1">Web-Technologien</span></div>
+                            </div>
+                            <!-- Weitere Module expand -->
+                            <div class="mt-1.5">
+                                <div class="flex items-center gap-1 text-xs dark:text-[#a6adc8] cursor-pointer hover:dark:text-[#cdd6f4]"
+                                     onclick="toggleExp('weitereExp','weitereArrow')">
+                                    <span class="material-icons-round text-sm transition-transform" id="weitereArrow">chevron_right</span>
+                                    <span>Weitere Module</span>
+                                    <span class="text-[.57rem] dark:text-[#6c7086]">(alle)</span>
+                                </div>
+                                <div class="exp-body" id="weitereExp">
+                                    <div class="mt-1">
+                                        <div class="swrap mb-1">
+                                            <span class="sic material-icons-round">search</span>
+                                            <input type="text" placeholder="Weitere suchen…" class="sinput" style="background:#27273a">
+                                        </div>
+                                        <div class="space-y-0.5 max-h-24 overflow-y-auto dark:bg-[#313244]/20 rounded-md p-1">
+                                            <div class="frow dark:text-[#a6adc8] italic" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="lbl flex-1">Rechnerarchitektur</span></div>
+                                            <div class="frow dark:text-[#a6adc8] italic" data-s="selected"><span class="tri" data-s="selected"></span><span class="lbl flex-1">Maschinelles Lernen</span></div>
+                                            <div class="frow dark:text-[#a6adc8] italic" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="lbl flex-1">Lineare Algebra</span></div>
+                                            <div class="frow dark:text-[#a6adc8] italic" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="lbl flex-1">Betriebssysteme</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- EVENT TYPE -->
+                        <div class="mb-2.5">
+                            <div class="text-[.58rem] uppercase tracking-wider font-semibold dark:text-[#a6adc8] mb-1">Veranstaltungstyp</div>
+                            <div class="space-y-0.5">
+                                <div class="frow" data-s="selected"><span class="tri" data-s="selected"></span><span class="w-2 h-2 rounded-sm bg-blue-500 shrink-0"></span><span class="lbl flex-1">Vorlesung</span><span class="cnt">4</span></div>
+                                <div class="frow" data-s="selected"><span class="tri" data-s="selected"></span><span class="w-2 h-2 rounded-sm bg-amber-500 shrink-0"></span><span class="lbl flex-1">Übung</span><span class="cnt">3</span></div>
+                                <div class="frow" data-s="selected"><span class="tri" data-s="selected"></span><span class="w-2 h-2 rounded-sm bg-violet-500 shrink-0"></span><span class="lbl flex-1">Praktikum</span><span class="cnt">2</span></div>
+                                <div class="frow dimmed" data-s="selected"><span class="tri dimmed" data-s="selected"></span><span class="w-2 h-2 rounded-sm bg-emerald-500 shrink-0 opacity-50"></span><span class="lbl flex-1 dark:text-[#6c7086]">Seminar</span><span class="cnt">0</span></div>
+                                <div class="frow" data-s="hidden"><span class="tri" data-s="hidden"></span><span class="w-2 h-2 rounded-sm bg-indigo-500 shrink-0 opacity-50"></span><span class="lbl flex-1">Kolloquium</span><span class="cnt">1</span></div>
+                            </div>
+                        </div>
+
+                        <!-- STATUS -->
+                        <div class="mb-2.5">
+                            <div class="text-[.58rem] uppercase tracking-wider font-semibold dark:text-[#a6adc8] mb-1">Status</div>
+                            <div class="space-y-0.5">
+                                <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="sdot bg-green-500"></span><span class="lbl flex-1">Bestätigt</span><span class="cnt">7</span></div>
+                                <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="sdot bg-yellow-400"></span><span class="lbl flex-1">VA offen</span><span class="cnt">1</span></div>
+                                <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="sdot bg-orange-400"></span><span class="lbl flex-1">Dozent offen</span><span class="cnt">1</span></div>
+                                <div class="frow" data-s="hidden"><span class="tri" data-s="hidden"></span><span class="sdot bg-red-500"></span><span class="lbl flex-1">Entfällt</span><span class="cnt">0</span></div>
+                                <div class="frow dimmed" data-s="neutral"><span class="tri dimmed" data-s="neutral"></span><span class="sdot bg-gray-400 opacity-30"></span><span class="lbl flex-1 dark:text-[#585b70]">Vorsemester</span><span class="cnt">0</span></div>
+                            </div>
+                        </div>
+
+                        <!-- STAFF (cross-filter) -->
+                        <div class="mb-2.5">
+                            <div class="text-[.58rem] uppercase tracking-wider font-semibold dark:text-[#a6adc8] mb-1 flex items-center gap-1">
+                                Dozent <span class="text-[.52rem] dark:text-[#585b70] normal-case tracking-normal font-normal">↕ cross-filter</span>
+                            </div>
+                            <div class="swrap mb-1">
+                                <span class="sic material-icons-round">search</span>
+                                <input type="text" placeholder="Dozent suchen…" class="sinput">
+                            </div>
+                            <div class="space-y-0.5 max-h-20 overflow-y-auto dark:bg-[#313244]/40 rounded-md p-1">
+                                <div class="frow" data-s="selected"><span class="tri" data-s="selected"></span><span class="lbl flex-1">Prof. Müller</span><span class="cnt">3</span></div>
+                                <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="lbl flex-1">Dr. Weber</span><span class="cnt">2</span></div>
+                                <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="lbl flex-1">Prof. Schmidt</span><span class="cnt">2</span></div>
+                                <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="lbl flex-1">Dr. Fischer</span><span class="cnt">1</span></div>
+                                <div class="frow" data-s="hidden"><span class="tri" data-s="hidden"></span><span class="lbl flex-1">Prof. Rahm</span><span class="cnt">1</span></div>
+                            </div>
+                        </div>
+
+                        <!-- LOCATION (cross-filter) -->
+                        <div class="mb-2">
+                            <div class="text-[.58rem] uppercase tracking-wider font-semibold dark:text-[#a6adc8] mb-1 flex items-center gap-1">
+                                Ort <span class="text-[.52rem] dark:text-[#585b70] normal-case tracking-normal font-normal">↕ cross-filter</span>
+                            </div>
+                            <div class="swrap mb-1">
+                                <span class="sic material-icons-round">search</span>
+                                <input type="text" placeholder="Ort suchen…" class="sinput">
+                            </div>
+                            <div class="space-y-0.5 max-h-20 overflow-y-auto dark:bg-[#313244]/40 rounded-md p-1">
+                                <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="lbl flex-1">Felix-Klein-HS</span><span class="cnt">4</span></div>
+                                <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="lbl flex-1">SG 3-10</span><span class="cnt">3</span></div>
+                                <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="lbl flex-1">SG 1-09</span><span class="cnt">2</span></div>
+                                <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="lbl flex-1">Paulinum P-702</span><span class="cnt">1</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar footer actions -->
+                    <div class="p-2.5 border-t dark:border-[#313244] flex gap-2 shrink-0">
+                        <button class="flex-1 text-xs dark:bg-[#313244] px-2 py-1.5 rounded-md font-medium hover:dark:bg-[#45475a] transition flex items-center justify-center gap-1">
+                            <span class="material-icons-round text-sm">restart_alt</span> Zurücksetzen
+                        </button>
+                        <button class="flex-1 text-xs dark:bg-blue-600/20 dark:text-blue-400 px-2 py-1.5 rounded-md font-medium hover:dark:bg-blue-600/30 transition flex items-center justify-center gap-1">
+                            <span class="material-icons-round text-sm">link</span> Teilen
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- ===== MAIN CONTENT ===== -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+
+                    <!-- Custom color config (slides open below header) -->
+                    <div class="cconf dark:bg-[#181825] border-b dark:border-[#313244] px-3 py-2.5" id="colorConfig">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-xs font-semibold">Benutzerdefinierte Farben</span>
+                            <button onclick="document.getElementById('colorConfig').classList.remove('open')"
+                                    class="text-[.62rem] dark:text-red-400 hover:underline">Schließen</button>
+                        </div>
+                        <div class="flex flex-wrap gap-3 text-xs">
+                            <div class="flex items-center gap-1.5"><span class="dark:text-[#a6adc8]">Vorlesung</span>
+                                <div class="flex gap-0.5">
+                                    <div class="cswatch bg-blue-500 act"></div><div class="cswatch bg-sky-400"></div><div class="cswatch bg-cyan-500"></div>
+                                    <div class="cswatch bg-indigo-500"></div><div class="cswatch bg-violet-500"></div><div class="cswatch bg-rose-500"></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5"><span class="dark:text-[#a6adc8]">Übung</span>
+                                <div class="flex gap-0.5">
+                                    <div class="cswatch bg-blue-500"></div><div class="cswatch bg-amber-500 act"></div><div class="cswatch bg-orange-500"></div>
+                                    <div class="cswatch bg-yellow-500"></div><div class="cswatch bg-lime-500"></div><div class="cswatch bg-rose-500"></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5"><span class="dark:text-[#a6adc8]">Praktikum</span>
+                                <div class="flex gap-0.5">
+                                    <div class="cswatch bg-blue-500"></div><div class="cswatch bg-amber-500"></div><div class="cswatch bg-violet-500 act"></div>
+                                    <div class="cswatch bg-purple-500"></div><div class="cswatch bg-fuchsia-500"></div><div class="cswatch bg-rose-500"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile: view toggle bar (visible only on mobile) -->
+                    <div class="sm:hidden flex items-center justify-between px-3 py-1.5 dark:bg-[#181825] border-b dark:border-[#313244] shrink-0">
+                        <div class="flex items-center gap-0.5 dark:bg-[#313244] rounded-lg p-0.5">
+                            <button class="vbtn dark:text-[#a6adc8]" data-view="week" onclick="switchView('week',this)">Woche</button>
+                            <button class="vbtn dark:text-[#a6adc8]" data-view="day" onclick="switchView('day',this)">Tag</button>
+                            <button class="vbtn active" data-view="list" onclick="switchView('list',this)">Liste</button>
+                        </div>
+                        <!-- Active filter summary (compact, mobile only) -->
+                        <div class="flex items-center gap-1 text-xs dark:text-[#a6adc8]">
+                            <span class="material-icons-round text-sm text-amber-500">push_pin</span>
+                            <span>3</span>
+                            <span class="material-icons-round text-sm text-green-500">check_circle</span>
+                            <span>3</span>
+                            <span class="material-icons-round text-sm text-red-500">cancel</span>
+                            <span>2</span>
+                        </div>
+                    </div>
+
+                    <!-- ===== VIEW CONTAINERS ===== -->
+                    <div class="flex-1 overflow-auto" id="mainArea">
+
+                        <!-- == WEEK VIEW == -->
+                        <div id="viewWeek" class="p-2 sm:p-3">
+                            <div class="dark:bg-[#181825] rounded-xl border dark:border-[#313244] overflow-hidden">
+                                <!-- Header row -->
+                                <div class="cal-grid">
+                                    <div class="cal-h text-[.58rem] dark:text-[#6c7086]"></div>
+                                    <div class="cal-h">Mo</div>
+                                    <div class="cal-h">Di</div>
+                                    <div class="cal-h">Mi</div>
+                                    <div class="cal-h">Do</div>
+                                    <div class="cal-h">Fr</div>
+                                </div>
+                                <div class="cal-grid">
+                                    <!-- 08:00 -->
+                                    <div class="cal-t">08:00</div>
+                                    <div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div>
+                                    <!-- 09:00 -->
+                                    <div class="cal-t">09:00</div>
+                                    <div class="cal-c">
+                                        <div class="ev pinned bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:92px" onclick="openPopup()">
+                                            <div class="ev-t">Algorithmen & DS</div>
+                                            <div class="ev-m">VL · Felix-Klein-HS</div>
+                                            <div class="ev-m">Prof. Müller</div>
+                                            <span class="sdot bg-green-500 absolute bottom-1.5 right-5"></span>
+                                            <span class="pin-ic material-icons-round">push_pin</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-c"></div>
+                                    <div class="cal-c">
+                                        <div class="ev bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:92px" onclick="openPopup()">
+                                            <div class="ev-t">Softwaretechnik</div>
+                                            <div class="ev-m">VL · SG 3-10</div>
+                                            <div class="ev-m">Dr. Weber</div>
+                                            <span class="sdot bg-green-500 absolute bottom-1.5 right-5"></span>
+                                            <span class="pin-ic material-icons-round">push_pin</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-c">
+                                        <div class="ev bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:92px" onclick="openPopup()">
+                                            <div class="ev-t">Datenbanksysteme</div>
+                                            <div class="ev-m">VL · Paulinum P-702</div>
+                                            <div class="ev-m">Prof. Schmidt</div>
+                                            <span class="sdot bg-green-500 absolute bottom-1.5 right-5"></span>
+                                            <span class="pin-ic material-icons-round">push_pin</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-c"></div>
+                                    <!-- 10:00 -->
+                                    <div class="cal-t">10:00</div>
+                                    <div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div>
+                                    <!-- 11:00 -->
+                                    <div class="cal-t">11:00</div>
+                                    <div class="cal-c">
+                                        <div class="ev pinned bg-amber-500/20 border-amber-500 text-amber-300" style="top:0;height:70px" onclick="openPopup()">
+                                            <div class="ev-t">Algo ÜB Grp A</div>
+                                            <div class="ev-m">ÜB · SG 1-09</div>
+                                            <span class="sdot bg-green-500 absolute bottom-1.5 right-5"></span>
+                                            <span class="pin-ic material-icons-round">push_pin</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-c">
+                                        <div class="ev excluded bg-amber-500/10 border-amber-800 text-amber-800" style="top:0;height:70px">
+                                            <div class="ev-t">Algo ÜB Grp B</div>
+                                            <div class="ev-m">ÜB · SG 3-10</div>
+                                            <div class="ev-m" style="font-size:.52rem;color:#92400e">Gruppe ausgewählt</div>
+                                        </div>
+                                    </div>
+                                    <div class="cal-c">
+                                        <div class="ev pinned bg-amber-500/20 border-amber-500 text-amber-300" style="top:0;height:70px" onclick="openPopup()">
+                                            <div class="ev-t">Datenbanksysteme</div>
+                                            <div class="ev-m">ÜB · SG 3-10</div>
+                                            <span class="sdot bg-green-500 absolute bottom-1.5 right-5"></span>
+                                            <span class="pin-ic material-icons-round">push_pin</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-c"></div>
+                                    <div class="cal-c"></div>
+                                    <!-- 12:00 -->
+                                    <div class="cal-t">12:00</div>
+                                    <div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div>
+                                    <!-- 13:00 -->
+                                    <div class="cal-t">13:00</div>
+                                    <div class="cal-c"></div>
+                                    <div class="cal-c">
+                                        <div class="ev bg-violet-500/20 border-violet-500 text-violet-300" style="top:0;height:138px" onclick="openPopup()">
+                                            <div class="ev-t">Softwaretechnik</div>
+                                            <div class="ev-m">PR · SG 1-09 · Dr. Weber</div>
+                                            <span class="sdot bg-orange-400 absolute bottom-1.5 right-5"></span>
+                                            <span class="pin-ic material-icons-round">push_pin</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-c">
+                                        <div class="ev bg-amber-500/20 border-amber-500 text-amber-300" style="top:0;height:70px" onclick="openPopup()">
+                                            <div class="ev-t">Softwaretechnik</div>
+                                            <div class="ev-m">ÜB · SG 3-10</div>
+                                            <span class="sdot bg-green-500 absolute bottom-1.5 right-5"></span>
+                                            <span class="pin-ic material-icons-round">push_pin</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-c"></div>
+                                    <div class="cal-c"></div>
+                                    <!-- 14:00 -->
+                                    <div class="cal-t">14:00</div>
+                                    <div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div>
+                                    <div class="cal-c">
+                                        <div class="ev bg-violet-500/20 border-violet-500 text-violet-300" style="top:0;height:138px" onclick="openPopup()">
+                                            <div class="ev-t">Datenbanksysteme</div>
+                                            <div class="ev-m">PR · SG 3-10 · Dr. Fischer</div>
+                                            <span class="sdot bg-green-500 absolute bottom-1.5 right-5"></span>
+                                            <span class="pin-ic material-icons-round">push_pin</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-c"></div>
+                                    <!-- 15:00 -->
+                                    <div class="cal-t">15:00</div>
+                                    <div class="cal-c">
+                                        <div class="ev bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:92px" onclick="openPopup()">
+                                            <div class="ev-t">Algorithmen & DS</div>
+                                            <div class="ev-m">VL · Felix-Klein-HS</div>
+                                            <div class="ev-m">Prof. Müller</div>
+                                            <span class="sdot bg-green-500 absolute bottom-1.5 right-5"></span>
+                                            <span class="pin-ic material-icons-round">push_pin</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div>
+                                    <!-- 16:00 -->
+                                    <div class="cal-t">16:00</div>
+                                    <div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div>
+                                    <!-- 17:00 Kolloquium hidden -->
+                                    <div class="cal-t">17:00</div>
+                                    <div class="cal-c"></div><div class="cal-c"></div>
+                                    <div class="cal-c"><!-- Kolloquium hidden (type=hidden) --></div>
+                                    <div class="cal-c"></div><div class="cal-c"></div>
+                                    <!-- 18:00 -->
+                                    <div class="cal-t">18:00</div>
+                                    <div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div><div class="cal-c"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- == LIST VIEW (mobile-friendly) == -->
+                        <div id="viewList" class="hidden px-3 py-2 pb-6">
+                            <!-- Montag -->
+                            <div class="lday-hdr">Montag</div>
+                            <div class="lev pinned" onclick="openPopup()">
+                                <div class="ltime">09:00<br>11:00</div>
+                                <div class="lbar bg-blue-500"></div>
+                                <div class="lbody">
+                                    <div class="ltitle">Algorithmen & Datenstrukturen</div>
+                                    <div class="lmeta">VL · Felix-Klein-HS · Prof. Müller</div>
+                                    <div class="lmeta"><span class="sdot bg-green-500 mr-1"></span>Bestätigt</div>
+                                </div>
+                                <button class="lpbtn"><span class="material-icons-round text-base">push_pin</span></button>
+                            </div>
+                            <div class="lev pinned" onclick="openPopup()">
+                                <div class="ltime">11:00<br>12:30</div>
+                                <div class="lbar bg-amber-500"></div>
+                                <div class="lbody">
+                                    <div class="ltitle">Algorithmen & DS – Übung Grp A</div>
+                                    <div class="lmeta">ÜB · SG 1-09</div>
+                                    <div class="lmeta"><span class="sdot bg-green-500 mr-1"></span>Bestätigt</div>
+                                </div>
+                                <button class="lpbtn"><span class="material-icons-round text-base">push_pin</span></button>
+                            </div>
+                            <div class="lev" onclick="openPopup()">
+                                <div class="ltime">15:00<br>17:00</div>
+                                <div class="lbar bg-blue-500"></div>
+                                <div class="lbody">
+                                    <div class="ltitle">Algorithmen & Datenstrukturen</div>
+                                    <div class="lmeta">VL · Felix-Klein-HS · Prof. Müller</div>
+                                    <div class="lmeta"><span class="sdot bg-green-500 mr-1"></span>Bestätigt</div>
+                                </div>
+                                <button class="lpbtn"><span class="material-icons-round text-base">push_pin</span></button>
+                            </div>
+
+                            <!-- Dienstag -->
+                            <div class="lday-hdr mt-2">Dienstag</div>
+                            <!-- Excluded event: dimmed with strikethrough -->
+                            <div class="lev" style="opacity:.3;pointer-events:none">
+                                <div class="ltime">11:00<br>12:30</div>
+                                <div class="lbar bg-amber-500"></div>
+                                <div class="lbody">
+                                    <div class="ltitle" style="text-decoration:line-through">Algo ÜB Grp B</div>
+                                    <div class="lmeta" style="font-size:.58rem;color:#92400e">Gruppe ausgewählt</div>
+                                </div>
+                            </div>
+                            <div class="lev" onclick="openPopup()">
+                                <div class="ltime">13:00<br>15:30</div>
+                                <div class="lbar bg-violet-500"></div>
+                                <div class="lbody">
+                                    <div class="ltitle">Softwaretechnik – Praktikum</div>
+                                    <div class="lmeta">PR · SG 1-09 · Dr. Weber</div>
+                                    <div class="lmeta"><span class="sdot bg-orange-400 mr-1"></span>Dozent offen</div>
+                                </div>
+                                <button class="lpbtn"><span class="material-icons-round text-base">push_pin</span></button>
+                            </div>
+
+                            <!-- Mittwoch -->
+                            <div class="lday-hdr mt-2">Mittwoch</div>
+                            <div class="lev" onclick="openPopup()">
+                                <div class="ltime">09:00<br>11:00</div>
+                                <div class="lbar bg-blue-500"></div>
+                                <div class="lbody">
+                                    <div class="ltitle">Softwaretechnik</div>
+                                    <div class="lmeta">VL · SG 3-10 · Dr. Weber</div>
+                                    <div class="lmeta"><span class="sdot bg-green-500 mr-1"></span>Bestätigt</div>
+                                </div>
+                                <button class="lpbtn"><span class="material-icons-round text-base">push_pin</span></button>
+                            </div>
+                            <div class="lev pinned" onclick="openPopup()">
+                                <div class="ltime">11:00<br>12:30</div>
+                                <div class="lbar bg-amber-500"></div>
+                                <div class="lbody">
+                                    <div class="ltitle">Datenbanksysteme – Übung</div>
+                                    <div class="lmeta">ÜB · SG 3-10</div>
+                                    <div class="lmeta"><span class="sdot bg-green-500 mr-1"></span>Bestätigt</div>
+                                </div>
+                                <button class="lpbtn"><span class="material-icons-round text-base">push_pin</span></button>
+                            </div>
+                            <div class="lev" onclick="openPopup()">
+                                <div class="ltime">13:00<br>14:30</div>
+                                <div class="lbar bg-amber-500"></div>
+                                <div class="lbody">
+                                    <div class="ltitle">Softwaretechnik – Übung</div>
+                                    <div class="lmeta">ÜB · SG 3-10</div>
+                                    <div class="lmeta"><span class="sdot bg-green-500 mr-1"></span>Bestätigt</div>
+                                </div>
+                                <button class="lpbtn"><span class="material-icons-round text-base">push_pin</span></button>
+                            </div>
+
+                            <!-- Donnerstag -->
+                            <div class="lday-hdr mt-2">Donnerstag</div>
+                            <div class="lev" onclick="openPopup()">
+                                <div class="ltime">09:00<br>11:00</div>
+                                <div class="lbar bg-blue-500"></div>
+                                <div class="lbody">
+                                    <div class="ltitle">Datenbanksysteme</div>
+                                    <div class="lmeta">VL · Paulinum P-702 · Prof. Schmidt</div>
+                                    <div class="lmeta"><span class="sdot bg-green-500 mr-1"></span>Bestätigt</div>
+                                </div>
+                                <button class="lpbtn"><span class="material-icons-round text-base">push_pin</span></button>
+                            </div>
+                            <div class="lev" onclick="openPopup()">
+                                <div class="ltime">14:00<br>17:00</div>
+                                <div class="lbar bg-violet-500"></div>
+                                <div class="lbody">
+                                    <div class="ltitle">Datenbanksysteme – Praktikum</div>
+                                    <div class="lmeta">PR · SG 3-10 · Dr. Fischer</div>
+                                    <div class="lmeta"><span class="sdot bg-green-500 mr-1"></span>Bestätigt</div>
+                                </div>
+                                <button class="lpbtn"><span class="material-icons-round text-base">push_pin</span></button>
+                            </div>
+
+                            <!-- Freitag -->
+                            <div class="lday-hdr mt-2">Freitag</div>
+                            <div class="lev" style="opacity:.35">
+                                <div class="ltime">11:00<br>13:00</div>
+                                <div class="lbar bg-blue-500"></div>
+                                <div class="lbody">
+                                    <div class="ltitle" style="text-decoration:line-through">Maschinelles Lernen</div>
+                                    <div class="lmeta" style="font-size:.58rem;color:#6c7086">Prof. Rahm versteckt</div>
+                                </div>
+                            </div>
+                            <div class="text-center py-4 text-xs dark:text-[#585b70]">– Keine weiteren Veranstaltungen –</div>
+                        </div>
+
+                        <!-- == DAY VIEW == -->
+                        <div id="viewDay" class="hidden p-2 sm:p-3">
+                            <div class="dark:text-[#a6adc8] text-xs font-semibold text-center mb-2">Montag</div>
+                            <div class="flex gap-2 mb-2">
+                                <button class="text-xs dark:text-[#a6adc8] dark:bg-[#313244] px-2 py-1 rounded-md hover:dark:bg-[#45475a] transition">← Di</button>
+                                <div class="flex-1"></div>
+                                <button class="text-xs dark:text-[#a6adc8] dark:bg-[#313244] px-2 py-1 rounded-md hover:dark:bg-[#45475a] transition">Mi →</button>
+                            </div>
+                            <div class="dark:bg-[#181825] rounded-xl border dark:border-[#313244] overflow-hidden">
+                                <div class="day-grid">
+                                    <div class="cal-h text-[.55rem] dark:text-[#6c7086]"></div>
+                                    <div class="cal-h text-sm">Montag</div>
+                                </div>
+                                <div class="day-grid">
+                                    <div class="cal-t">08:00</div><div class="cal-c" style="min-height:52px"></div>
+                                    <div class="cal-t">09:00</div>
+                                    <div class="cal-c" style="min-height:52px">
+                                        <div class="ev pinned bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:100px" onclick="openPopup()">
+                                            <div class="ev-t">Algorithmen & Datenstrukturen</div>
+                                            <div class="ev-m">Vorlesung · Felix-Klein-Hörsaal</div>
+                                            <div class="ev-m">Prof. Müller · 09:00–11:00</div>
+                                            <span class="sdot bg-green-500 absolute bottom-2 right-6"></span>
+                                            <span class="pin-ic material-icons-round">push_pin</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-t">10:00</div><div class="cal-c" style="min-height:52px"></div>
+                                    <div class="cal-t">11:00</div>
+                                    <div class="cal-c" style="min-height:52px">
+                                        <div class="ev pinned bg-amber-500/20 border-amber-500 text-amber-300" style="top:0;height:75px" onclick="openPopup()">
+                                            <div class="ev-t">Algo & DS – Übung Grp A</div>
+                                            <div class="ev-m">SG 1-09 · 11:00–12:30</div>
+                                            <span class="sdot bg-green-500 absolute bottom-2 right-6"></span>
+                                            <span class="pin-ic material-icons-round">push_pin</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-t">12:00</div><div class="cal-c" style="min-height:52px"></div>
+                                    <div class="cal-t">13:00</div><div class="cal-c" style="min-height:52px"></div>
+                                    <div class="cal-t">14:00</div><div class="cal-c" style="min-height:52px"></div>
+                                    <div class="cal-t">15:00</div>
+                                    <div class="cal-c" style="min-height:52px">
+                                        <div class="ev bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:100px" onclick="openPopup()">
+                                            <div class="ev-t">Algorithmen & Datenstrukturen</div>
+                                            <div class="ev-m">Vorlesung · Felix-Klein-HS</div>
+                                            <div class="ev-m">Prof. Müller · 15:00–17:00</div>
+                                            <span class="sdot bg-green-500 absolute bottom-2 right-6"></span>
+                                            <span class="pin-ic material-icons-round">push_pin</span>
+                                        </div>
+                                    </div>
+                                    <div class="cal-t">16:00</div><div class="cal-c" style="min-height:52px"></div>
+                                    <div class="cal-t">17:00</div><div class="cal-c" style="min-height:52px"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FOOTER ===== -->
+            <footer class="text-center text-[.58rem] dark:text-[#6c7086] py-1.5 border-t dark:border-[#313244] shrink-0">
+                Daten von <a href="#" class="underline hover:dark:text-[#a6adc8]">informatik.uni-leipzig.de</a>
+            </footer>
+        </div><!-- /previewContent -->
+    </div><!-- /previewOuter -->
+
+    <!-- ===== EVENT DETAIL POPUP ===== -->
+    <div class="popup-ov" id="popup" onclick="if(event.target===this)closePopup()">
+        <div class="popup-box dark:bg-[#1e1e2e] rounded-2xl shadow-2xl border dark:border-[#313244] w-full max-w-sm mx-4 p-4">
+            <div class="flex items-start justify-between mb-3">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2.5 h-2.5 rounded-sm bg-blue-500"></span>
+                        <span class="text-xs font-medium dark:text-blue-400">Vorlesung</span>
+                        <span class="sdot bg-green-500 ml-0.5"></span>
+                        <span class="text-xs dark:text-green-400">Bestätigt</span>
+                    </div>
+                    <h3 class="font-bold text-lg leading-tight">Algorithmen & Datenstrukturen</h3>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button class="p-1.5 rounded-lg dark:bg-amber-500/20 dark:text-amber-400 transition min-w-[44px] min-h-[44px] flex items-center justify-center">
+                        <span class="material-icons-round text-lg">push_pin</span>
+                    </button>
+                    <button onclick="closePopup()" class="p-1.5 rounded-lg dark:hover:bg-[#313244] transition min-w-[44px] min-h-[44px] flex items-center justify-center">
+                        <span class="material-icons-round text-lg">close</span>
+                    </button>
+                </div>
+            </div>
+            <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">book</span>
+                    <span>10-201-2001 · 5 ECTS</span>
+                </div>
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">schedule</span>
+                    <span>Montag, 09:00 – 11:00</span>
+                </div>
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">location_on</span>
+                    <span>Felix-Klein-Hörsaal</span>
+                </div>
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">person</span>
+                    <span>Prof. Müller</span>
+                </div>
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">school</span>
+                    <div>
+                        <div>B.Sc. Digital Humanities · 2. Semester</div>
+                        <div class="text-xs dark:text-[#6c7086]">B.Sc. Informatik · 2. Semester</div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 pt-2.5 border-t dark:border-[#313244] text-xs dark:text-[#a6adc8] flex items-center gap-1.5">
+                <span class="material-icons-round text-sm text-amber-500">info</span>
+                <span>Übung Grp A angeheftet → Grp B ausgeblendet</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ===== DEVICE PREVIEW ===== */
+        function setPreview(w, btn) {
+            const content = document.getElementById('previewContent');
+            const label = document.getElementById('widthLabel');
+            document.querySelectorAll('.dbtn').forEach(b => b.classList.remove('act'));
+            btn.classList.add('act');
+            if (w === 0) {
+                content.style.maxWidth = '';
+                label.textContent = 'Vollbreite';
+                // switch to week view for desktop
+            } else {
+                content.style.maxWidth = w + 'px';
+                label.textContent = w + 'px';
+                // switch to list view for mobile
+                if (w <= 430) switchToMobileDefaults();
+            }
+        }
+
+        function switchToMobileDefaults() {
+            // switch to list view when simulating mobile
+            const listBtns = document.querySelectorAll('[data-view="list"]');
+            listBtns.forEach(b => {
+                b.closest('div').querySelectorAll('.vbtn').forEach(vb => {
+                    vb.classList.remove('active');
+                    vb.classList.add('dark:text-[#a6adc8]');
+                });
+                b.classList.add('active');
+                b.classList.remove('dark:text-[#a6adc8]');
+            });
+            document.getElementById('viewWeek').classList.add('hidden');
+            document.getElementById('viewDay').classList.add('hidden');
+            document.getElementById('viewList').classList.remove('hidden');
+        }
+
+        /* ===== SIDEBAR DRAWER (mobile) ===== */
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const bd = document.getElementById('sbBackdrop');
+            sb.classList.toggle('open');
+            bd.style.display = sb.classList.contains('open') ? 'block' : 'none';
+        }
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sbBackdrop').style.display = 'none';
+        }
+
+        /* ===== VIEW SWITCH ===== */
+        function switchView(name, btn) {
+            // update all .vbtn groups
+            document.querySelectorAll('[data-view]').forEach(b => {
+                if (b.dataset.view === name) {
+                    b.classList.add('active');
+                    b.classList.remove('dark:text-[#a6adc8]');
+                } else {
+                    b.classList.remove('active');
+                    b.classList.add('dark:text-[#a6adc8]');
+                }
+            });
+            document.getElementById('viewWeek').classList.toggle('hidden', name !== 'week');
+            document.getElementById('viewList').classList.toggle('hidden', name !== 'list');
+            document.getElementById('viewDay').classList.toggle('hidden', name !== 'day');
+        }
+
+        /* ===== TRI-STATE ===== */
+        const STATES = ['neutral', 'selected', 'hidden'];
+        function bindTriState() {
+            document.querySelectorAll('.frow:not(.dimmed)').forEach(row => {
+                row.addEventListener('click', () => {
+                    const tri = row.querySelector('.tri');
+                    if (!tri || tri.classList.contains('dimmed')) return;
+                    const cur = tri.getAttribute('data-s');
+                    const next = STATES[(STATES.indexOf(cur) + 1) % 3];
+                    tri.setAttribute('data-s', next);
+                    row.setAttribute('data-s', next);
+                });
+            });
+        }
+        bindTriState();
+
+        /* ===== POPUP ===== */
+        function openPopup()  { document.getElementById('popup').classList.add('show'); }
+        function closePopup() { document.getElementById('popup').classList.remove('show'); }
+
+        /* ===== PIN TOGGLE ===== */
+        document.querySelectorAll('.pin-ic').forEach(ic => {
+            ic.addEventListener('click', e => {
+                e.stopPropagation();
+                ic.closest('.ev').classList.toggle('pinned');
+            });
+        });
+
+        /* ===== EXPAND SECTIONS ===== */
+        function toggleExp(bodyId, arrowId) {
+            const body = document.getElementById(bodyId);
+            const arrow = document.getElementById(arrowId);
+            body.classList.toggle('open');
+            arrow.style.transform = body.classList.contains('open') ? 'rotate(90deg)' : '';
+        }
+
+        /* ===== COLOR DROPDOWN ===== */
+        document.addEventListener('click', e => {
+            const cd = document.getElementById('cdrop');
+            if (!cd.contains(e.target)) cd.classList.remove('open');
+        });
+        document.getElementById('customColorBtn').addEventListener('click', () => {
+            document.getElementById('colorConfig').classList.toggle('open');
+            document.getElementById('cdrop').classList.remove('open');
+        });
+
+        /* ===== COLOR SWATCHES ===== */
+        document.querySelectorAll('.cswatch').forEach(s => {
+            s.addEventListener('click', () => {
+                s.parentElement.querySelectorAll('.cswatch').forEach(x => x.classList.remove('act'));
+                s.classList.add('act');
+            });
+        });
+
+        /* ===== CHIPS ===== */
+        document.querySelectorAll('.cx').forEach(x => {
+            x.addEventListener('click', () => x.closest('.chip').remove());
+        });
+
+        /* ===== PIN BUTTONS in list view ===== */
+        document.querySelectorAll('.lev .lpbtn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                btn.closest('.lev').classList.toggle('pinned');
+            });
+        });
+
+        /* ===== DARK MODE ===== */
+        document.querySelectorAll('button[onclick*="classList.toggle(\'dark\')"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // override onclick to also update icon
+                const icon = btn.querySelector('.material-icons-round');
+                if (document.documentElement.classList.contains('dark')) {
+                    icon.textContent = 'dark_mode';
+                } else {
+                    icon.textContent = 'light_mode';
+                }
+            });
+        });
+
+        /* ===== CLOSE sidebar on escape ===== */
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { closePopup(); closeSidebar(); }
+        });
+
+        /* Show default state based on initial preview width */
+        const defaultWidth = document.getElementById('previewContent').getBoundingClientRect().width;
+        if (defaultWidth <= 430) switchToMobileDefaults();
+    </script>
+</body>
+</html>

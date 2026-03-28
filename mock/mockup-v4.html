@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uni Planer – Mockup v4 (Tri-State)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <style>
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+
+        .cal-grid { display: grid; grid-template-columns: 52px repeat(5, 1fr); }
+        .cal-header { font-weight: 600; text-align: center; padding: 8px 0; border-bottom: 2px solid; }
+        .cal-time { font-size: 0.7rem; text-align: right; padding-right: 6px; padding-top: 2px; }
+        .cal-cell { min-height: 48px; border-bottom: 1px solid; border-right: 1px solid; position: relative; }
+        .dark .cal-header { border-color: #313244; color: #cdd6f4; }
+        .dark .cal-cell { border-color: #313244; }
+        .dark .cal-time { color: #6c7086; }
+
+        .ev-block {
+            position: absolute; left: 2px; right: 2px; border-radius: 6px;
+            padding: 3px 5px; font-size: 0.68rem; line-height: 1.2;
+            overflow: hidden; cursor: pointer; border-left: 3px solid;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .ev-block:hover { transform: scale(1.03); box-shadow: 0 4px 14px rgba(0,0,0,0.3); z-index: 10; }
+        .ev-block .ev-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ev-block .ev-meta { opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.62rem; }
+        .ev-block.pinned { box-shadow: 0 0 0 2px #f59e0b; }
+        .ev-block .pin-icon {
+            position: absolute; top: 2px; right: 2px; font-size: 0.7rem;
+            opacity: 0; transition: opacity 0.15s; cursor: pointer;
+            background: rgba(0,0,0,0.3); border-radius: 3px; padding: 1px 2px; line-height: 1;
+        }
+        .ev-block:hover .pin-icon { opacity: 1; }
+        .ev-block.pinned { box-shadow: none; }
+        .ev-block.pinned .pin-icon { opacity: 1; color: #f59e0b; background: rgba(245,158,11,0.2); }
+
+        .ev-block.excluded {
+            opacity: 0.25; pointer-events: none;
+            background: repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(100,100,100,0.1) 3px, rgba(100,100,100,0.1) 6px);
+        }
+        .ev-block.excluded .ev-title { text-decoration: line-through; }
+
+        .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+        /* === TRI-STATE TOGGLE === */
+        .tri-toggle {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 16px; height: 16px; border-radius: 4px;
+            font-size: 0.6rem; font-weight: 700; line-height: 1;
+            cursor: pointer; user-select: none; flex-shrink: 0;
+            transition: all 0.12s ease;
+            border: 1.5px solid;
+        }
+        /* Neutral (—) */
+        .tri-toggle[data-state="neutral"] {
+            background: #313244; border-color: #45475a; color: #6c7086;
+        }
+        .tri-toggle[data-state="neutral"]::after { content: '—'; }
+        /* Selected (✓) */
+        .tri-toggle[data-state="selected"] {
+            background: rgba(34,197,94,0.2); border-color: #22c55e; color: #22c55e;
+        }
+        .tri-toggle[data-state="selected"]::after { content: '✓'; font-size: 0.7rem; }
+        /* Hidden (✕) */
+        .tri-toggle[data-state="hidden"] {
+            background: rgba(239,68,68,0.2); border-color: #ef4444; color: #ef4444;
+        }
+        .tri-toggle[data-state="hidden"]::after { content: '✕'; }
+        /* Disabled but keeps state */
+        .tri-toggle.disabled { opacity: 0.35; pointer-events: none; }
+
+        /* Chips */
+        .chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.68rem; padding: 2px 7px 2px 5px; border-radius: 9999px;
+            white-space: nowrap;
+        }
+        .chip .chip-x { cursor: pointer; font-size: 0.8rem; opacity: 0.6; transition: opacity 0.1s; line-height: 1; }
+        .chip .chip-x:hover { opacity: 1; }
+        .chip.pin-chip { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.25); }
+        .chip.select-chip { background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+        .chip.hide-chip { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); text-decoration: line-through; }
+
+        .filter-section { margin-bottom: 0.75rem; }
+        .filter-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; margin-bottom: 0.25rem; color: #a6adc8; }
+        .filter-option { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; cursor: pointer; padding: 1px 4px; border-radius: 4px; transition: background 0.1s; }
+        .filter-option:hover { background: rgba(69,71,90,0.4); }
+        .filter-option.disabled-cascaded { opacity: 0.35; pointer-events: none; }
+        .filter-option .item-label { flex: 1; }
+        .filter-option .item-count { font-size: 0.58rem; color: #6c7086; }
+        /* Hidden items get strikethrough text */
+        .filter-option[data-state="hidden"] .item-label { text-decoration: line-through; color: #6c7086; }
+
+        .search-input {
+            width: 100%; font-size: 0.7rem; border-radius: 6px; border: 0;
+            padding: 4px 6px 4px 26px; background: #313244; color: #cdd6f4;
+        }
+        .search-input:focus { outline: none; box-shadow: 0 0 0 2px #3b82f6; }
+        .search-input::placeholder { color: #6c7086; }
+        .search-wrap { position: relative; }
+        .search-wrap .s-icon { position: absolute; left: 7px; top: 5px; font-size: 0.8rem; color: #6c7086; }
+
+        .expand-trigger { cursor: pointer; user-select: none; }
+        .expand-content { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
+        .expand-content.open { max-height: 600px; }
+
+        .view-btn { padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 500; transition: all 0.15s; }
+        .view-btn.active { background: #3b82f6; color: white; }
+
+        .popup-overlay { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .popup-overlay.show { display: flex; }
+
+        .color-config { display: none; }
+        .color-config.open { display: block; }
+        .color-swatch { width: 20px; height: 20px; border-radius: 4px; border: 2px solid transparent; cursor: pointer; }
+        .color-swatch:hover { border-color: #cdd6f4; }
+        .color-swatch.active { border-color: #f59e0b; }
+
+        .color-menu { display: none; position: absolute; top: 100%; right: 0; margin-top: 4px; border-radius: 8px; overflow: hidden; z-index: 30; min-width: 180px; }
+        .color-dropdown.open .color-menu { display: block; }
+
+        /* Tri-state legend */
+        .legend { display: flex; gap: 10px; align-items: center; font-size: 0.58rem; color: #6c7086; margin-bottom: 6px; padding: 3px 0; }
+        .legend-item { display: flex; align-items: center; gap: 3px; }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); position: fixed; z-index: 50; top: 0; bottom: 0; left: 0; transition: transform 0.3s; width: 300px; }
+            .sidebar.open { transform: translateX(0); }
+            .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
+            .sidebar.open ~ .overlay { display: block; }
+        }
+    </style>
+</head>
+<body class="dark:bg-[#1e1e2e] bg-gray-50 dark:text-[#cdd6f4] text-gray-900 h-screen flex flex-col overflow-hidden">
+
+    <!-- ===== HEADER ===== -->
+    <header class="flex items-center justify-between px-4 py-2 dark:bg-[#181825] bg-white border-b dark:border-[#313244] border-gray-200 shrink-0">
+        <div class="flex items-center gap-3">
+            <button id="menuBtn" class="md:hidden material-icons-round text-2xl">menu</button>
+            <span class="material-icons-round text-blue-500 text-xl">school</span>
+            <h1 class="text-base font-bold tracking-tight">Uni Planer</h1>
+            <span class="text-xs dark:text-[#a6adc8] dark:bg-[#313244] bg-gray-100 px-2 py-0.5 rounded-md hidden sm:inline">SoSe 2026</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+            <div class="hidden sm:flex items-center gap-0.5 dark:bg-[#313244] bg-gray-100 rounded-lg p-0.5">
+                <button class="view-btn active">Woche</button>
+                <button class="view-btn dark:text-[#a6adc8]">Tag</button>
+                <button class="view-btn dark:text-[#a6adc8]">Liste</button>
+            </div>
+            <div class="color-dropdown relative" id="colorDropdown">
+                <button id="colorBtn" class="p-1.5 rounded-lg dark:hover:bg-[#313244] hover:bg-gray-100 transition flex items-center gap-1 text-xs dark:text-[#a6adc8]" title="Farbmodus">
+                    <span class="material-icons-round text-lg">palette</span>
+                    <span class="hidden sm:inline">Typ</span>
+                    <span class="material-icons-round text-sm">expand_more</span>
+                </button>
+                <div class="color-menu dark:bg-[#313244] bg-white border dark:border-[#45475a] shadow-xl">
+                    <button class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:dark:bg-[#45475a] dark:text-blue-400 font-medium">
+                        <span class="material-icons-round text-sm">check</span> Nach Typ
+                    </button>
+                    <button class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:dark:bg-[#45475a] dark:text-[#cdd6f4]">
+                        <span class="material-icons-round text-sm opacity-0">check</span> Nach Modul
+                    </button>
+                    <button class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:dark:bg-[#45475a] dark:text-[#cdd6f4]">
+                        <span class="material-icons-round text-sm opacity-0">check</span> Nach Status
+                    </button>
+                    <button class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:dark:bg-[#45475a] dark:text-[#cdd6f4]">
+                        <span class="material-icons-round text-sm opacity-0">check</span> Nach Dozent
+                    </button>
+                    <div class="border-t dark:border-[#45475a]"></div>
+                    <button class="flex items-center gap-2 w-full px-3 py-2 text-xs hover:dark:bg-[#45475a] dark:text-[#cdd6f4]" id="customColorBtn">
+                        <span class="material-icons-round text-sm opacity-0">check</span> Benutzerdefiniert…
+                    </button>
+                </div>
+            </div>
+            <button id="themeBtn" class="p-1.5 rounded-lg dark:hover:bg-[#313244] hover:bg-gray-100 transition" title="Design wechseln">
+                <span class="material-icons-round text-lg dark:text-yellow-300 text-gray-600">light_mode</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar w-72 shrink-0 dark:bg-[#181825] bg-white border-r dark:border-[#313244] border-gray-200 overflow-y-auto hidden md:flex flex-col">
+            <div class="p-3 flex-1 overflow-y-auto">
+
+                <!-- ACTIVE SELECTION SUMMARY -->
+                <div class="mb-3 pb-2.5 border-b dark:border-[#313244]">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[0.62rem] font-semibold dark:text-[#a6adc8] uppercase tracking-wider">Auswahl</span>
+                        <button class="text-[0.6rem] dark:text-red-400 hover:underline">Alle zurücksetzen</button>
+                    </div>
+                    <div class="flex flex-wrap gap-1">
+                        <!-- Pinned events -->
+                        <span class="chip pin-chip"><span class="material-icons-round" style="font-size:0.65rem">push_pin</span> Algo VL Mo <span class="chip-x">×</span></span>
+                        <span class="chip pin-chip"><span class="material-icons-round" style="font-size:0.65rem">push_pin</span> Algo ÜB Mo <span class="chip-x">×</span></span>
+                        <span class="chip pin-chip"><span class="material-icons-round" style="font-size:0.65rem">push_pin</span> DB ÜB Mi <span class="chip-x">×</span></span>
+                        <!-- Selected (green) chips -->
+                        <span class="chip select-chip"><span class="material-icons-round" style="font-size:0.6rem">check</span> Vorlesung <span class="chip-x">×</span></span>
+                        <span class="chip select-chip"><span class="material-icons-round" style="font-size:0.6rem">check</span> Übung <span class="chip-x">×</span></span>
+                        <span class="chip select-chip"><span class="material-icons-round" style="font-size:0.6rem">check</span> Praktikum <span class="chip-x">×</span></span>
+                        <span class="chip select-chip"><span class="material-icons-round" style="font-size:0.6rem">person</span> Prof. Müller <span class="chip-x">×</span></span>
+                        <!-- Hidden (red strikethrough) chips -->
+                        <span class="chip hide-chip"><span class="material-icons-round" style="font-size:0.6rem">close</span> Kolloquium <span class="chip-x">×</span></span>
+                        <span class="chip hide-chip"><span class="material-icons-round" style="font-size:0.6rem">close</span> reserve <span class="chip-x">×</span></span>
+                    </div>
+                </div>
+
+                <!-- Tri-state legend -->
+                <div class="legend">
+                    <span class="font-semibold dark:text-[#a6adc8]">Klick-Reihenfolge:</span>
+                    <span class="legend-item"><span class="tri-toggle" data-state="neutral" style="width:12px;height:12px;font-size:0.45rem;pointer-events:none;"></span> Neutral</span>
+                    <span class="legend-item"><span class="tri-toggle" data-state="selected" style="width:12px;height:12px;font-size:0.5rem;pointer-events:none;"></span> Anzeigen</span>
+                    <span class="legend-item"><span class="tri-toggle" data-state="hidden" style="width:12px;height:12px;font-size:0.45rem;pointer-events:none;"></span> Verstecken</span>
+                </div>
+
+                <!-- DEGREE -->
+                <div class="filter-section">
+                    <div class="filter-label">Studiengang</div>
+                    <select class="w-full text-xs rounded-lg dark:bg-[#313244] bg-gray-100 border-0 dark:text-[#cdd6f4] px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500">
+                        <option value="">Alle Studiengänge</option>
+                        <option>B.Sc. Informatik</option>
+                        <option>M.Sc. Informatik</option>
+                        <option selected>B.Sc. Digital Humanities</option>
+                        <option>M.Sc. Data Science</option>
+                        <option>Lehramt Informatik</option>
+                    </select>
+                </div>
+
+                <!-- SEMESTER -->
+                <div class="filter-section">
+                    <div class="filter-label">Semester</div>
+                    <select class="w-full text-xs rounded-lg dark:bg-[#313244] bg-gray-100 border-0 dark:text-[#cdd6f4] px-2.5 py-1.5 focus:ring-2 focus:ring-blue-500">
+                        <option value="">Alle Semester</option>
+                        <option>1. Semester</option>
+                        <option selected>2. Semester</option>
+                        <option>3. Semester</option>
+                        <option>4. Semester</option>
+                    </select>
+                </div>
+
+                <!-- MODULES with search + tri-state -->
+                <div class="filter-section">
+                    <div class="filter-label">Module</div>
+                    <div class="search-wrap mb-1.5">
+                        <span class="s-icon material-icons-round">search</span>
+                        <input type="text" placeholder="Modul suchen…" class="search-input">
+                    </div>
+                    <div class="space-y-0.5 max-h-32 overflow-y-auto dark:bg-[#313244]/40 rounded-lg p-1.5">
+                        <div class="filter-option" data-state="neutral">
+                            <span class="tri-toggle" data-state="neutral"></span>
+                            <span class="item-label">Algorithmen & Datenstrukturen</span>
+                        </div>
+                        <div class="filter-option" data-state="selected">
+                            <span class="tri-toggle" data-state="selected"></span>
+                            <span class="item-label">Datenbanksysteme</span>
+                        </div>
+                        <div class="filter-option" data-state="neutral">
+                            <span class="tri-toggle" data-state="neutral"></span>
+                            <span class="item-label">Softwaretechnik</span>
+                        </div>
+                        <div class="filter-option" data-state="hidden">
+                            <span class="tri-toggle" data-state="hidden"></span>
+                            <span class="item-label" style="text-decoration:line-through;color:#6c7086;">Web-Technologien</span>
+                        </div>
+                    </div>
+                    <!-- Weitere Module -->
+                    <div class="mt-1.5">
+                        <div class="expand-trigger flex items-center gap-1 text-xs dark:text-[#a6adc8] hover:dark:text-[#cdd6f4]" id="expandTrigger">
+                            <span class="material-icons-round text-sm transition-transform" id="expandArrow">chevron_right</span>
+                            <span>Weitere Module</span>
+                            <span class="text-[0.58rem] dark:text-[#6c7086]">(alle)</span>
+                        </div>
+                        <div class="expand-content" id="expandContent">
+                            <div class="mt-1">
+                                <div class="search-wrap mb-1">
+                                    <span class="s-icon material-icons-round">search</span>
+                                    <input type="text" placeholder="Weitere suchen…" class="search-input" style="background:#27273a;">
+                                </div>
+                                <div class="space-y-0.5 max-h-28 overflow-y-auto dark:bg-[#313244]/20 rounded-lg p-1.5">
+                                    <div class="filter-option dark:text-[#a6adc8] italic" data-state="neutral">
+                                        <span class="tri-toggle" data-state="neutral"></span>
+                                        <span class="item-label">Rechnerarchitektur</span>
+                                    </div>
+                                    <div class="filter-option dark:text-[#a6adc8] italic" data-state="neutral">
+                                        <span class="tri-toggle" data-state="neutral"></span>
+                                        <span class="item-label">Lineare Algebra</span>
+                                    </div>
+                                    <div class="filter-option dark:text-[#a6adc8] italic" data-state="selected">
+                                        <span class="tri-toggle" data-state="selected"></span>
+                                        <span class="item-label">Maschinelles Lernen</span>
+                                    </div>
+                                    <div class="filter-option dark:text-[#a6adc8] italic" data-state="neutral">
+                                        <span class="tri-toggle" data-state="neutral"></span>
+                                        <span class="item-label">Computergrafik</span>
+                                    </div>
+                                    <div class="filter-option dark:text-[#a6adc8] italic" data-state="neutral">
+                                        <span class="tri-toggle" data-state="neutral"></span>
+                                        <span class="item-label">Betriebssysteme</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EVENT TYPE — tri-state -->
+                <div class="filter-section">
+                    <div class="filter-label">Veranstaltungstyp</div>
+                    <div class="space-y-0.5">
+                        <div class="filter-option" data-state="selected">
+                            <span class="tri-toggle" data-state="selected"></span>
+                            <span class="w-2 h-2 rounded-sm bg-blue-500 shrink-0"></span>
+                            <span class="item-label">Vorlesung</span>
+                            <span class="item-count ml-auto">4</span>
+                        </div>
+                        <div class="filter-option" data-state="selected">
+                            <span class="tri-toggle" data-state="selected"></span>
+                            <span class="w-2 h-2 rounded-sm bg-amber-500 shrink-0"></span>
+                            <span class="item-label">Übung</span>
+                            <span class="item-count ml-auto">3</span>
+                        </div>
+                        <div class="filter-option" data-state="selected">
+                            <span class="tri-toggle" data-state="selected"></span>
+                            <span class="w-2 h-2 rounded-sm bg-violet-500 shrink-0"></span>
+                            <span class="item-label">Praktikum</span>
+                            <span class="item-count ml-auto">2</span>
+                        </div>
+                        <!-- Disabled by cascade, but user had it selected — keeps green but dimmed -->
+                        <div class="filter-option disabled-cascaded" data-state="selected">
+                            <span class="tri-toggle disabled" data-state="selected"></span>
+                            <span class="w-2 h-2 rounded-sm bg-emerald-500 shrink-0 opacity-50"></span>
+                            <span class="item-label dark:text-[#6c7086]">Seminar</span>
+                            <span class="item-count ml-auto">0</span>
+                        </div>
+                        <!-- User explicitly hid Kolloquium -->
+                        <div class="filter-option" data-state="hidden">
+                            <span class="tri-toggle" data-state="hidden"></span>
+                            <span class="w-2 h-2 rounded-sm bg-indigo-500 shrink-0 opacity-50"></span>
+                            <span class="item-label" style="text-decoration:line-through;color:#6c7086;">Kolloquium</span>
+                            <span class="item-count ml-auto">1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STATUS — tri-state -->
+                <div class="filter-section">
+                    <div class="filter-label">Status</div>
+                    <div class="space-y-0.5">
+                        <div class="filter-option" data-state="neutral">
+                            <span class="tri-toggle" data-state="neutral"></span>
+                            <span class="status-dot bg-green-500"></span>
+                            <span class="item-label">Bestätigt</span>
+                            <span class="item-count ml-auto">7</span>
+                        </div>
+                        <div class="filter-option" data-state="neutral">
+                            <span class="tri-toggle" data-state="neutral"></span>
+                            <span class="status-dot bg-yellow-400"></span>
+                            <span class="item-label">VA offen</span>
+                            <span class="item-count ml-auto">1</span>
+                        </div>
+                        <div class="filter-option" data-state="neutral">
+                            <span class="tri-toggle" data-state="neutral"></span>
+                            <span class="status-dot bg-orange-400"></span>
+                            <span class="item-label">Dozent offen</span>
+                            <span class="item-count ml-auto">1</span>
+                        </div>
+                        <div class="filter-option disabled-cascaded" data-state="neutral">
+                            <span class="tri-toggle disabled" data-state="neutral"></span>
+                            <span class="status-dot bg-gray-400 opacity-30"></span>
+                            <span class="item-label dark:text-[#585b70]">Vorsemester</span>
+                            <span class="item-count ml-auto">0</span>
+                        </div>
+                        <!-- User explicitly hid "reserve" status -->
+                        <div class="filter-option" data-state="hidden">
+                            <span class="tri-toggle" data-state="hidden"></span>
+                            <span class="status-dot bg-red-500"></span>
+                            <span class="item-label" style="text-decoration:line-through;color:#6c7086;">Entfällt (reserve)</span>
+                            <span class="item-count ml-auto">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STAFF — tri-state + search + cross-filter -->
+                <div class="filter-section">
+                    <div class="flex items-center gap-1 filter-label">Dozent <span class="text-[0.55rem] dark:text-[#585b70] normal-case tracking-normal font-normal">↕ cross-filter</span></div>
+                    <div class="search-wrap mb-1">
+                        <span class="s-icon material-icons-round">search</span>
+                        <input type="text" placeholder="Dozent suchen…" class="search-input">
+                    </div>
+                    <div class="space-y-0.5 max-h-24 overflow-y-auto dark:bg-[#313244]/40 rounded-lg p-1.5">
+                        <div class="filter-option" data-state="selected">
+                            <span class="tri-toggle" data-state="selected"></span>
+                            <span class="item-label">Prof. Müller</span>
+                            <span class="item-count ml-auto">3</span>
+                        </div>
+                        <div class="filter-option" data-state="neutral">
+                            <span class="tri-toggle" data-state="neutral"></span>
+                            <span class="item-label">Dr. Weber</span>
+                            <span class="item-count ml-auto">2</span>
+                        </div>
+                        <div class="filter-option" data-state="neutral">
+                            <span class="tri-toggle" data-state="neutral"></span>
+                            <span class="item-label">Prof. Schmidt</span>
+                            <span class="item-count ml-auto">2</span>
+                        </div>
+                        <div class="filter-option" data-state="neutral">
+                            <span class="tri-toggle" data-state="neutral"></span>
+                            <span class="item-label">Dr. Fischer</span>
+                            <span class="item-count ml-auto">1</span>
+                        </div>
+                        <div class="filter-option" data-state="hidden">
+                            <span class="tri-toggle" data-state="hidden"></span>
+                            <span class="item-label" style="text-decoration:line-through;color:#6c7086;">Prof. Rahm</span>
+                            <span class="item-count ml-auto">1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LOCATION — tri-state + search + cross-filter -->
+                <div class="filter-section">
+                    <div class="flex items-center gap-1 filter-label">Ort <span class="text-[0.55rem] dark:text-[#585b70] normal-case tracking-normal font-normal">↕ cross-filter</span></div>
+                    <div class="search-wrap mb-1">
+                        <span class="s-icon material-icons-round">search</span>
+                        <input type="text" placeholder="Ort suchen…" class="search-input">
+                    </div>
+                    <div class="space-y-0.5 max-h-24 overflow-y-auto dark:bg-[#313244]/40 rounded-lg p-1.5">
+                        <div class="filter-option" data-state="neutral">
+                            <span class="tri-toggle" data-state="neutral"></span>
+                            <span class="item-label">Felix-Klein-HS</span>
+                            <span class="item-count ml-auto">4</span>
+                        </div>
+                        <div class="filter-option" data-state="neutral">
+                            <span class="tri-toggle" data-state="neutral"></span>
+                            <span class="item-label">SG 3-10</span>
+                            <span class="item-count ml-auto">3</span>
+                        </div>
+                        <div class="filter-option" data-state="neutral">
+                            <span class="tri-toggle" data-state="neutral"></span>
+                            <span class="item-label">SG 1-09</span>
+                            <span class="item-count ml-auto">2</span>
+                        </div>
+                        <div class="filter-option" data-state="neutral">
+                            <span class="tri-toggle" data-state="neutral"></span>
+                            <span class="item-label">Paulinum P-702</span>
+                            <span class="item-count ml-auto">1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom actions -->
+            <div class="p-3 border-t dark:border-[#313244] flex gap-2 shrink-0">
+                <button class="flex-1 text-xs dark:bg-[#313244] px-2 py-1.5 rounded-lg font-medium hover:dark:bg-[#45475a] transition flex items-center justify-center gap-1">
+                    <span class="material-icons-round text-sm">restart_alt</span> Zurücksetzen
+                </button>
+                <button class="flex-1 text-xs dark:bg-blue-600/20 dark:text-blue-400 px-2 py-1.5 rounded-lg font-medium hover:dark:bg-blue-600/30 transition flex items-center justify-center gap-1">
+                    <span class="material-icons-round text-sm">link</span> Link teilen
+                </button>
+            </div>
+        </aside>
+        <div class="overlay"></div>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Custom color config panel -->
+            <div class="color-config dark:bg-[#181825] border-b dark:border-[#313244] px-4 py-3" id="colorConfig">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold">Benutzerdefinierte Farben</span>
+                    <div class="flex items-center gap-2">
+                        <button class="text-[0.65rem] dark:text-[#a6adc8] hover:underline">Zurücksetzen</button>
+                        <button class="text-[0.65rem] dark:text-red-400 hover:underline" id="closeColorConfig">Schließen</button>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-3 text-xs">
+                    <div class="flex items-center gap-1.5">
+                        <span class="dark:text-[#a6adc8]">Vorlesung</span>
+                        <div class="flex gap-0.5">
+                            <div class="color-swatch bg-blue-500 active"></div>
+                            <div class="color-swatch bg-sky-400"></div>
+                            <div class="color-swatch bg-cyan-500"></div>
+                            <div class="color-swatch bg-indigo-500"></div>
+                            <div class="color-swatch bg-purple-500"></div>
+                            <div class="color-swatch bg-rose-500"></div>
+                            <div class="color-swatch bg-emerald-500"></div>
+                            <div class="color-swatch bg-amber-500"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="dark:text-[#a6adc8]">Übung</span>
+                        <div class="flex gap-0.5">
+                            <div class="color-swatch bg-blue-500"></div>
+                            <div class="color-swatch bg-sky-400"></div>
+                            <div class="color-swatch bg-cyan-500"></div>
+                            <div class="color-swatch bg-indigo-500"></div>
+                            <div class="color-swatch bg-purple-500"></div>
+                            <div class="color-swatch bg-rose-500"></div>
+                            <div class="color-swatch bg-emerald-500"></div>
+                            <div class="color-swatch bg-amber-500 active"></div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="dark:text-[#a6adc8]">Praktikum</span>
+                        <div class="flex gap-0.5">
+                            <div class="color-swatch bg-blue-500"></div>
+                            <div class="color-swatch bg-sky-400"></div>
+                            <div class="color-swatch bg-cyan-500"></div>
+                            <div class="color-swatch bg-indigo-500"></div>
+                            <div class="color-swatch bg-purple-500 active"></div>
+                            <div class="color-swatch bg-rose-500"></div>
+                            <div class="color-swatch bg-emerald-500"></div>
+                            <div class="color-swatch bg-amber-500"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar -->
+            <main class="flex-1 overflow-auto p-3">
+                <div class="sm:hidden flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-0.5 dark:bg-[#313244] rounded-lg p-0.5">
+                        <button class="view-btn active">Woche</button>
+                        <button class="view-btn dark:text-[#a6adc8]">Tag</button>
+                        <button class="view-btn dark:text-[#a6adc8]">Liste</button>
+                    </div>
+                </div>
+
+                <div class="dark:bg-[#181825] bg-white rounded-xl border dark:border-[#313244] border-gray-200 overflow-hidden">
+                    <!-- Header -->
+                    <div class="cal-grid">
+                        <div class="cal-header text-xs dark:text-[#6c7086]"></div>
+                        <div class="cal-header text-xs">Montag</div>
+                        <div class="cal-header text-xs">Dienstag</div>
+                        <div class="cal-header text-xs">Mittwoch</div>
+                        <div class="cal-header text-xs">Donnerstag</div>
+                        <div class="cal-header text-xs">Freitag</div>
+                    </div>
+
+                    <div class="cal-grid">
+                        <!-- 08:00 -->
+                        <div class="cal-time">08:00</div>
+                        <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+
+                        <!-- 09:00 -->
+                        <div class="cal-time">09:00</div>
+                        <div class="cal-cell">
+                            <!-- PINNED: VL Algo -->
+                            <div class="ev-block pinned bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:96px;">
+                                <div class="ev-title">Algorithmen & DS</div>
+                                <div class="ev-meta">VL · Felix-Klein-HS</div>
+                                <div class="ev-meta">Prof. Müller</div>
+                                <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                                <span class="pin-icon material-icons-round">push_pin</span>
+                            </div>
+                        </div>
+                        <div class="cal-cell"></div>
+                        <div class="cal-cell">
+                            <!-- VL Softwaretechnik -->
+                            <div class="ev-block bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:96px;">
+                                <div class="ev-title">Softwaretechnik</div>
+                                <div class="ev-meta">VL · SG 3-10</div>
+                                <div class="ev-meta">Dr. Weber</div>
+                                <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                                <span class="pin-icon material-icons-round">push_pin</span>
+                            </div>
+                        </div>
+                        <div class="cal-cell">
+                            <!-- VL Datenbanken -->
+                            <div class="ev-block bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:96px;">
+                                <div class="ev-title">Datenbanksysteme</div>
+                                <div class="ev-meta">VL · Paulinum P-702</div>
+                                <div class="ev-meta">Prof. Schmidt</div>
+                                <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                                <span class="pin-icon material-icons-round">push_pin</span>
+                            </div>
+                        </div>
+                        <div class="cal-cell"></div>
+
+                        <!-- 10:00 -->
+                        <div class="cal-time">10:00</div>
+                        <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+
+                        <!-- 11:00 -->
+                        <div class="cal-time">11:00</div>
+                        <div class="cal-cell">
+                            <!-- PINNED: ÜB Algo Grp A -->
+                            <div class="ev-block pinned bg-amber-500/20 border-amber-500 text-amber-300" style="top:0;height:72px;">
+                                <div class="ev-title">Algo ÜB Grp A</div>
+                                <div class="ev-meta">ÜB · SG 1-09</div>
+                                <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                                <span class="pin-icon material-icons-round">push_pin</span>
+                            </div>
+                        </div>
+                        <div class="cal-cell">
+                            <!-- EXCLUDED: ÜB Algo Grp B -->
+                            <div class="ev-block excluded bg-amber-500/10 border-amber-800 text-amber-800" style="top:0;height:72px;">
+                                <div class="ev-title">Algo ÜB Grp B</div>
+                                <div class="ev-meta">ÜB · SG 3-10</div>
+                                <div class="ev-meta text-[0.55rem] dark:text-amber-700">Gruppe ausgewählt</div>
+                            </div>
+                        </div>
+                        <div class="cal-cell">
+                            <!-- PINNED: ÜB Datenbanken -->
+                            <div class="ev-block pinned bg-amber-500/20 border-amber-500 text-amber-300" style="top:0;height:72px;">
+                                <div class="ev-title">Datenbanksysteme</div>
+                                <div class="ev-meta">ÜB · SG 3-10</div>
+                                <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                                <span class="pin-icon material-icons-round">push_pin</span>
+                            </div>
+                        </div>
+                        <div class="cal-cell"></div>
+                        <div class="cal-cell">
+                            <!-- Masch. Lernen — HIDDEN by Prof. Rahm being hidden → still shows because not pinned? No, it's hidden -->
+                            <!-- Actually: Prof. Rahm is hidden → this event is excluded. But "Maschinelles Lernen" module is Selected. Hidden > Selected. So it's gone. -->
+                        </div>
+
+                        <!-- 12:00 -->
+                        <div class="cal-time">12:00</div>
+                        <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+
+                        <!-- 13:00 -->
+                        <div class="cal-time">13:00</div>
+                        <div class="cal-cell"></div>
+                        <div class="cal-cell">
+                            <!-- PR Softwaretechnik -->
+                            <div class="ev-block bg-violet-500/20 border-violet-500 text-violet-300" style="top:0;height:144px;">
+                                <div class="ev-title">Softwaretechnik</div>
+                                <div class="ev-meta">PR · SG 1-09</div>
+                                <div class="ev-meta">Dr. Weber</div>
+                                <span class="status-dot bg-orange-400 absolute bottom-2 right-2"></span>
+                                <span class="pin-icon material-icons-round">push_pin</span>
+                            </div>
+                        </div>
+                        <div class="cal-cell">
+                            <!-- ÜB Softwaretechnik -->
+                            <div class="ev-block bg-amber-500/20 border-amber-500 text-amber-300" style="top:0;height:72px;">
+                                <div class="ev-title">Softwaretechnik</div>
+                                <div class="ev-meta">ÜB · SG 3-10</div>
+                                <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                                <span class="pin-icon material-icons-round">push_pin</span>
+                            </div>
+                        </div>
+                        <div class="cal-cell"></div>
+                        <div class="cal-cell"></div>
+
+                        <!-- 14:00 -->
+                        <div class="cal-time">14:00</div>
+                        <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+                        <div class="cal-cell">
+                            <!-- PR Datenbanken -->
+                            <div class="ev-block bg-violet-500/20 border-violet-500 text-violet-300" style="top:0;height:144px;">
+                                <div class="ev-title">Datenbanksysteme</div>
+                                <div class="ev-meta">PR · SG 3-10</div>
+                                <div class="ev-meta">Dr. Fischer</div>
+                                <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                                <span class="pin-icon material-icons-round">push_pin</span>
+                            </div>
+                        </div>
+                        <div class="cal-cell"></div>
+
+                        <!-- 15:00 -->
+                        <div class="cal-time">15:00</div>
+                        <div class="cal-cell">
+                            <div class="ev-block bg-blue-500/20 border-blue-500 text-blue-300" style="top:0;height:96px;">
+                                <div class="ev-title">Algorithmen & DS</div>
+                                <div class="ev-meta">VL · Felix-Klein-HS</div>
+                                <div class="ev-meta">Prof. Müller</div>
+                                <span class="status-dot bg-green-500 absolute bottom-2 right-2"></span>
+                                <span class="pin-icon material-icons-round">push_pin</span>
+                            </div>
+                        </div>
+                        <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+
+                        <!-- 16:00 -->
+                        <div class="cal-time">16:00</div>
+                        <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+
+                        <!-- 17:00 — Kolloquium is HIDDEN (user set type to hidden) -->
+                        <div class="cal-time">17:00</div>
+                        <div class="cal-cell"></div><div class="cal-cell"></div>
+                        <div class="cal-cell">
+                            <!-- Forschungskolloquium — hidden because Kolloquium type is ✕ -->
+                            <!-- Not rendered at all (completely hidden) -->
+                        </div>
+                        <div class="cal-cell"></div><div class="cal-cell"></div>
+
+                        <!-- 18:00 -->
+                        <div class="cal-time">18:00</div>
+                        <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+                    </div>
+                </div>
+
+                <!-- Annotation: what changed -->
+                <div class="mt-3 p-3 rounded-lg dark:bg-[#313244]/50 border dark:border-[#45475a] text-xs dark:text-[#a6adc8] space-y-1.5">
+                    <div class="font-semibold dark:text-[#cdd6f4] mb-1">v4 Tri-State-Änderungen im Vergleich zu v3:</div>
+                    <div class="flex items-start gap-2">
+                        <span class="tri-toggle" data-state="hidden" style="width:14px;height:14px;font-size:0.5rem;pointer-events:none;flex-shrink:0;margin-top:1px;"></span>
+                        <span><strong>Kolloquium</strong> ist versteckt → das Forschungskolloquium (Mi 17:00) fehlt im Kalender</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="tri-toggle" data-state="hidden" style="width:14px;height:14px;font-size:0.5rem;pointer-events:none;flex-shrink:0;margin-top:1px;"></span>
+                        <span><strong>Prof. Rahm</strong> ist versteckt → Maschinelles Lernen (Fr 11:00) fehlt, obwohl das Modul ausgewählt ist (Hidden &gt; Selected)</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="tri-toggle" data-state="hidden" style="width:14px;height:14px;font-size:0.5rem;pointer-events:none;flex-shrink:0;margin-top:1px;"></span>
+                        <span><strong>Web-Technologien</strong> (Modul) und <strong>reserve</strong> (Status) sind versteckt → zugehörige Events würden ebenfalls fehlen</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="tri-toggle" data-state="selected" style="width:14px;height:14px;font-size:0.55rem;pointer-events:none;flex-shrink:0;margin-top:1px;"></span>
+                        <span>Grüne Chips in der Auswahl zeigen aktiv eingeschlossene Items, rote durchgestrichene Chips zeigen versteckte Items</span>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="tri-toggle" data-state="neutral" style="width:14px;height:14px;font-size:0.45rem;pointer-events:none;flex-shrink:0;margin-top:1px;"></span>
+                        <span>Neutrale Items erscheinen nicht in den Chips — sie haben keinen aktiven Einfluss auf die Filterung</span>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ===== EVENT DETAIL POPUP ===== -->
+    <div class="popup-overlay" id="eventPopup">
+        <div class="dark:bg-[#1e1e2e] bg-white rounded-2xl shadow-2xl border dark:border-[#313244] w-full max-w-sm mx-4 p-4">
+            <div class="flex items-start justify-between mb-3">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2.5 h-2.5 rounded-sm bg-blue-500"></span>
+                        <span class="text-xs font-medium dark:text-blue-400">Vorlesung</span>
+                        <span class="status-dot bg-green-500 ml-0.5"></span>
+                        <span class="text-xs dark:text-green-400">Bestätigt</span>
+                    </div>
+                    <h3 class="font-bold text-lg leading-tight">Algorithmen & Datenstrukturen</h3>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button class="p-1 rounded-lg dark:bg-amber-500/20 dark:text-amber-400 hover:dark:bg-amber-500/30 transition" title="Angeheftet">
+                        <span class="material-icons-round text-lg">push_pin</span>
+                    </button>
+                    <button id="closePopup" class="p-1 rounded-lg dark:hover:bg-[#313244] transition">
+                        <span class="material-icons-round text-lg">close</span>
+                    </button>
+                </div>
+            </div>
+            <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">book</span>
+                    <span>10-201-2001 · 5 ECTS</span>
+                </div>
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">schedule</span>
+                    <span>Montag, 09:00 – 11:00</span>
+                </div>
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">location_on</span>
+                    <span>Felix-Klein-Hörsaal</span>
+                </div>
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">person</span>
+                    <span>Prof. Müller</span>
+                </div>
+                <div class="flex items-center gap-2 dark:text-[#a6adc8]">
+                    <span class="material-icons-round text-base">school</span>
+                    <div>
+                        <span>B.Sc. Digital Humanities · 2. Semester</span><br>
+                        <span class="text-xs dark:text-[#6c7086]">B.Sc. Informatik · 2. Semester</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 pt-2 border-t dark:border-[#313244] text-xs dark:text-[#a6adc8] flex items-center gap-1.5">
+                <span class="material-icons-round text-sm text-amber-500">info</span>
+                <span>Übung Grp A angeheftet → Grp B ausgeblendet</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="text-center text-[0.62rem] dark:text-[#6c7086] py-1.5 border-t dark:border-[#313244] shrink-0">
+        Daten von <a href="https://www.informatik.uni-leipzig.de/~stundenplan/modul.html" class="underline hover:dark:text-[#a6adc8]">informatik.uni-leipzig.de</a>
+    </footer>
+
+    <script>
+        // Tri-state toggle: neutral → selected → hidden → neutral
+        const STATES = ['neutral', 'selected', 'hidden'];
+        document.querySelectorAll('.tri-toggle:not(.disabled)').forEach(toggle => {
+            // Only attach to toggles inside filter-options (not legend)
+            if (!toggle.closest('.filter-option') && !toggle.closest('.filter-section')) return;
+            toggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const current = toggle.getAttribute('data-state');
+                const next = STATES[(STATES.indexOf(current) + 1) % STATES.length];
+                toggle.setAttribute('data-state', next);
+
+                // Also update parent filter-option
+                const parent = toggle.closest('.filter-option');
+                if (parent) {
+                    parent.setAttribute('data-state', next);
+                    const label = parent.querySelector('.item-label');
+                    if (label) {
+                        if (next === 'hidden') {
+                            label.style.textDecoration = 'line-through';
+                            label.style.color = '#6c7086';
+                        } else {
+                            label.style.textDecoration = '';
+                            label.style.color = '';
+                        }
+                    }
+                }
+            });
+        });
+
+        // Also allow clicking the whole filter-option row
+        document.querySelectorAll('.filter-option:not(.disabled-cascaded)').forEach(opt => {
+            opt.addEventListener('click', (e) => {
+                if (e.target.closest('.tri-toggle')) return; // already handled
+                const toggle = opt.querySelector('.tri-toggle');
+                if (toggle && !toggle.classList.contains('disabled')) {
+                    toggle.click();
+                }
+            });
+        });
+
+        // Theme
+        document.getElementById('themeBtn').addEventListener('click', () => document.documentElement.classList.toggle('dark'));
+
+        // Popup
+        const popup = document.getElementById('eventPopup');
+        document.getElementById('closePopup').addEventListener('click', () => popup.classList.remove('show'));
+        popup.addEventListener('click', (e) => { if (e.target === popup) popup.classList.remove('show'); });
+        document.querySelectorAll('.ev-block:not(.excluded)').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (e.target.classList.contains('pin-icon')) return;
+                popup.classList.add('show');
+            });
+        });
+
+        // Pin toggle
+        document.querySelectorAll('.ev-block .pin-icon').forEach(icon => {
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                icon.closest('.ev-block').classList.toggle('pinned');
+            });
+        });
+
+        // Expand
+        const trigger = document.getElementById('expandTrigger');
+        const content = document.getElementById('expandContent');
+        const arrow = document.getElementById('expandArrow');
+        trigger.addEventListener('click', () => {
+            content.classList.toggle('open');
+            arrow.style.transform = content.classList.contains('open') ? 'rotate(90deg)' : '';
+        });
+
+        // Color dropdown
+        const cd = document.getElementById('colorDropdown');
+        document.getElementById('colorBtn').addEventListener('click', () => cd.classList.toggle('open'));
+        document.addEventListener('click', (e) => { if (!cd.contains(e.target)) cd.classList.remove('open'); });
+
+        // Custom color config
+        const cc = document.getElementById('colorConfig');
+        document.getElementById('customColorBtn').addEventListener('click', () => { cc.classList.toggle('open'); cd.classList.remove('open'); });
+        document.getElementById('closeColorConfig').addEventListener('click', () => cc.classList.remove('open'));
+
+        // Color swatches
+        document.querySelectorAll('.color-swatch').forEach(s => {
+            s.addEventListener('click', () => {
+                s.parentElement.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('active'));
+                s.classList.add('active');
+            });
+        });
+
+        // View toggles
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.closest('div').querySelectorAll('.view-btn').forEach(b => { b.classList.remove('active'); b.classList.add('dark:text-[#a6adc8]'); });
+                btn.classList.add('active'); btn.classList.remove('dark:text-[#a6adc8]');
+            });
+        });
+
+        // Chip removal
+        document.querySelectorAll('.chip .chip-x').forEach(x => { x.addEventListener('click', () => x.closest('.chip').remove()); });
+    </script>
+</body>
+</html>

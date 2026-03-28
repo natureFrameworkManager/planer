@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uni Planer – Neues Mockup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        /* ======================================
+           CSS CUSTOM PROPERTIES – LIGHT / DARK
+           ====================================== */
+        :root {
+            --bg-page: #f5f0eb;
+            --bg-surface: #ffffff;
+            --bg-surface-alt: #faf7f4;
+            --bg-elevated: #ffffff;
+            --bg-input: #f0ece7;
+            --bg-hover: #ece6df;
+            --border: #e0d8cf;
+            --border-light: #ede7df;
+            --text-primary: #1a1a2e;
+            --text-secondary: #6b6580;
+            --text-muted: #9e95a9;
+            --accent: #e06c5d;
+            --accent-light: rgba(224,108,93,.12);
+            --accent2: #3a8a7c;
+            --accent2-light: rgba(58,138,124,.1);
+            --shadow-sm: 0 1px 3px rgba(26,26,46,.06);
+            --shadow-md: 0 4px 16px rgba(26,26,46,.08);
+            --shadow-lg: 0 12px 40px rgba(26,26,46,.12);
+            --radius: 14px;
+            --radius-sm: 8px;
+            --radius-xs: 5px;
+            --glass: rgba(255,255,255,.75);
+            --glass-border: rgba(255,255,255,.4);
+            --selected-bg: rgba(58,138,124,.1);
+            --selected-border: #3a8a7c;
+            --selected-text: #2a7a6c;
+            --hidden-bg: rgba(224,108,93,.08);
+            --hidden-border: #e06c5d;
+            --hidden-text: #c0524a;
+            --pin-color: #d4a017;
+            --pin-bg: rgba(212,160,23,.1);
+        }
+
+        html.dark {
+            --bg-page: #0f0e17;
+            --bg-surface: #1a1928;
+            --bg-surface-alt: #15142a;
+            --bg-elevated: #211f36;
+            --bg-input: #252340;
+            --bg-hover: #2a284a;
+            --border: #2e2c4a;
+            --border-light: #242240;
+            --text-primary: #eae6ff;
+            --text-secondary: #a8a0c0;
+            --text-muted: #6b6590;
+            --accent: #ff7a6b;
+            --accent-light: rgba(255,122,107,.1);
+            --accent2: #5cf0d8;
+            --accent2-light: rgba(92,240,216,.08);
+            --shadow-sm: 0 1px 4px rgba(0,0,0,.3);
+            --shadow-md: 0 4px 20px rgba(0,0,0,.35);
+            --shadow-lg: 0 16px 50px rgba(0,0,0,.5);
+            --glass: rgba(26,25,40,.8);
+            --glass-border: rgba(46,44,74,.5);
+            --selected-bg: rgba(92,240,216,.08);
+            --selected-border: #5cf0d8;
+            --selected-text: #5cf0d8;
+            --hidden-bg: rgba(255,122,107,.08);
+            --hidden-border: #ff7a6b;
+            --hidden-text: #ff7a6b;
+            --pin-color: #ffd166;
+            --pin-bg: rgba(255,209,102,.1);
+        }
+
+        /* ======================================
+           RESET & BASE
+           ====================================== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-page);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100vh;
+            transition: background .3s, color .3s;
+        }
+        button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+        select {
+            font-family: inherit;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 7px 10px;
+            font-size: .8rem;
+            width: 100%;
+            outline: none;
+            transition: border-color .2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%239e95a9' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+        }
+        select:focus { border-color: var(--accent); }
+        input[type="text"] {
+            font-family: inherit;
+            width: 100%;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 6px 10px 6px 30px;
+            font-size: .78rem;
+            outline: none;
+            transition: border-color .2s;
+        }
+        input[type="text"]:focus { border-color: var(--accent); }
+        input::placeholder { color: var(--text-muted); }
+
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        /* ======================================
+           HEADER – glassmorphism floating bar
+           ====================================== */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            flex-shrink: 0;
+            z-index: 40;
+            gap: 12px;
+        }
+        .header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .logo {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--accent), #d4a017);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .app-title { font-size: 1.05rem; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+        .semester-pill {
+            font-size: .7rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            background: var(--accent-light);
+            color: var(--accent);
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .header-center { display: flex; align-items: center; gap: 2px; }
+        .view-btn {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all .15s;
+        }
+        .view-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .view-btn.active {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(224,108,93,.3);
+        }
+        .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .icon-btn {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .15s;
+            position: relative;
+        }
+        .icon-btn:hover { background: var(--bg-hover); }
+        .icon-btn .material-icons-round { font-size: 20px; }
+        .hamburger { display: none; }
+
+        /* ======================================
+           COLOR DROPDOWN
+           ====================================== */
+        .color-drop { position: relative; }
+        .color-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 6px;
+            min-width: 190px;
+            z-index: 50;
+        }
+        .color-drop.open .color-menu { display: block; }
+        .color-opt {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            font-size: .78rem;
+            font-weight: 500;
+            width: 100%;
+            text-align: left;
+            transition: background .1s;
+        }
+        .color-opt:hover { background: var(--bg-hover); }
+        .color-opt .material-icons-round { font-size: 16px; color: var(--accent2); }
+        .color-opt .co-check { visibility: hidden; }
+        .color-opt.active .co-check { visibility: visible; }
+        .color-opt-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+        /* ======================================
+           CUSTOM COLOR CONFIG BAR
+           ====================================== */
+        .color-config {
+            display: none;
+            background: var(--bg-surface-alt);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 20px;
+            flex-shrink: 0;
+        }
+        .color-config.open { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+        .cc-label { font-size: .75rem; font-weight: 600; color: var(--text-secondary); }
+        .cc-group { display: flex; align-items: center; gap: 6px; }
+        .cc-swatch {
+            width: 22px; height: 22px;
+            border-radius: 6px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: border-color .15s, transform .1s;
+        }
+        .cc-swatch:hover { transform: scale(1.15); }
+        .cc-swatch.active { border-color: var(--pin-color); }
+
+        /* ======================================
+           LAYOUT – body area
+           ====================================== */
+        .body-wrap {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ======================================
+           MAIN CONTENT
+           ====================================== */
+        .main {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ======================================
+           FILTER PANEL – RIGHT SIDE
+           ====================================== */
+        .panel {
+            width: 300px;
+            flex-shrink: 0;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform .3s cubic-bezier(.4,0,.2,1), width .3s;
+        }
+        .panel-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        .panel-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .panel-footer button {
+            flex: 1;
+            padding: 8px;
+            border-radius: var(--radius-sm);
+            font-size: .78rem;
+            font-weight: 600;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+            transition: background .15s;
+        }
+        .btn-reset {
+            background: var(--bg-input);
+            color: var(--text-secondary);
+        }
+        .btn-reset:hover { background: var(--bg-hover); }
+        .btn-share {
+            background: var(--accent2-light);
+            color: var(--accent2);
+        }
+        .btn-share:hover { opacity: .85; }
+
+        /* ======================================
+           PANEL SECTIONS
+           ====================================== */
+        .section { margin-bottom: 18px; }
+        .section:last-child { margin-bottom: 0; }
+        .section-title {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .section-title .cross-badge {
+            font-size: .58rem;
+            font-weight: 500;
+            text-transform: none;
+            letter-spacing: 0;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        /* ======================================
+           ACTIVE SELECTION CHIPS
+           ====================================== */
+        .chips-area {
+            padding-bottom: 14px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .chips-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .chips-header-label {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--text-muted);
+        }
+        .chips-reset {
+            font-size: .7rem;
+            font-weight: 600;
+            color: var(--accent);
+            transition: opacity .15s;
+        }
+        .chips-reset:hover { opacity: .7; }
+        .chips-wrap { display: flex; flex-wrap: wrap; gap: 5px; }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: .68rem;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: opacity .15s;
+        }
+        .chip .material-icons-round { font-size: 12px; }
+        .chip-close {
+            font-size: 13px !important;
+            opacity: .5;
+            cursor: pointer;
+            transition: opacity .15s;
+        }
+        .chip-close:hover { opacity: 1; }
+        .chip-pin {
+            background: var(--pin-bg);
+            color: var(--pin-color);
+            border: 1px solid rgba(212,160,23,.2);
+        }
+        .chip-sel {
+            background: var(--selected-bg);
+            color: var(--selected-text);
+            border: 1px solid rgba(58,138,124,.15);
+        }
+        .chip-hid {
+            background: var(--hidden-bg);
+            color: var(--hidden-text);
+            border: 1px solid rgba(224,108,93,.15);
+            text-decoration: line-through;
+        }
+
+        /* ======================================
+           TRI-STATE LEGEND
+           ====================================== */
+        .tri-legend {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 14px;
+            font-size: .66rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+        .tri-legend-item { display: flex; align-items: center; gap: 4px; }
+
+        /* ======================================
+           TRI-STATE TOGGLE
+           ====================================== */
+        .tri {
+            width: 18px; height: 18px;
+            border-radius: 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .55rem;
+            font-weight: 800;
+            cursor: pointer;
+            user-select: none;
+            flex-shrink: 0;
+            transition: all .12s;
+            border: 1.5px solid;
+        }
+        .tri[data-s="neutral"] {
+            background: var(--bg-input);
+            border-color: var(--border);
+            color: var(--text-muted);
+        }
+        .tri[data-s="neutral"]::after { content: '—'; }
+        .tri[data-s="selected"] {
+            background: var(--selected-bg);
+            border-color: var(--selected-border);
+            color: var(--selected-text);
+        }
+        .tri[data-s="selected"]::after { content: '✓'; font-size: .65rem; }
+        .tri[data-s="hidden"] {
+            background: var(--hidden-bg);
+            border-color: var(--hidden-border);
+            color: var(--hidden-text);
+        }
+        .tri[data-s="hidden"]::after { content: '✕'; }
+        .tri.disabled { opacity: .3; pointer-events: none; }
+
+        /* ======================================
+           FILTER ROW
+           ====================================== */
+        .frow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 6px;
+            border-radius: var(--radius-xs);
+            font-size: .78rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background .1s;
+        }
+        .frow:hover { background: var(--bg-hover); }
+        .frow.disabled { opacity: .3; pointer-events: none; }
+        .frow[data-s="hidden"] .frow-label { text-decoration: line-through; color: var(--text-muted); }
+        .frow-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .frow-count {
+            font-size: .65rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            min-width: 16px;
+            text-align: right;
+        }
+        .frow-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .frow-swatch {
+            width: 8px; height: 8px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+        .filter-list {
+            background: var(--bg-surface-alt);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 4px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        .search-wrap {
+            position: relative;
+            margin-bottom: 6px;
+        }
+        .search-wrap .material-icons-round {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: var(--text-muted);
+        }
+
+        /* ======================================
+           EXPAND / COLLAPSE
+           ====================================== */
+        .expand-trigger {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px 0;
+            transition: color .15s;
+        }
+        .expand-trigger:hover { color: var(--text-primary); }
+        .expand-trigger .material-icons-round {
+            font-size: 18px;
+            transition: transform .2s;
+        }
+        .expand-trigger.open .material-icons-round { transform: rotate(90deg); }
+        .expand-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .25s ease;
+        }
+        .expand-body.open { max-height: 500px; }
+        .extra-label {
+            font-size: .66rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-left: 2px;
+        }
+
+        /* ======================================
+           CALENDAR WEEK VIEW
+           ====================================== */
+        .calendar-wrap {
+            padding: 16px;
+            flex: 1;
+        }
+        .calendar {
+            background: var(--bg-surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        .cal-head {
+            display: grid;
+            grid-template-columns: 52px repeat(5, 1fr);
+            border-bottom: 2px solid var(--border);
+        }
+        .cal-head-cell {
+            text-align: center;
+            font-size: .75rem;
+            font-weight: 700;
+            padding: 10px 0;
+            color: var(--text-secondary);
+        }
+        .cal-body {
+            display: grid;
+            grid-template-columns: 52px repeat(5, 1fr);
+        }
+        .cal-time {
+            font-size: .65rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-align: right;
+            padding-right: 8px;
+            padding-top: 2px;
+        }
+        .cal-cell {
+            min-height: 52px;
+            border-bottom: 1px solid var(--border-light);
+            border-right: 1px solid var(--border-light);
+            position: relative;
+        }
+        .cal-cell:nth-child(6n) { border-right: none; }
+
+        /* ======================================
+           EVENT BLOCK (calendar)
+           ====================================== */
+        .ev {
+            position: absolute;
+            left: 3px; right: 3px;
+            border-radius: var(--radius-sm);
+            padding: 4px 6px;
+            font-size: .68rem;
+            line-height: 1.2;
+            overflow: hidden;
+            cursor: pointer;
+            border-left: 4px solid;
+            transition: transform .12s, box-shadow .12s;
+        }
+        .ev:hover {
+            transform: scale(1.03);
+            box-shadow: var(--shadow-md);
+            z-index: 10;
+        }
+        .ev-title {
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ev-meta {
+            font-size: .62rem;
+            opacity: .8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ev-pin {
+            position: absolute;
+            top: 3px; right: 3px;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity .15s;
+            cursor: pointer;
+            background: rgba(0,0,0,.15);
+            border-radius: 4px;
+            padding: 1px 2px;
+            line-height: 1;
+        }
+        .ev:hover .ev-pin { opacity: 1; }
+        .ev.pinned .ev-pin { opacity: 1; color: var(--pin-color); background: var(--pin-bg); }
+        .ev .status-dot {
+            position: absolute;
+            bottom: 4px; right: 20px;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+        }
+        .ev.excluded {
+            opacity: .18;
+            pointer-events: none;
+        }
+        .ev.excluded .ev-title { text-decoration: line-through; }
+
+        /* Event colors by type */
+        .ev-vorlesung { background: rgba(59,130,246,.12); border-color: #3B82F6; color: #2563EB; }
+        .ev-uebung    { background: rgba(245,158,11,.12); border-color: #F59E0B; color: #B45309; }
+        .ev-praktikum { background: rgba(139,92,246,.12); border-color: #8B5CF6; color: #6D28D9; }
+        .ev-seminar    { background: rgba(16,185,129,.12); border-color: #10B981; color: #047857; }
+        .ev-kolloquium { background: rgba(99,102,241,.12); border-color: #6366F1; color: #4338CA; }
+        html.dark .ev-vorlesung { background: rgba(59,130,246,.15); color: #93C5FD; }
+        html.dark .ev-uebung    { background: rgba(245,158,11,.15); color: #FCD34D; }
+        html.dark .ev-praktikum { background: rgba(139,92,246,.15); color: #C4B5FD; }
+        html.dark .ev-seminar    { background: rgba(16,185,129,.15); color: #6EE7B7; }
+        html.dark .ev-kolloquium { background: rgba(99,102,241,.15); color: #A5B4FC; }
+
+        /* ======================================
+           LIST VIEW
+           ====================================== */
+        .list-view { padding: 16px; }
+        .list-day-header {
+            font-size: .72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--text-muted);
+            padding: 12px 0 6px;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 4px;
+        }
+        .list-event {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background .1s;
+        }
+        .list-event:hover { background: var(--bg-hover); }
+        .le-time {
+            font-size: .68rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            width: 42px;
+            flex-shrink: 0;
+            padding-top: 2px;
+            line-height: 1.4;
+        }
+        .le-bar {
+            width: 4px;
+            border-radius: 3px;
+            align-self: stretch;
+            flex-shrink: 0;
+            min-height: 32px;
+        }
+        .le-body { flex: 1; min-width: 0; }
+        .le-title {
+            font-size: .82rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .le-meta { font-size: .7rem; color: var(--text-secondary); }
+        .le-status { font-size: .66rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+        .le-pin-btn {
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity .15s;
+            padding: 4px;
+            border-radius: 6px;
+        }
+        .list-event:hover .le-pin-btn { opacity: 1; }
+        .list-event.pinned .le-pin-btn { opacity: 1; color: var(--pin-color); }
+        .list-event.excluded {
+            opacity: .2;
+            pointer-events: none;
+        }
+        .list-event.excluded .le-title { text-decoration: line-through; }
+        .le-excluded-label { font-size: .62rem; color: var(--accent); font-weight: 600; }
+
+        /* ======================================
+           DAY VIEW
+           ====================================== */
+        .day-view { padding: 16px; }
+        .day-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .day-nav-title {
+            font-size: .88rem;
+            font-weight: 700;
+        }
+        .day-nav-btn {
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: .75rem;
+            font-weight: 600;
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            transition: background .15s;
+        }
+        .day-nav-btn:hover { background: var(--bg-hover); }
+        .day-grid {
+            display: grid;
+            grid-template-columns: 52px 1fr;
+        }
+
+        /* ======================================
+           STATUS DOT
+           ====================================== */
+        .sdot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .sdot-ok      { background: #22c55e; }
+        .sdot-pok     { background: #eab308; }
+        .sdot-tok     { background: #f97316; }
+        .sdot-alt     { background: #9ca3af; }
+        .sdot-reserve { background: #ef4444; }
+
+        /* ======================================
+           POPUP OVERLAY
+           ====================================== */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(15,14,23,.45);
+            justify-content: center;
+            align-items: center;
+        }
+        .popup-overlay.show { display: flex; }
+        .popup-card {
+            background: var(--bg-elevated);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 420px;
+            margin: 16px;
+            padding: 24px;
+            animation: popIn .2s ease-out;
+        }
+        @keyframes popIn {
+            from { transform: scale(.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .popup-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .popup-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: .75rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .popup-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+        .popup-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .popup-action-btn {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .15s;
+        }
+        .popup-action-btn:hover { background: var(--bg-hover); }
+        .popup-action-btn.pin-active {
+            background: var(--pin-bg);
+            color: var(--pin-color);
+        }
+        .popup-details { display: flex; flex-direction: column; gap: 10px; }
+        .popup-detail-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: .85rem;
+            color: var(--text-secondary);
+        }
+        .popup-detail-row .material-icons-round { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .popup-note {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            font-size: .78rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .popup-note .material-icons-round { font-size: 16px; color: var(--pin-color); }
+
+        /* ======================================
+           FOOTER
+           ====================================== */
+        .footer {
+            text-align: center;
+            font-size: .68rem;
+            color: var(--text-muted);
+            padding: 8px;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .footer a { color: var(--accent2); text-decoration: underline; }
+
+        /* ======================================
+           MOBILE RESPONSIVE
+           ====================================== */
+        @media (max-width: 768px) {
+            .hamburger { display: flex; }
+            .semester-pill { display: none; }
+            .header-center { display: none; }
+            .panel {
+                position: fixed;
+                top: 0; bottom: 0; right: 0;
+                z-index: 60;
+                width: 88vw;
+                max-width: 340px;
+                transform: translateX(110%);
+                border-left: 1px solid var(--border);
+                box-shadow: var(--shadow-lg);
+            }
+            .panel.open { transform: translateX(0); }
+            .panel-backdrop {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 55;
+                background: rgba(15,14,23,.5);
+            }
+            .panel-backdrop.show { display: block; }
+            .mobile-view-bar { display: flex !important; }
+            .calendar-wrap, .list-view, .day-view { padding: 10px; }
+            .popup-card {
+                max-width: 100%;
+                margin: 0;
+                border-radius: 20px 20px 0 0;
+                padding-bottom: max(24px, env(safe-area-inset-bottom));
+            }
+            .popup-overlay { align-items: flex-end; }
+        }
+        @media (min-width: 769px) {
+            .panel-backdrop { display: none !important; }
+            .mobile-view-bar { display: none !important; }
+            .panel-mobile-header { display: none !important; }
+        }
+        @media (min-width: 769px) and (max-width: 1100px) {
+            .panel { width: 260px; }
+        }
+
+        /* ======================================
+           MOBILE VIEW BAR (below header)
+           ====================================== */
+        .mobile-view-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            background: var(--bg-surface-alt);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .mobile-filter-summary {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .72rem;
+            color: var(--text-muted);
+        }
+        .mfs-item { display: flex; align-items: center; gap: 2px; }
+
+        /* ======================================
+           HIDDEN HELPER
+           ====================================== */
+        .hidden { display: none !important; }
+
+        /* ======================================
+           DEVICE PREVIEW BAR (mockup only)
+           ====================================== */
+        .dev-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: #1a1928;
+            border-top: 1px solid #2e2c4a;
+            flex-shrink: 0;
+            z-index: 200;
+        }
+        .dev-bar-label { font-size: .62rem; color: #6b6590; }
+        .dev-btn {
+            font-size: .65rem;
+            padding: 3px 10px;
+            border-radius: 5px;
+            color: #a8a0c0;
+            background: #252340;
+            border: 1px solid #2e2c4a;
+            cursor: pointer;
+            display: flex; align-items: center; gap: 4px;
+            transition: all .15s;
+        }
+        .dev-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    </style>
+</head>
+<body>
+
+    <!-- Device Preview Bar -->
+    <div class="dev-bar" id="devBar">
+        <span class="material-icons-round dev-bar-label" style="font-size:14px">devices</span>
+        <span class="dev-bar-label">Vorschau:</span>
+        <button class="dev-btn" onclick="setDevice(375, this)">
+            <span class="material-icons-round" style="font-size:13px">smartphone</span> 375px
+        </button>
+        <button class="dev-btn" onclick="setDevice(768, this)">
+            <span class="material-icons-round" style="font-size:13px">tablet</span> 768px
+        </button>
+        <button class="dev-btn active" onclick="setDevice(0, this)">
+            <span class="material-icons-round" style="font-size:13px">desktop_windows</span> Voll
+        </button>
+        <span class="dev-bar-label" id="devLabel" style="margin-left:8px">Vollbreite</span>
+    </div>
+
+    <!-- ===== APP SHELL ===== -->
+    <div id="appFrame" style="flex:1;overflow:hidden;display:flex;justify-content:center">
+    <div id="appRoot" style="width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden;transition:max-width .3s">
+
+        <!-- ===== HEADER ===== -->
+        <header class="header">
+            <div class="header-left">
+                <button class="icon-btn hamburger" onclick="togglePanel()">
+                    <span class="material-icons-round">menu</span>
+                </button>
+                <div class="logo">
+                    <span class="material-icons-round" style="font-size:20px">school</span>
+                </div>
+                <span class="app-title">Uni Planer</span>
+                <span class="semester-pill">SoSe 2026</span>
+            </div>
+
+            <div class="header-center">
+                <button class="view-btn active" data-view="week" onclick="switchView('week',this)">Woche</button>
+                <button class="view-btn" data-view="day" onclick="switchView('day',this)">Tag</button>
+                <button class="view-btn" data-view="list" onclick="switchView('list',this)">Liste</button>
+            </div>
+
+            <div class="header-right">
+                <!-- Color mode -->
+                <div class="color-drop" id="colorDrop">
+                    <button class="icon-btn" onclick="document.getElementById('colorDrop').classList.toggle('open')" title="Farbmodus">
+                        <span class="material-icons-round">palette</span>
+                    </button>
+                    <div class="color-menu">
+                        <button class="color-opt active"><span class="material-icons-round co-check">check</span> Nach Typ</button>
+                        <button class="color-opt"><span class="material-icons-round co-check">check</span> Nach Modul</button>
+                        <button class="color-opt"><span class="material-icons-round co-check">check</span> Nach Status</button>
+                        <button class="color-opt"><span class="material-icons-round co-check">check</span> Nach Dozent</button>
+                        <div class="color-opt-divider"></div>
+                        <button class="color-opt" id="customColorBtn"><span class="material-icons-round co-check">check</span> Benutzerdefiniert…</button>
+                    </div>
+                </div>
+                <!-- Theme toggle -->
+                <button class="icon-btn" onclick="toggleTheme()" title="Theme wechseln" id="themeBtn">
+                    <span class="material-icons-round">light_mode</span>
+                </button>
+                <!-- Filter panel toggle (desktop) -->
+                <button class="icon-btn" onclick="togglePanel()" title="Filter anzeigen" style="display:none" id="panelToggleDesktop">
+                    <span class="material-icons-round">filter_list</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Custom Color Config Bar -->
+        <div class="color-config" id="colorConfig">
+            <span class="cc-label">Benutzerdefinierte Farben</span>
+            <div class="cc-group">
+                <span style="font-size:.72rem;color:var(--text-secondary)">Vorlesung</span>
+                <div class="cc-swatch active" style="background:#3B82F6"></div>
+                <div class="cc-swatch" style="background:#0EA5E9"></div>
+                <div class="cc-swatch" style="background:#6366F1"></div>
+                <div class="cc-swatch" style="background:#EC4899"></div>
+            </div>
+            <div class="cc-group">
+                <span style="font-size:.72rem;color:var(--text-secondary)">Übung</span>
+                <div class="cc-swatch active" style="background:#F59E0B"></div>
+                <div class="cc-swatch" style="background:#F97316"></div>
+                <div class="cc-swatch" style="background:#EAB308"></div>
+                <div class="cc-swatch" style="background:#84CC16"></div>
+            </div>
+            <div class="cc-group">
+                <span style="font-size:.72rem;color:var(--text-secondary)">Praktikum</span>
+                <div class="cc-swatch active" style="background:#8B5CF6"></div>
+                <div class="cc-swatch" style="background:#A855F7"></div>
+                <div class="cc-swatch" style="background:#D946EF"></div>
+                <div class="cc-swatch" style="background:#14B8A6"></div>
+            </div>
+            <button onclick="document.getElementById('colorConfig').classList.remove('open')"
+                    style="font-size:.72rem;font-weight:600;color:var(--accent);margin-left:auto">Schließen</button>
+        </div>
+
+        <!-- Mobile view bar -->
+        <div class="mobile-view-bar">
+            <div style="display:flex;gap:2px">
+                <button class="view-btn" data-view="week" onclick="switchView('week',this)">Woche</button>
+                <button class="view-btn" data-view="day" onclick="switchView('day',this)">Tag</button>
+                <button class="view-btn active" data-view="list" onclick="switchView('list',this)">Liste</button>
+            </div>
+            <div class="mobile-filter-summary">
+                <span class="mfs-item"><span class="material-icons-round" style="font-size:14px;color:var(--pin-color)">push_pin</span> 3</span>
+                <span class="mfs-item"><span class="material-icons-round" style="font-size:14px;color:var(--selected-text)">check_circle</span> 4</span>
+                <span class="mfs-item"><span class="material-icons-round" style="font-size:14px;color:var(--hidden-text)">cancel</span> 2</span>
+            </div>
+        </div>
+
+        <!-- ===== BODY ===== -->
+        <div class="body-wrap">
+
+            <!-- Backdrop for mobile panel -->
+            <div class="panel-backdrop" id="panelBackdrop" onclick="closePanel()"></div>
+
+            <!-- ===== MAIN CONTENT AREA ===== -->
+            <div class="main" id="mainArea">
+
+                <!-- == WEEK VIEW == -->
+                <div id="viewWeek" class="calendar-wrap">
+                    <div class="calendar">
+                        <div class="cal-head">
+                            <div class="cal-head-cell"></div>
+                            <div class="cal-head-cell">Montag</div>
+                            <div class="cal-head-cell">Dienstag</div>
+                            <div class="cal-head-cell">Mittwoch</div>
+                            <div class="cal-head-cell">Donnerstag</div>
+                            <div class="cal-head-cell">Freitag</div>
+                        </div>
+                        <div class="cal-body">
+                            <!-- 08:00 -->
+                            <div class="cal-time">08:00</div>
+                            <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+
+                            <!-- 09:00 -->
+                            <div class="cal-time">09:00</div>
+                            <div class="cal-cell">
+                                <div class="ev ev-vorlesung pinned" style="top:0;height:100px" onclick="openPopup()">
+                                    <div class="ev-title">Algorithmen & DS</div>
+                                    <div class="ev-meta">VL · Felix-Klein-HS</div>
+                                    <div class="ev-meta">Prof. Müller</div>
+                                    <div class="status-dot sdot-ok"></div>
+                                    <span class="ev-pin material-icons-round">push_pin</span>
+                                </div>
+                            </div>
+                            <div class="cal-cell"></div>
+                            <div class="cal-cell">
+                                <div class="ev ev-vorlesung" style="top:0;height:100px" onclick="openPopup()">
+                                    <div class="ev-title">Softwaretechnik</div>
+                                    <div class="ev-meta">VL · SG 3-10</div>
+                                    <div class="ev-meta">Dr. Weber</div>
+                                    <div class="status-dot sdot-ok"></div>
+                                    <span class="ev-pin material-icons-round">push_pin</span>
+                                </div>
+                            </div>
+                            <div class="cal-cell">
+                                <div class="ev ev-vorlesung" style="top:0;height:100px" onclick="openPopup()">
+                                    <div class="ev-title">Datenbanksysteme</div>
+                                    <div class="ev-meta">VL · Paulinum P-702</div>
+                                    <div class="ev-meta">Prof. Schmidt</div>
+                                    <div class="status-dot sdot-ok"></div>
+                                    <span class="ev-pin material-icons-round">push_pin</span>
+                                </div>
+                            </div>
+                            <div class="cal-cell"></div>
+
+                            <!-- 10:00 -->
+                            <div class="cal-time">10:00</div>
+                            <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+
+                            <!-- 11:00 -->
+                            <div class="cal-time">11:00</div>
+                            <div class="cal-cell">
+                                <div class="ev ev-uebung pinned" style="top:0;height:78px" onclick="openPopup()">
+                                    <div class="ev-title">Algo ÜB Grp A</div>
+                                    <div class="ev-meta">ÜB · SG 1-09</div>
+                                    <div class="status-dot sdot-ok"></div>
+                                    <span class="ev-pin material-icons-round">push_pin</span>
+                                </div>
+                            </div>
+                            <div class="cal-cell">
+                                <div class="ev ev-uebung excluded" style="top:0;height:78px">
+                                    <div class="ev-title">Algo ÜB Grp B</div>
+                                    <div class="ev-meta">ÜB · SG 3-10</div>
+                                    <div class="ev-meta" style="font-size:.55rem;color:var(--accent)">Gruppe ausgewählt</div>
+                                </div>
+                            </div>
+                            <div class="cal-cell">
+                                <div class="ev ev-uebung pinned" style="top:0;height:78px" onclick="openPopup()">
+                                    <div class="ev-title">DB Übung</div>
+                                    <div class="ev-meta">ÜB · SG 3-10</div>
+                                    <div class="status-dot sdot-ok"></div>
+                                    <span class="ev-pin material-icons-round">push_pin</span>
+                                </div>
+                            </div>
+                            <div class="cal-cell"></div>
+                            <div class="cal-cell"></div>
+
+                            <!-- 12:00 -->
+                            <div class="cal-time">12:00</div>
+                            <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+
+                            <!-- 13:00 -->
+                            <div class="cal-time">13:00</div>
+                            <div class="cal-cell"></div>
+                            <div class="cal-cell">
+                                <div class="ev ev-praktikum" style="top:0;height:148px" onclick="openPopup()">
+                                    <div class="ev-title">Softwaretechnik</div>
+                                    <div class="ev-meta">PR · SG 1-09</div>
+                                    <div class="ev-meta">Dr. Weber</div>
+                                    <div class="status-dot sdot-tok"></div>
+                                    <span class="ev-pin material-icons-round">push_pin</span>
+                                </div>
+                            </div>
+                            <div class="cal-cell">
+                                <div class="ev ev-uebung" style="top:0;height:78px" onclick="openPopup()">
+                                    <div class="ev-title">Softwaretechnik ÜB</div>
+                                    <div class="ev-meta">ÜB · SG 3-10</div>
+                                    <div class="status-dot sdot-ok"></div>
+                                    <span class="ev-pin material-icons-round">push_pin</span>
+                                </div>
+                            </div>
+                            <div class="cal-cell"></div>
+                            <div class="cal-cell"></div>
+
+                            <!-- 14:00 -->
+                            <div class="cal-time">14:00</div>
+                            <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+                            <div class="cal-cell">
+                                <div class="ev ev-praktikum" style="top:0;height:148px" onclick="openPopup()">
+                                    <div class="ev-title">DB Praktikum</div>
+                                    <div class="ev-meta">PR · SG 3-10</div>
+                                    <div class="ev-meta">Dr. Fischer</div>
+                                    <div class="status-dot sdot-ok"></div>
+                                    <span class="ev-pin material-icons-round">push_pin</span>
+                                </div>
+                            </div>
+                            <div class="cal-cell"></div>
+
+                            <!-- 15:00 -->
+                            <div class="cal-time">15:00</div>
+                            <div class="cal-cell">
+                                <div class="ev ev-vorlesung" style="top:0;height:100px" onclick="openPopup()">
+                                    <div class="ev-title">Algorithmen & DS</div>
+                                    <div class="ev-meta">VL · Felix-Klein-HS</div>
+                                    <div class="ev-meta">Prof. Müller</div>
+                                    <div class="status-dot sdot-ok"></div>
+                                    <span class="ev-pin material-icons-round">push_pin</span>
+                                </div>
+                            </div>
+                            <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+
+                            <!-- 16:00 -->
+                            <div class="cal-time">16:00</div>
+                            <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+
+                            <!-- 17:00 -->
+                            <div class="cal-time">17:00</div>
+                            <div class="cal-cell"></div><div class="cal-cell"></div>
+                            <div class="cal-cell"><!-- Kolloquium hidden --></div>
+                            <div class="cal-cell"></div><div class="cal-cell"></div>
+
+                            <!-- 18:00 -->
+                            <div class="cal-time">18:00</div>
+                            <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- == LIST VIEW == -->
+                <div id="viewList" class="list-view hidden">
+                    <!-- Montag -->
+                    <div class="list-day-header">Montag</div>
+                    <div class="list-event pinned" onclick="openPopup()">
+                        <div class="le-time">09:00<br>11:00</div>
+                        <div class="le-bar" style="background:#3B82F6"></div>
+                        <div class="le-body">
+                            <div class="le-title">Algorithmen & Datenstrukturen</div>
+                            <div class="le-meta">VL · Felix-Klein-HS · Prof. Müller</div>
+                            <div class="le-status"><span class="sdot sdot-ok"></span> Bestätigt</div>
+                        </div>
+                        <button class="le-pin-btn"><span class="material-icons-round" style="font-size:18px">push_pin</span></button>
+                    </div>
+                    <div class="list-event pinned" onclick="openPopup()">
+                        <div class="le-time">11:00<br>12:30</div>
+                        <div class="le-bar" style="background:#F59E0B"></div>
+                        <div class="le-body">
+                            <div class="le-title">Algorithmen & DS – Übung Grp A</div>
+                            <div class="le-meta">ÜB · SG 1-09</div>
+                            <div class="le-status"><span class="sdot sdot-ok"></span> Bestätigt</div>
+                        </div>
+                        <button class="le-pin-btn"><span class="material-icons-round" style="font-size:18px">push_pin</span></button>
+                    </div>
+                    <div class="list-event" onclick="openPopup()">
+                        <div class="le-time">15:00<br>17:00</div>
+                        <div class="le-bar" style="background:#3B82F6"></div>
+                        <div class="le-body">
+                            <div class="le-title">Algorithmen & Datenstrukturen</div>
+                            <div class="le-meta">VL · Felix-Klein-HS · Prof. Müller</div>
+                            <div class="le-status"><span class="sdot sdot-ok"></span> Bestätigt</div>
+                        </div>
+                        <button class="le-pin-btn"><span class="material-icons-round" style="font-size:18px">push_pin</span></button>
+                    </div>
+
+                    <!-- Dienstag -->
+                    <div class="list-day-header" style="margin-top:8px">Dienstag</div>
+                    <div class="list-event excluded">
+                        <div class="le-time">11:00<br>12:30</div>
+                        <div class="le-bar" style="background:#F59E0B"></div>
+                        <div class="le-body">
+                            <div class="le-title">Algo ÜB Grp B</div>
+                            <div class="le-excluded-label">Gruppe ausgewählt</div>
+                        </div>
+                    </div>
+                    <div class="list-event" onclick="openPopup()">
+                        <div class="le-time">13:00<br>15:30</div>
+                        <div class="le-bar" style="background:#8B5CF6"></div>
+                        <div class="le-body">
+                            <div class="le-title">Softwaretechnik – Praktikum</div>
+                            <div class="le-meta">PR · SG 1-09 · Dr. Weber</div>
+                            <div class="le-status"><span class="sdot sdot-tok"></span> Dozent offen</div>
+                        </div>
+                        <button class="le-pin-btn"><span class="material-icons-round" style="font-size:18px">push_pin</span></button>
+                    </div>
+
+                    <!-- Mittwoch -->
+                    <div class="list-day-header" style="margin-top:8px">Mittwoch</div>
+                    <div class="list-event" onclick="openPopup()">
+                        <div class="le-time">09:00<br>11:00</div>
+                        <div class="le-bar" style="background:#3B82F6"></div>
+                        <div class="le-body">
+                            <div class="le-title">Softwaretechnik</div>
+                            <div class="le-meta">VL · SG 3-10 · Dr. Weber</div>
+                            <div class="le-status"><span class="sdot sdot-ok"></span> Bestätigt</div>
+                        </div>
+                        <button class="le-pin-btn"><span class="material-icons-round" style="font-size:18px">push_pin</span></button>
+                    </div>
+                    <div class="list-event pinned" onclick="openPopup()">
+                        <div class="le-time">11:00<br>12:30</div>
+                        <div class="le-bar" style="background:#F59E0B"></div>
+                        <div class="le-body">
+                            <div class="le-title">Datenbanksysteme – Übung</div>
+                            <div class="le-meta">ÜB · SG 3-10</div>
+                            <div class="le-status"><span class="sdot sdot-ok"></span> Bestätigt</div>
+                        </div>
+                        <button class="le-pin-btn"><span class="material-icons-round" style="font-size:18px">push_pin</span></button>
+                    </div>
+                    <div class="list-event" onclick="openPopup()">
+                        <div class="le-time">13:00<br>14:30</div>
+                        <div class="le-bar" style="background:#F59E0B"></div>
+                        <div class="le-body">
+                            <div class="le-title">Softwaretechnik – Übung</div>
+                            <div class="le-meta">ÜB · SG 3-10</div>
+                            <div class="le-status"><span class="sdot sdot-ok"></span> Bestätigt</div>
+                        </div>
+                        <button class="le-pin-btn"><span class="material-icons-round" style="font-size:18px">push_pin</span></button>
+                    </div>
+
+                    <!-- Donnerstag -->
+                    <div class="list-day-header" style="margin-top:8px">Donnerstag</div>
+                    <div class="list-event" onclick="openPopup()">
+                        <div class="le-time">09:00<br>11:00</div>
+                        <div class="le-bar" style="background:#3B82F6"></div>
+                        <div class="le-body">
+                            <div class="le-title">Datenbanksysteme</div>
+                            <div class="le-meta">VL · Paulinum P-702 · Prof. Schmidt</div>
+                            <div class="le-status"><span class="sdot sdot-ok"></span> Bestätigt</div>
+                        </div>
+                        <button class="le-pin-btn"><span class="material-icons-round" style="font-size:18px">push_pin</span></button>
+                    </div>
+                    <div class="list-event" onclick="openPopup()">
+                        <div class="le-time">14:00<br>17:00</div>
+                        <div class="le-bar" style="background:#8B5CF6"></div>
+                        <div class="le-body">
+                            <div class="le-title">Datenbanksysteme – Praktikum</div>
+                            <div class="le-meta">PR · SG 3-10 · Dr. Fischer</div>
+                            <div class="le-status"><span class="sdot sdot-ok"></span> Bestätigt</div>
+                        </div>
+                        <button class="le-pin-btn"><span class="material-icons-round" style="font-size:18px">push_pin</span></button>
+                    </div>
+
+                    <!-- Freitag -->
+                    <div class="list-day-header" style="margin-top:8px">Freitag</div>
+                    <div class="list-event" style="opacity:.3;pointer-events:none">
+                        <div class="le-time">11:00<br>13:00</div>
+                        <div class="le-bar" style="background:#3B82F6"></div>
+                        <div class="le-body">
+                            <div class="le-title" style="text-decoration:line-through">Maschinelles Lernen</div>
+                            <div class="le-meta" style="color:var(--text-muted)">Prof. Rahm versteckt</div>
+                        </div>
+                    </div>
+                    <div style="text-align:center;padding:24px 0;font-size:.78rem;color:var(--text-muted)">— Keine weiteren Veranstaltungen —</div>
+                </div>
+
+                <!-- == DAY VIEW == -->
+                <div id="viewDay" class="day-view hidden">
+                    <div class="day-nav">
+                        <button class="day-nav-btn">← Dienstag</button>
+                        <span class="day-nav-title">Montag</span>
+                        <button class="day-nav-btn">Mittwoch →</button>
+                    </div>
+                    <div class="calendar">
+                        <div class="day-grid">
+                            <div class="cal-head-cell"></div>
+                            <div class="cal-head-cell" style="font-size:.88rem">Montag</div>
+                        </div>
+                        <div class="day-grid">
+                            <div class="cal-time">08:00</div><div class="cal-cell" style="min-height:56px"></div>
+                            <div class="cal-time">09:00</div>
+                            <div class="cal-cell" style="min-height:56px">
+                                <div class="ev ev-vorlesung pinned" style="top:0;height:110px" onclick="openPopup()">
+                                    <div class="ev-title">Algorithmen & Datenstrukturen</div>
+                                    <div class="ev-meta">Vorlesung · Felix-Klein-Hörsaal</div>
+                                    <div class="ev-meta">Prof. Müller · 09:00–11:00</div>
+                                    <div class="status-dot sdot-ok"></div>
+                                    <span class="ev-pin material-icons-round">push_pin</span>
+                                </div>
+                            </div>
+                            <div class="cal-time">10:00</div><div class="cal-cell" style="min-height:56px"></div>
+                            <div class="cal-time">11:00</div>
+                            <div class="cal-cell" style="min-height:56px">
+                                <div class="ev ev-uebung pinned" style="top:0;height:84px" onclick="openPopup()">
+                                    <div class="ev-title">Algo & DS – Übung Grp A</div>
+                                    <div class="ev-meta">SG 1-09 · 11:00–12:30</div>
+                                    <div class="status-dot sdot-ok"></div>
+                                    <span class="ev-pin material-icons-round">push_pin</span>
+                                </div>
+                            </div>
+                            <div class="cal-time">12:00</div><div class="cal-cell" style="min-height:56px"></div>
+                            <div class="cal-time">13:00</div><div class="cal-cell" style="min-height:56px"></div>
+                            <div class="cal-time">14:00</div><div class="cal-cell" style="min-height:56px"></div>
+                            <div class="cal-time">15:00</div>
+                            <div class="cal-cell" style="min-height:56px">
+                                <div class="ev ev-vorlesung" style="top:0;height:110px" onclick="openPopup()">
+                                    <div class="ev-title">Algorithmen & Datenstrukturen</div>
+                                    <div class="ev-meta">Vorlesung · Felix-Klein-HS</div>
+                                    <div class="ev-meta">Prof. Müller · 15:00–17:00</div>
+                                    <div class="status-dot sdot-ok"></div>
+                                    <span class="ev-pin material-icons-round">push_pin</span>
+                                </div>
+                            </div>
+                            <div class="cal-time">16:00</div><div class="cal-cell" style="min-height:56px"></div>
+                            <div class="cal-time">17:00</div><div class="cal-cell" style="min-height:56px"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FILTER PANEL (RIGHT SIDE) ===== -->
+            <aside class="panel" id="panel">
+                <!-- Mobile-only panel header -->
+                <div class="panel-mobile-header" style="display:none;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
+                    <div style="display:flex;align-items:center;justify-content:space-between">
+                        <span style="font-size:.88rem;font-weight:800">Filter</span>
+                        <button onclick="closePanel()" class="icon-btn" style="width:32px;height:32px">
+                            <span class="material-icons-round" style="font-size:18px">close</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-scroll">
+
+                    <!-- ACTIVE SELECTION CHIPS -->
+                    <div class="chips-area">
+                        <div class="chips-header">
+                            <span class="chips-header-label">Auswahl</span>
+                            <button class="chips-reset">Alle zurücksetzen</button>
+                        </div>
+                        <div class="chips-wrap">
+                            <span class="chip chip-pin"><span class="material-icons-round">push_pin</span> Algo VL Mo <span class="chip-close material-icons-round">close</span></span>
+                            <span class="chip chip-pin"><span class="material-icons-round">push_pin</span> Algo ÜB Mo <span class="chip-close material-icons-round">close</span></span>
+                            <span class="chip chip-pin"><span class="material-icons-round">push_pin</span> DB ÜB Mi <span class="chip-close material-icons-round">close</span></span>
+                            <span class="chip chip-sel"><span class="material-icons-round">check</span> Vorlesung <span class="chip-close material-icons-round">close</span></span>
+                            <span class="chip chip-sel"><span class="material-icons-round">check</span> Übung <span class="chip-close material-icons-round">close</span></span>
+                            <span class="chip chip-sel"><span class="material-icons-round">check</span> Praktikum <span class="chip-close material-icons-round">close</span></span>
+                            <span class="chip chip-sel"><span class="material-icons-round">person</span> Prof. Müller <span class="chip-close material-icons-round">close</span></span>
+                            <span class="chip chip-hid"><span class="material-icons-round">close</span> Kolloquium <span class="chip-close material-icons-round">close</span></span>
+                            <span class="chip chip-hid"><span class="material-icons-round">close</span> reserve <span class="chip-close material-icons-round">close</span></span>
+                        </div>
+                    </div>
+
+                    <!-- TRI-STATE LEGEND -->
+                    <div class="tri-legend">
+                        <span style="font-weight:600;color:var(--text-secondary)">Klick:</span>
+                        <span class="tri-legend-item"><span class="tri" data-s="neutral" style="width:14px;height:14px;font-size:.42rem;pointer-events:none"></span> Neutral</span>
+                        <span class="tri-legend-item"><span class="tri" data-s="selected" style="width:14px;height:14px;font-size:.48rem;pointer-events:none"></span> Anzeigen</span>
+                        <span class="tri-legend-item"><span class="tri" data-s="hidden" style="width:14px;height:14px;font-size:.42rem;pointer-events:none"></span> Verstecken</span>
+                    </div>
+
+                    <!-- DEGREE -->
+                    <div class="section">
+                        <div class="section-title">Studiengang</div>
+                        <select>
+                            <option>Alle Studiengänge</option>
+                            <option>B.Sc. Informatik</option>
+                            <option selected>B.Sc. Digital Humanities</option>
+                            <option>M.Sc. Informatik</option>
+                            <option>M.Sc. Data Science</option>
+                            <option>Lehramt Informatik</option>
+                        </select>
+                    </div>
+
+                    <!-- SEMESTER -->
+                    <div class="section">
+                        <div class="section-title">Semester</div>
+                        <select>
+                            <option>Alle Semester</option>
+                            <option>1. Semester</option>
+                            <option selected>2. Semester</option>
+                            <option>3. Semester</option>
+                            <option>4. Semester</option>
+                        </select>
+                    </div>
+
+                    <!-- MODULES -->
+                    <div class="section">
+                        <div class="section-title">Module</div>
+                        <div class="search-wrap">
+                            <span class="material-icons-round">search</span>
+                            <input type="text" placeholder="Modul suchen…">
+                        </div>
+                        <div class="filter-list">
+                            <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="frow-label">Algorithmen & DS</span></div>
+                            <div class="frow" data-s="selected"><span class="tri" data-s="selected"></span><span class="frow-label">Datenbanksysteme</span></div>
+                            <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="frow-label">Softwaretechnik</span></div>
+                            <div class="frow" data-s="hidden"><span class="tri" data-s="hidden"></span><span class="frow-label">Web-Technologien</span></div>
+                        </div>
+                        <!-- Weitere Module -->
+                        <div style="margin-top:8px">
+                            <div class="expand-trigger" id="weitereToggle" onclick="toggleExpand('weitereBody','weitereToggle')">
+                                <span class="material-icons-round">chevron_right</span>
+                                Weitere Module <span class="extra-label">(alle)</span>
+                            </div>
+                            <div class="expand-body" id="weitereBody">
+                                <div style="padding-top:6px">
+                                    <div class="search-wrap">
+                                        <span class="material-icons-round">search</span>
+                                        <input type="text" placeholder="Weitere suchen…">
+                                    </div>
+                                    <div class="filter-list" style="max-height:120px">
+                                        <div class="frow" data-s="neutral" style="font-style:italic;color:var(--text-secondary)"><span class="tri" data-s="neutral"></span><span class="frow-label">Rechnerarchitektur</span></div>
+                                        <div class="frow" data-s="selected" style="font-style:italic;color:var(--text-secondary)"><span class="tri" data-s="selected"></span><span class="frow-label">Maschinelles Lernen</span></div>
+                                        <div class="frow" data-s="neutral" style="font-style:italic;color:var(--text-secondary)"><span class="tri" data-s="neutral"></span><span class="frow-label">Lineare Algebra</span></div>
+                                        <div class="frow" data-s="neutral" style="font-style:italic;color:var(--text-secondary)"><span class="tri" data-s="neutral"></span><span class="frow-label">Betriebssysteme</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EVENT TYPE -->
+                    <div class="section">
+                        <div class="section-title">Veranstaltungstyp</div>
+                        <div class="frow" data-s="selected"><span class="tri" data-s="selected"></span><span class="frow-swatch" style="background:#3B82F6"></span><span class="frow-label">Vorlesung</span><span class="frow-count">4</span></div>
+                        <div class="frow" data-s="selected"><span class="tri" data-s="selected"></span><span class="frow-swatch" style="background:#F59E0B"></span><span class="frow-label">Übung</span><span class="frow-count">3</span></div>
+                        <div class="frow" data-s="selected"><span class="tri" data-s="selected"></span><span class="frow-swatch" style="background:#8B5CF6"></span><span class="frow-label">Praktikum</span><span class="frow-count">2</span></div>
+                        <div class="frow disabled" data-s="selected"><span class="tri disabled" data-s="selected"></span><span class="frow-swatch" style="background:#10B981;opacity:.4"></span><span class="frow-label" style="color:var(--text-muted)">Seminar</span><span class="frow-count">0</span></div>
+                        <div class="frow" data-s="hidden"><span class="tri" data-s="hidden"></span><span class="frow-swatch" style="background:#6366F1;opacity:.5"></span><span class="frow-label">Kolloquium</span><span class="frow-count">1</span></div>
+                    </div>
+
+                    <!-- STATUS -->
+                    <div class="section">
+                        <div class="section-title">Status</div>
+                        <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="frow-dot sdot-ok"></span><span class="frow-label">Bestätigt</span><span class="frow-count">7</span></div>
+                        <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="frow-dot sdot-pok"></span><span class="frow-label">VA offen</span><span class="frow-count">1</span></div>
+                        <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="frow-dot sdot-tok"></span><span class="frow-label">Dozent offen</span><span class="frow-count">1</span></div>
+                        <div class="frow" data-s="hidden"><span class="tri" data-s="hidden"></span><span class="frow-dot sdot-reserve"></span><span class="frow-label">Entfällt</span><span class="frow-count">0</span></div>
+                        <div class="frow disabled" data-s="neutral"><span class="tri disabled" data-s="neutral"></span><span class="frow-dot sdot-alt" style="opacity:.3"></span><span class="frow-label" style="color:var(--text-muted)">Vorsemester</span><span class="frow-count">0</span></div>
+                    </div>
+
+                    <!-- STAFF (cross-filter) -->
+                    <div class="section">
+                        <div class="section-title">Dozent <span class="cross-badge">↕ cross-filter</span></div>
+                        <div class="search-wrap">
+                            <span class="material-icons-round">search</span>
+                            <input type="text" placeholder="Dozent suchen…">
+                        </div>
+                        <div class="filter-list" style="max-height:110px">
+                            <div class="frow" data-s="selected"><span class="tri" data-s="selected"></span><span class="frow-label">Prof. Müller</span><span class="frow-count">3</span></div>
+                            <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="frow-label">Dr. Weber</span><span class="frow-count">2</span></div>
+                            <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="frow-label">Prof. Schmidt</span><span class="frow-count">2</span></div>
+                            <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="frow-label">Dr. Fischer</span><span class="frow-count">1</span></div>
+                            <div class="frow" data-s="hidden"><span class="tri" data-s="hidden"></span><span class="frow-label">Prof. Rahm</span><span class="frow-count">1</span></div>
+                        </div>
+                    </div>
+
+                    <!-- LOCATION (cross-filter) -->
+                    <div class="section">
+                        <div class="section-title">Ort <span class="cross-badge">↕ cross-filter</span></div>
+                        <div class="search-wrap">
+                            <span class="material-icons-round">search</span>
+                            <input type="text" placeholder="Ort suchen…">
+                        </div>
+                        <div class="filter-list" style="max-height:110px">
+                            <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="frow-label">Felix-Klein-HS</span><span class="frow-count">4</span></div>
+                            <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="frow-label">SG 3-10</span><span class="frow-count">3</span></div>
+                            <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="frow-label">SG 1-09</span><span class="frow-count">2</span></div>
+                            <div class="frow" data-s="neutral"><span class="tri" data-s="neutral"></span><span class="frow-label">Paulinum P-702</span><span class="frow-count">1</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel footer -->
+                <div class="panel-footer">
+                    <button class="btn-reset">
+                        <span class="material-icons-round" style="font-size:16px">restart_alt</span> Zurücksetzen
+                    </button>
+                    <button class="btn-share">
+                        <span class="material-icons-round" style="font-size:16px">link</span> Teilen
+                    </button>
+                </div>
+            </aside>
+        </div>
+
+        <!-- ===== FOOTER ===== -->
+        <footer class="footer">
+            Daten von <a href="#">informatik.uni-leipzig.de</a>
+        </footer>
+
+    </div><!-- /appRoot -->
+    </div><!-- /appFrame -->
+
+    <!-- ===== EVENT DETAIL POPUP ===== -->
+    <div class="popup-overlay" id="popup" onclick="if(event.target===this)closePopup()">
+        <div class="popup-card">
+            <div class="popup-top">
+                <div>
+                    <div class="popup-type-badge">
+                        <span class="frow-swatch" style="background:#3B82F6;width:10px;height:10px"></span>
+                        <span style="color:#3B82F6">Vorlesung</span>
+                        <span class="sdot sdot-ok" style="margin-left:4px"></span>
+                        <span style="font-size:.72rem;color:var(--selected-text)">Bestätigt</span>
+                    </div>
+                    <div class="popup-title">Algorithmen & Datenstrukturen</div>
+                </div>
+                <div class="popup-actions">
+                    <button class="popup-action-btn pin-active" title="Angeheftet">
+                        <span class="material-icons-round">push_pin</span>
+                    </button>
+                    <button class="popup-action-btn" onclick="closePopup()" title="Schließen">
+                        <span class="material-icons-round">close</span>
+                    </button>
+                </div>
+            </div>
+            <div class="popup-details">
+                <div class="popup-detail-row">
+                    <span class="material-icons-round">book</span>
+                    <span>10-201-2001 · 5 ECTS</span>
+                </div>
+                <div class="popup-detail-row">
+                    <span class="material-icons-round">schedule</span>
+                    <span>Montag, 09:00 – 11:00</span>
+                </div>
+                <div class="popup-detail-row">
+                    <span class="material-icons-round">location_on</span>
+                    <span>Felix-Klein-Hörsaal</span>
+                </div>
+                <div class="popup-detail-row">
+                    <span class="material-icons-round">person</span>
+                    <span>Prof. Müller</span>
+                </div>
+                <div class="popup-detail-row">
+                    <span class="material-icons-round">school</span>
+                    <div>
+                        <div>B.Sc. Digital Humanities · 2. Semester</div>
+                        <div style="font-size:.78rem;color:var(--text-muted)">B.Sc. Informatik · 2. Semester</div>
+                    </div>
+                </div>
+            </div>
+            <div class="popup-note">
+                <span class="material-icons-round">info</span>
+                <span>Übung Grp A angeheftet → Grp B ausgeblendet</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script>
+        /* ===== DEVICE PREVIEW ===== */
+        function setDevice(w, btn) {
+            const root = document.getElementById('appRoot');
+            const label = document.getElementById('devLabel');
+            document.querySelectorAll('.dev-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (w === 0) {
+                root.style.maxWidth = '';
+                label.textContent = 'Vollbreite';
+            } else {
+                root.style.maxWidth = w + 'px';
+                label.textContent = w + 'px';
+                if (w <= 430) switchToMobileDefaults();
+            }
+        }
+        function switchToMobileDefaults() {
+            switchView('list', document.querySelector('.mobile-view-bar [data-view="list"]'));
+        }
+
+        /* ===== THEME TOGGLE ===== */
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+            const icon = document.querySelector('#themeBtn .material-icons-round');
+            icon.textContent = document.documentElement.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+        }
+
+        /* ===== VIEW SWITCH ===== */
+        function switchView(name, btn) {
+            document.querySelectorAll('[data-view]').forEach(b => {
+                if (b.dataset.view === name) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+            document.getElementById('viewWeek').classList.toggle('hidden', name !== 'week');
+            document.getElementById('viewList').classList.toggle('hidden', name !== 'list');
+            document.getElementById('viewDay').classList.toggle('hidden', name !== 'day');
+        }
+
+        /* ===== PANEL (filter sidebar) ===== */
+        function togglePanel() {
+            const panel = document.getElementById('panel');
+            const bd = document.getElementById('panelBackdrop');
+            panel.classList.toggle('open');
+            if (window.innerWidth <= 768) {
+                bd.classList.toggle('show', panel.classList.contains('open'));
+                // show mobile header
+                const mh = panel.querySelector('.panel-mobile-header');
+                if (mh) mh.style.display = panel.classList.contains('open') ? 'block' : 'none';
+            }
+        }
+        function closePanel() {
+            document.getElementById('panel').classList.remove('open');
+            document.getElementById('panelBackdrop').classList.remove('show');
+        }
+
+        /* ===== TRI-STATE CYCLING ===== */
+        const STATES = ['neutral', 'selected', 'hidden'];
+        document.querySelectorAll('.frow:not(.disabled)').forEach(row => {
+            row.addEventListener('click', () => {
+                const tri = row.querySelector('.tri');
+                if (!tri || tri.classList.contains('disabled')) return;
+                const cur = tri.getAttribute('data-s');
+                const next = STATES[(STATES.indexOf(cur) + 1) % 3];
+                tri.setAttribute('data-s', next);
+                row.setAttribute('data-s', next);
+            });
+        });
+
+        /* ===== POPUP ===== */
+        function openPopup()  { document.getElementById('popup').classList.add('show'); }
+        function closePopup() { document.getElementById('popup').classList.remove('show'); }
+
+        /* ===== PIN TOGGLE (calendar events) ===== */
+        document.querySelectorAll('.ev-pin').forEach(pin => {
+            pin.addEventListener('click', e => {
+                e.stopPropagation();
+                pin.closest('.ev').classList.toggle('pinned');
+            });
+        });
+
+        /* ===== PIN TOGGLE (list events) ===== */
+        document.querySelectorAll('.le-pin-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                btn.closest('.list-event').classList.toggle('pinned');
+            });
+        });
+
+        /* ===== EXPAND/COLLAPSE ===== */
+        function toggleExpand(bodyId, triggerId) {
+            const body = document.getElementById(bodyId);
+            const trigger = document.getElementById(triggerId);
+            body.classList.toggle('open');
+            trigger.classList.toggle('open');
+        }
+
+        /* ===== COLOR DROPDOWN ===== */
+        document.addEventListener('click', e => {
+            const cd = document.getElementById('colorDrop');
+            if (!cd.contains(e.target)) cd.classList.remove('open');
+        });
+        document.querySelectorAll('.color-opt').forEach(opt => {
+            opt.addEventListener('click', () => {
+                document.querySelectorAll('.color-opt').forEach(o => o.classList.remove('active'));
+                opt.classList.add('active');
+                document.getElementById('colorDrop').classList.remove('open');
+            });
+        });
+        document.getElementById('customColorBtn').addEventListener('click', () => {
+            document.getElementById('colorConfig').classList.toggle('open');
+        });
+
+        /* ===== COLOR SWATCHES ===== */
+        document.querySelectorAll('.cc-swatch').forEach(s => {
+            s.addEventListener('click', () => {
+                s.closest('.cc-group').querySelectorAll('.cc-swatch').forEach(x => x.classList.remove('active'));
+                s.classList.add('active');
+            });
+        });
+
+        /* ===== CHIP REMOVE ===== */
+        document.querySelectorAll('.chip-close').forEach(btn => {
+            btn.addEventListener('click', () => btn.closest('.chip').remove());
+        });
+    </script>
+</body>
+</html>
