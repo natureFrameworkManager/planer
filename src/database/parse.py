@@ -33,6 +33,7 @@ STATUS_MAP = {
     "tok": Status.TOK,
     "alt": Status.ALT,
     "pausiert": Status.RESERVE,
+    "reserve": Status.RESERVE,
 }
 
 EVENT_TYPE_BY_VALUE = {et.value: et for et in EventType}
@@ -174,6 +175,11 @@ def _parse_module_info(info_table: Tag) -> dict:
     }
     for row in info_table.find_all("tr", class_="row-module-info"):
         tds = row.find_all("td")
+
+        if tds and len(tds) == 1 and tds[0].find("p", attrs={"class": "comment"}):
+            continue # Skip comment rows
+        if tds[0] and tds[0].get_text(strip=True).startswith("Tags") and len(tds) == 1:
+            continue # Skip tag rows that don't contain any tag info
         if len(tds) < 2:
             logger.warning(
                 "Skipping module info row: expected at least 2 cells but got %d. Raw HTML: %s",
@@ -282,24 +288,36 @@ def parse_and_populate() -> None:
                 continue
 
             for row in event_table.find_all("tr"):
-                row_classes = row.get("class", [])
-                status_key = next(
-                    (c for c in row_classes if c in STATUS_MAP), None
-                )
-                if status_key is None:
-                    logger.warning(
-                        "Skipping event row in module '%s': no valid status found. Available row classes: %s",
-                        module_name,
-                        row_classes,
-                    )
-                    continue
-
+                ths = row.find_all("th")
+                if ths and len(ths) > 1:
+                    continue  # Skip header rows
+                
                 tds = row.find_all("td")
+
+                if tds and len(tds) == 1 and tds[0].find("p", attrs={"class": "comment"}):
+                    continue # Skip comment rows
+
                 if len(tds) < 8:
                     logger.warning(
                         "Skipping event row in module '%s': expected 8+ cells but got %d",
                         module_name,
                         len(tds),
+                    )
+                    continue
+
+                row_classes = row.get("class", [])
+                if (row_classes == []): 
+                    tds[6].get_text(strip=True) # Status is in 7th cell (index 6)
+                    status_key = tds[6].get_text(strip=True).lower()
+                else:
+                    status_key = next(
+                        (c for c in row_classes if c in STATUS_MAP), None
+                    )
+                if status_key is None:
+                    logger.warning(
+                        "Skipping event row in module '%s': no valid status found. Available row classes: %s",
+                        module_name,
+                        row_classes,
                     )
                     continue
 
@@ -318,14 +336,9 @@ def parse_and_populate() -> None:
                     continue
 
                 loc_name = _parse_location_name(tds[4])
+                # Use default location if none specified
                 if not loc_name:
-                    title = tds[2].get_text(strip=True)
-                    logger.warning(
-                        "Skipping event '%s' in module '%s': location name is missing or empty",
-                        title,
-                        module_name,
-                    )
-                    continue
+                    loc_name = "Unbekannt" # "Unknown" in German
 
                 location = _get_or_create_location(session, loc_name)
                 title = tds[2].get_text(strip=True)
