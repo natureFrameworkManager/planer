@@ -114,3 +114,21 @@ export async function fetchLocations() {
 export async function fetchSemesters() {
     return apiFetch("/semesters");
 }
+
+// request all initial data
+/**
+ * 
+ * @returns {Promise<[Degree[], Module[], Event[], {id: number, name: string}[], {id: number, name: string}[], {id: number, name: string}[]]>}
+ */
+export async function fetchAll() {
+    return Promise.all([
+        fetchDegrees(),
+        fetchModules(),
+        fetchEvents(),
+        fetchStaff(),
+        fetchLocations(),
+        fetchSemesters()
+    ])
+}
+
+// sync data and fire callback

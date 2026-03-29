@@ -1,422 +1,303 @@
-// js/filters.js — Filter panel: cascading logic, active chips, tri-state UI
+import { fetchedData, filterState, nextTriState, TRI } from "./state.js"
 
-import {
-    sel,
-    data,
-    maps,
-    TRI,
-    nextTriState,
-    computeVisibleEvents,
-    getAvailableInCategory,
-    getDegreeSemesterModuleIds,
-    saveState,
-    TYPE_COLORS,
-    STATUS_COLORS,
-    STATUS_LABELS,
-    TYPE_SHORT,
-    WEEKDAY_SHORT,
-} from "./state.js";
-import { fetchDegreeDetail } from "./api.js";
-import { refreshCalendarEvents } from "./calendar.js";
-
-// ===== Render all filter sections =====
-export function renderFilters() {
-    renderChips();
-    renderDegreeDropdown();
-    renderSemesterDropdown();
-    renderModuleList();
-    renderTypeList();
-    renderStatusList();
-    renderStaffList();
-    renderLocationList();
-    updateMobileFilterSummary();
+// display filter section
+export function updateFilters() {
+    fillDegreesSemesters();
+    fillModules();
+    fillTypes();
+    fillStates();
+    fillStaff();
+    fillLocations();
 }
+// fill degree and semester select
+function fillDegreesSemesters() {
+    var degrees = fetchedData.degrees;
 
-// ===== Active Selection Chips =====
-function renderChips() {
-    const area = document.getElementById("chipArea");
-    if (!area) return;
-    area.innerHTML = "";
+    var degreeEl = document.querySelector("#degreeSelect");
+    var semesterEl = document.querySelector("#semesterSelect");
+    
+    if (degreeEl.children.length > 1) {
+        var selected = document.querySelector("#degreeSelect option:checked").value;
+        if (!isNaN(parseInt(selected))) {
+            // else fill with correct semesters 
+            document.querySelector("#semester-filter-section").style.display = "";
 
-    // Pinned events
-    for (const eid of sel.pinnedEventIds) {
-        const ev = maps.eventById.get(eid);
-        if (!ev) continue;
-        const chip = createChip(
-            "chip-pin",
-            `push_pin`,
-            `${TYPE_SHORT[ev.type] || ""} ${ev.title} ${WEEKDAY_SHORT[ev.weekday] || ""}`.trim(),
-            () => {
-                sel.pinnedEventIds.delete(eid);
-                onFilterChange();
-            },
-        );
-        area.appendChild(chip);
-    }
+            var semesters = degrees.find(el => el.id == parseInt(selected)).semesters;
 
-    // Selected items
-    appendTriChips(
-        area,
-        sel.modules,
-        "chip-sel",
-        "check",
-        (k) => maps.moduleById.get(Number(k))?.name || k,
-        sel.modules,
-    );
-    appendTriChips(
-        area,
-        sel.types,
-        "chip-sel",
-        "check",
-        (k) => TYPE_SHORT[k] || k,
-        sel.types,
-    );
-    appendTriChips(
-        area,
-        sel.statuses,
-        "chip-sel",
-        "check",
-        (k) => STATUS_LABELS[k] || k,
-        sel.statuses,
-    );
-    appendTriChips(
-        area,
-        sel.staffs,
-        "chip-sel",
-        "person",
-        (k) => maps.staffById.get(Number(k))?.name || k,
-        sel.staffs,
-    );
-    appendTriChips(
-        area,
-        sel.locations,
-        "chip-sel",
-        "check",
-        (k) => maps.locationById.get(Number(k))?.name || k,
-        sel.locations,
-    );
-
-    // Hidden items
-    appendTriChips(
-        area,
-        sel.modules,
-        "chip-hid",
-        "close",
-        (k) => maps.moduleById.get(Number(k))?.name || k,
-        sel.modules,
-        TRI.HIDDEN,
-    );
-    appendTriChips(
-        area,
-        sel.types,
-        "chip-hid",
-        "close",
-        (k) => TYPE_SHORT[k] || k,
-        sel.types,
-        TRI.HIDDEN,
-    );
-    appendTriChips(
-        area,
-        sel.statuses,
-        "chip-hid",
-        "close",
-        (k) => STATUS_LABELS[k] || k,
-        sel.statuses,
-        TRI.HIDDEN,
-    );
-    appendTriChips(
-        area,
-        sel.staffs,
-        "chip-hid",
-        "close",
-        (k) => maps.staffById.get(Number(k))?.name || k,
-        sel.staffs,
-        TRI.HIDDEN,
-    );
-    appendTriChips(
-        area,
-        sel.locations,
-        "chip-hid",
-        "close",
-        (k) => maps.locationById.get(Number(k))?.name || k,
-        sel.locations,
-        TRI.HIDDEN,
-    );
-
-    // Show/hide chip section
-    const section = document.getElementById("chipsSection");
-    if (section) {
-        section.style.display = area.children.length > 0 ? "" : "none";
-    }
-}
-
-function appendTriChips(
-    area,
-    triMap,
-    chipClass,
-    icon,
-    labelFn,
-    targetMap,
-    filterState = TRI.SELECTED,
-) {
-    for (const [k, v] of Object.entries(triMap)) {
-        if (v !== filterState) continue;
-        const chip = createChip(chipClass, icon, labelFn(k), () => {
-            targetMap[k] = TRI.NEUTRAL;
-            onFilterChange();
-        });
-        area.appendChild(chip);
-    }
-}
-
-function createChip(cls, iconName, label, onRemove) {
-    const chip = document.createElement("span");
-    chip.className = `chip ${cls}`;
-
-    const icon = document.createElement("span");
-    icon.className = "material-icons-round";
-    icon.textContent = iconName;
-    chip.appendChild(icon);
-
-    chip.appendChild(document.createTextNode(` ${label} `));
-
-    const close = document.createElement("i");
-    close.className = "chip-close";
-    close.textContent = "×";
-    close.addEventListener("click", (e) => {
-        e.stopPropagation();
-        onRemove();
-    });
-    chip.appendChild(close);
-    return chip;
-}
-
-// ===== Degree Dropdown =====
-function renderDegreeDropdown() {
-    const select = document.getElementById("degreeSelect");
-    if (!select) return;
-
-    // Only rebuild options if empty
-    if (select.options.length <= 1) {
-        select.innerHTML = '<option value="">Alle Studiengänge</option>';
-        for (const d of data.degrees) {
-            const opt = document.createElement("option");
-            opt.value = d.id;
-            opt.textContent = d.name;
-            select.appendChild(opt);
-        }
-    }
-
-    select.value = sel.degreeId || "";
-}
-
-// ===== Semester Dropdown =====
-function renderSemesterDropdown() {
-    const select = document.getElementById("semesterSelect");
-    if (!select) return;
-
-    const semesters = data.degreeDetail?.semesters || [];
-    select.innerHTML = '<option value="">Alle Semester</option>';
-    for (const s of semesters) {
-        const opt = document.createElement("option");
-        opt.value = s;
-        opt.textContent = `${s}. Semester`;
-        select.appendChild(opt);
-    }
-
-    select.value = sel.semester || "";
-    select.disabled = !sel.degreeId;
-}
-
-// ===== Module List =====
-function renderModuleList() {
-    const container = document.getElementById("moduleList");
-    const weitereContainer = document.getElementById("weitereModuleList");
-    if (!container) return;
-
-    const dsModuleIds = getDegreeSemesterModuleIds();
-    const available = getAvailableInCategory("modules");
-
-    container.innerHTML = "";
-    if (weitereContainer) weitereContainer.innerHTML = "";
-
-    // Determine which modules are "primary" (in degree/semester) vs "weitere"
-    const allModules = [...maps.moduleById.values()];
-    const primary = [];
-    const weitere = [];
-
-    for (const m of allModules) {
-        if (dsModuleIds && dsModuleIds.includes(m.id)) {
-            primary.push(m);
+            var html = "<option value=''>Alle Semester</option>";
+            for (const semester of semesters) {
+                html += '<option value="' + semester + '">' + semester + "</option>";
+            }
+            semesterEl.innerHTML = html;
+            semesterEl.addEventListener("change", handleSemesterSelect);
         } else {
-            weitere.push(m);
+            // if selected el is first dont fill semesters
+            document.querySelector("#semester-filter-section").style.display = "none";
+
+            semesterEl.innerHTML = "<option value=''>Alle Semester</option>";
         }
+    } else {
+        // if selected el is first dont fill semesters
+        document.querySelector("#semester-filter-section").style.display = "none";
+
+        semesterEl.innerHTML = "<option value=''>Alle Semester</option>";
+    }
+    var html = "<option value=''>Alle Studiengänge</option>";
+    for (const degree of degrees) {
+        var selected = degreeEl.children.length > 1 && parseInt(document.querySelector("#degreeSelect option:checked").value) == degree.id;
+        html += '<option value="' + degree.id + '"' + (selected ? " selected" : "")+ '>' + degree.name + "</option>";
+    }
+    degreeEl.innerHTML = html;
+    degreeEl.addEventListener("change", handleDegreeSelect);
+}
+// fill module select based on degree
+// show and fill more module select based on remaining modules
+function fillModules() {
+    var currentDegree = document.querySelector("#degreeSelect option:checked").value;
+    console.log(parseInt(currentDegree))
+    if (!isNaN(parseInt(currentDegree))) {
+        var modules = fetchedData.modules.filter(el => el.degree_ids.includes(parseInt(currentDegree)));
+        var moreModules = fetchedData.modules.filter(el => !modules.includes(el));;
+    } else {
+        var modules = fetchedData.modules;
+        var moreModules = [];
+    }
+    console.log(modules, moreModules)
+
+    var moduleCon = document.querySelector("#moduleList");
+    moduleCon.innerHTML = "";
+    var moreModuleCon = document.querySelector("#weitereModuleList");
+    moreModuleCon.innerHTML = "";
+
+    for (const module of modules) {
+        moduleCon.appendChild(createFilterRow(module.id, module.name, TRI.NEUTRAL, 0, handleModuleSelect));
+    }
+    for (const module of moreModules) {
+        moreModuleCon.appendChild(createFilterRow(module.id, module.name, TRI.NEUTRAL, 0, handleModuleSelect));
+    }
+    if (moreModules.length > 0) {
+        document.querySelector("#weitereSection").style.display = "";
+    } else {
+        document.querySelector("#weitereSection").style.display = "none";
+    }
+}
+// fill event types (+ count), disable types with count == 0
+function fillTypes() {
+    var types = new Set(fetchedData.events.map(el => el.type));
+
+    var typeCon = document.querySelector("#typeList");
+    typeCon.innerHTML = "";
+
+    for (const type of [...types].sort()) {
+        typeCon.appendChild(createFilterRow(type, type, TRI.NEUTRAL, 0, handleTypeSelect));
     }
 
-    // If no degree selected, all modules go to primary
-    const listA = dsModuleIds ? primary : allModules;
-    const listB = dsModuleIds ? weitere : [];
+}
+// fill states
+function fillStates() {
+    var states = fetchedData.states;
 
-    for (const m of listA.sort((a, b) => a.name.localeCompare(b.name))) {
-        const row = createFilterRow(
-            String(m.id),
-            m.name,
-            sel.modules,
-            available.get(String(m.id)) || 0,
-        );
-        container.appendChild(row);
-    }
+    var stateCon = document.querySelector("#statusList");
+    stateCon.innerHTML = "";
 
-    if (weitereContainer) {
-        for (const m of listB.sort((a, b) => a.name.localeCompare(b.name))) {
-            const row = createFilterRow(
-                String(m.id),
-                m.name,
-                sel.modules,
-                available.get(String(m.id)) || 0,
-                true,
-            );
-            weitereContainer.appendChild(row);
-        }
-
-        // Show/hide weitere section
-        const weitereSection = document.getElementById("weitereSection");
-        if (weitereSection) {
-            weitereSection.style.display = listB.length > 0 ? "" : "none";
-        }
+    for (const state of states) {
+        stateCon.appendChild(createFilterRow(state.key, state.name, TRI.NEUTRAL, 0, handleStateSelect));
     }
 }
 
-// ===== Type List =====
-function renderTypeList() {
-    const container = document.getElementById("typeList");
-    if (!container) return;
+// fill staff
+function fillStaff() {
+    var staff = fetchedData.staff;
 
-    const available = getAvailableInCategory("types");
-    container.innerHTML = "";
+    var staffCon = document.querySelector("#staffList");
+    staffCon.innerHTML = "";
 
-    const allTypes = Object.keys(TYPE_COLORS);
-    for (const t of allTypes) {
-        const count = available.get(t) || 0;
-        const row = createFilterRow(
-            t,
-            TYPE_SHORT[t] || t,
-            sel.types,
-            count,
-            false,
-            TYPE_COLORS[t],
-        );
-        container.appendChild(row);
+    for (const staffMember of staff.sort((a,b) => a.name.localeCompare(b.name))) {
+        staffCon.appendChild(createFilterRow(staffMember.id, staffMember.name, TRI.NEUTRAL, 0, handleStaffSelect));
     }
+
+}
+// fill locations
+function fillLocations() {
+    var locations = fetchedData.locations;
+
+    var locationCon = document.querySelector("#locationList");
+    locationCon.innerHTML = "";
+
+    for (const location of locations.sort((a,b) => a.name.localeCompare(b.name))) {
+        locationCon.appendChild(createFilterRow(location.id, location.name, TRI.NEUTRAL, 0, handleLocationSelect));
+    }
+
 }
 
-// ===== Status List =====
-function renderStatusList() {
-    const container = document.getElementById("statusList");
-    if (!container) return;
+// search modules
 
-    const available = getAvailableInCategory("statuses");
-    container.innerHTML = "";
+// search more modules
 
-    const allStatuses = ["ok", "pok", "tok", "alt", "reserve"];
-    for (const s of allStatuses) {
-        const count = available.get(s) || 0;
-        const row = createFilterRow(
-            s,
-            STATUS_LABELS[s] || s,
-            sel.statuses,
-            count,
-            false,
-            null,
-            STATUS_COLORS[s],
-        );
-        container.appendChild(row);
+// search staff
+
+// search locations
+
+// handle select of filter element (degree, semester, module, more module, type, status, staff, location)
+function handleDegreeSelect(ev) {
+    var selected = ev.target.querySelector("option:checked").value;
+    if (!isNaN(parseInt(selected))) {
+        filterState.degree = parseInt(selected);
+    } else {
+        filterState.degree = null;
     }
+    filterState.semester = null;
+
+    updateFilters();
+}
+function handleSemesterSelect(ev) {
+    var selected = ev.target.querySelector("option:checked").value;
+    if (!isNaN(parseInt(selected))) {
+        filterState.semester = parseInt(selected);
+    } else {
+        filterState.semester = null;
+    }
+
+    updateFilters()
+}
+function handleModuleSelect(ev) {
+    var filterRowEl = ev.target.closest("div.frow");
+    var triStateEl = filterRowEl.querySelector("span.tri");
+    var newState = triStateEl.dataset.state;
+    var moduleId = filterRowEl.dataset.key;
+
+    switch (newState) {
+        case TRI.SELECTED:
+            filterState.selectedModules.add(moduleId);
+            filterState.hiddenModules.delete(moduleId);
+            break;
+        case TRI.HIDDEN:
+            filterState.hiddenModules.add(moduleId);
+            filterState.selectedModules.delete(moduleId);
+            break;
+        case TRI.NEUTRAL:
+            filterState.hiddenModules.delete(moduleId);
+            filterState.selectedModules.delete(moduleId);
+            break;
+    }
+    updateFilters()
+}
+// TODO: test with full type name or introduce seperate id for types
+function handleTypeSelect(ev) {
+    var filterRowEl = ev.target.closest("div.frow");
+    var triStateEl = filterRowEl.querySelector("span.tri");
+    var newState = triStateEl.dataset.state;
+    var typeId = filterRowEl.dataset.key;
+
+    switch (newState) {
+        case TRI.SELECTED:
+            filterState.selectedTypes.add(typeId);
+            filterState.hiddenTypes.delete(typeId);
+            break;
+        case TRI.HIDDEN:
+            filterState.hiddenTypes.add(typeId);
+            filterState.selectedTypes.delete(typeId);
+            break;
+        case TRI.NEUTRAL:
+            filterState.hiddenTypes.delete(typeId);
+            filterState.selectedTypes.delete(typeId);
+            break;
+    }
+    updateFilters()
+}
+function handleStateSelect(ev) {
+    console.log(ev)
+}
+function handleStaffSelect(ev) {
+    var filterRowEl = ev.target.closest("div.frow");
+    var triStateEl = filterRowEl.querySelector("span.tri");
+    var newState = triStateEl.dataset.state;
+    var staffId = filterRowEl.dataset.key;
+
+    switch (newState) {
+        case TRI.SELECTED:
+            filterState.selectedStaff.add(staffId);
+            filterState.hiddenStaff.delete(staffId);
+            break;
+        case TRI.HIDDEN:
+            filterState.hiddenStaff.add(staffId);
+            filterState.selectedStaff.delete(staffId);
+            break;
+        case TRI.NEUTRAL:
+            filterState.hiddenStaff.delete(staffId);
+            filterState.selectedStaff.delete(staffId);
+            break;
+    }
+    updateFilters()
+}
+function handleLocationSelect(ev) {
+    var filterRowEl = ev.target.closest("div.frow");
+    var triStateEl = filterRowEl.querySelector("span.tri");
+    var newState = triStateEl.dataset.state;
+    var locationId = filterRowEl.dataset.key;
+
+    switch (newState) {
+        case TRI.SELECTED:
+            filterState.selectedLocations.add(locationId);
+            filterState.hiddenLocations.delete(locationId);
+            break;
+        case TRI.HIDDEN:
+            filterState.hiddenLocations.add(locationId);
+            filterState.selectedLocations.delete(locationId);
+            break;
+        case TRI.NEUTRAL:
+            filterState.hiddenLocations.delete(locationId);
+            filterState.selectedLocations.delete(locationId);
+            break;
+    }
+    updateFilters()
 }
 
-// ===== Staff List =====
-function renderStaffList() {
-    const container = document.getElementById("staffList");
-    if (!container) return;
+// handle event pin
 
-    const available = getAvailableInCategory("staffs");
-    container.innerHTML = "";
+// hide unpinned events
 
-    const allStaff = [...maps.staffById.values()].sort((a, b) =>
-        a.name.localeCompare(b.name),
-    );
-    for (const s of allStaff) {
-        const count = available.get(String(s.id)) || 0;
-        const row = createFilterRow(String(s.id), s.name, sel.staffs, count);
-        container.appendChild(row);
-    }
+// give events based on filters
+export function getEvents() {
+    return fetchedData.events;
 }
 
-// ===== Location List =====
-function renderLocationList() {
-    const container = document.getElementById("locationList");
-    if (!container) return;
+// compute hidden events based on pinned events
 
-    const available = getAvailableInCategory("locations");
-    container.innerHTML = "";
-
-    const allLocs = [...maps.locationById.values()].sort((a, b) =>
-        a.name.localeCompare(b.name),
-    );
-    for (const l of allLocs) {
-        const count = available.get(String(l.id)) || 0;
-        const row = createFilterRow(String(l.id), l.name, sel.locations, count);
-        container.appendChild(row);
-    }
-}
-
-// ===== Create a filter row with tri-state =====
+/**
+ * 
+ * @param {string} key 
+ * @param {string|HTMLElement} content displayed content 
+ * @param {string} state element of TRI 
+ * @param {number} count event count of row 
+ * @param {Function} handler
+ * @param {boolean} disabled mark row as disabled 
+ * @returns {HTMLDivElement}
+ */
 function createFilterRow(
     key,
-    label,
-    triMap,
+    content,
+    state,
     count,
-    isWeitere = false,
-    typeColor = null,
-    statusColor = null,
+    handler,
+    disabled = false,
 ) {
-    const state = triMap[key] || TRI.NEUTRAL;
-    const isDimmed = count === 0 && state === TRI.NEUTRAL && !isWeitere;
-
     const row = document.createElement("div");
-    row.className = `frow${isDimmed ? " dimmed" : ""}`;
-    row.setAttribute("data-s", state);
+    row.className = `frow${disabled ? " dimmed" : ""}`;
+    row.setAttribute("data-state", state);
     row.setAttribute("data-key", key);
 
     // Tri-state toggle
     const tri = document.createElement("span");
-    tri.className = `tri${isDimmed ? " dimmed" : ""}`;
-    tri.setAttribute("data-s", state);
+    tri.className = `tri${disabled ? " dimmed" : ""}`;
+    tri.setAttribute("data-state", state);
     row.appendChild(tri);
-
-    // Type color dot
-    if (typeColor) {
-        const dot = document.createElement("span");
-        dot.className = "type-dot";
-        dot.style.background = typeColor;
-        if (isDimmed) dot.style.opacity = "0.3";
-        row.appendChild(dot);
-    }
-
-    // Status dot
-    if (statusColor) {
-        const dot = document.createElement("span");
-        dot.className = "status-dot";
-        dot.style.background = statusColor;
-        if (isDimmed) dot.style.opacity = "0.3";
-        row.appendChild(dot);
-    }
 
     // Label
     const lbl = document.createElement("span");
     lbl.className = "lbl";
     lbl.style.flex = "1";
-    lbl.textContent = label;
+    lbl.textContent = content;
     row.appendChild(lbl);
 
     // Count
@@ -426,112 +307,14 @@ function createFilterRow(
     row.appendChild(cnt);
 
     // Click handler
-    if (!isDimmed) {
-        row.addEventListener("click", () => {
-            const current = triMap[key] || TRI.NEUTRAL;
+    if (!disabled) {
+        row.addEventListener("click", (ev) => {
+            const current = row.querySelector("span.tri").dataset.state;
             const next = nextTriState(current);
-            if (next === TRI.NEUTRAL) {
-                delete triMap[key];
-            } else {
-                triMap[key] = next;
-            }
-            onFilterChange();
+            row.querySelector("span.tri").dataset.state = next;
+            handler(ev);
         });
     }
 
     return row;
-}
-
-// ===== Search filtering for filter lists =====
-export function setupSearchInputs() {
-    setupSearchFor("moduleSearch", "moduleList");
-    setupSearchFor("weitereModuleSearch", "weitereModuleList");
-    setupSearchFor("staffSearch", "staffList");
-    setupSearchFor("locationSearch", "locationList");
-}
-
-function setupSearchFor(inputId, listId) {
-    const input = document.getElementById(inputId);
-    const list = document.getElementById(listId);
-    if (!input || !list) return;
-
-    input.addEventListener("input", () => {
-        const query = input.value.toLowerCase().trim();
-        for (const row of list.children) {
-            const lbl = row.querySelector(".lbl");
-            if (!lbl) continue;
-            const match =
-                !query || lbl.textContent.toLowerCase().includes(query);
-            row.style.display = match ? "" : "none";
-        }
-    });
-}
-
-// ===== Degree change handler =====
-export async function onDegreeChange(degreeId) {
-    sel.degreeId = degreeId ? Number(degreeId) : null;
-    sel.semester = null;
-
-    if (sel.degreeId) {
-        try {
-            data.degreeDetail = await fetchDegreeDetail(sel.degreeId);
-        } catch {
-            data.degreeDetail = null;
-        }
-    } else {
-        data.degreeDetail = null;
-    }
-
-    onFilterChange();
-}
-
-export function onSemesterChange(semester) {
-    sel.semester = semester ? Number(semester) : null;
-    onFilterChange();
-}
-
-// ===== Central filter change handler =====
-export function onFilterChange() {
-    computeVisibleEvents();
-    renderFilters();
-    refreshCalendarEvents();
-    saveState();
-}
-
-// ===== Reset all filters =====
-export function resetAllFilters() {
-    sel.modules = {};
-    sel.types = {};
-    sel.statuses = {};
-    sel.staffs = {};
-    sel.locations = {};
-    sel.pinnedEventIds.clear();
-    onFilterChange();
-}
-
-// ===== Mobile filter summary =====
-function updateMobileFilterSummary() {
-    const pinCount = document.getElementById("mobilePinCount");
-    const selCount = document.getElementById("mobileSelCount");
-    const hidCount = document.getElementById("mobileHidCount");
-    if (!pinCount) return;
-
-    pinCount.textContent = sel.pinnedEventIds.size;
-
-    let totalSel = 0;
-    let totalHid = 0;
-    for (const m of [
-        sel.modules,
-        sel.types,
-        sel.statuses,
-        sel.staffs,
-        sel.locations,
-    ]) {
-        for (const v of Object.values(m)) {
-            if (v === TRI.SELECTED) totalSel++;
-            if (v === TRI.HIDDEN) totalHid++;
-        }
-    }
-    selCount.textContent = totalSel;
-    hidCount.textContent = totalHid;
 }

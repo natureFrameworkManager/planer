@@ -95,15 +95,15 @@
                         <div class="tri-legend">
                             <strong>Klick:</strong>
                             <span style="display:flex;align-items:center;gap:3px">
-                                <span class="tri" data-s="neutral"
+                                <span class="tri" data-state="neutral"
                                     style="width:11px;height:11px;font-size:0.42rem;pointer-events:none"></span>Neutral
                             </span>
                             <span style="display:flex;align-items:center;gap:3px">
-                                <span class="tri" data-s="selected"
+                                <span class="tri" data-state="selected"
                                     style="width:11px;height:11px;font-size:0.45rem;pointer-events:none"></span>Anzeigen
                             </span>
                             <span style="display:flex;align-items:center;gap:3px">
-                                <span class="tri" data-s="hidden"
+                                <span class="tri" data-state="hidden"
                                     style="width:11px;height:11px;font-size:0.42rem;pointer-events:none"></span>Verstecken
                             </span>
                         </div>
@@ -115,9 +115,9 @@
                             </select>
                         </div>
 
-                        <div class="filter-section">
+                        <div class="filter-section" id="semester-filter-section">
                             <div class="filter-label">Semester</div>
-                            <select id="semesterSelect" class="filter-select" disabled>
+                            <select id="semesterSelect" class="filter-select">
                                 <option value="">Alle Semester</option>
                             </select>
                         </div>

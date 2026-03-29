@@ -1,31 +1,10 @@
-// js/calendar.js — FullCalendar setup + event rendering
+import { getEvents } from "./filters.js";
+import { fetchedData, view } from "./state.js";
 
-import {
-    sel,
-    data,
-    maps,
-    visibleEventIds,
-    excludedEventIds,
-    getEventColor,
-    WEEKDAY_MAP,
-    WEEKDAY_SHORT,
-    TYPE_SHORT,
-    STATUS_COLORS,
-    saveState,
-} from "./state.js";
-
-// Callbacks set by app.js to avoid circular imports
-let _onPinToggle = null;
-let _openEventPopup = null;
-
-export function setCalendarCallbacks(onPin, openPopup) {
-    _onPinToggle = onPin;
-    _openEventPopup = openPopup;
-}
-
+// render cal
 let calendarInstance = null;
 
-export function getCalendar() {
+function getCalendar() {
     return calendarInstance;
 }
 
@@ -34,7 +13,7 @@ export function initCalendar() {
     if (!calEl) return;
 
     calendarInstance = new FullCalendar.Calendar(calEl, {
-        initialView: sel.currentView || "timeGridWeek",
+        initialView: view || "timeGridWeek",
         locale: "de",
         headerToolbar: false, // We use our own header controls
         allDaySlot: false,
@@ -51,7 +30,7 @@ export function initCalendar() {
         navLinks: false,
         weekNumbers: false,
         nowIndicator: false,
-        events: buildCalendarEvents(),
+        events: buildCalendarEvents(getEvents()),
         eventContent: renderEventContent,
         eventClick: handleEventClick,
         height: "100%",
@@ -65,67 +44,8 @@ export function initCalendar() {
     calendarInstance.render();
 }
 
-// Get a non-date-specific Monday for the generic week
-function getFixedMonday() {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(d.setDate(diff));
-}
-
-export function buildCalendarEvents() {
-    const fcEvents = [];
-
-    for (const ev of data.events) {
-        const isVisible = visibleEventIds.has(ev.id);
-        const isPinned = sel.pinnedEventIds.has(ev.id);
-        const isExcluded = excludedEventIds.has(ev.id);
-
-        if (!isVisible && !isExcluded) continue;
-
-        const color = getEventColor(ev);
-        const fcDay = WEEKDAY_MAP[ev.weekday];
-        if (fcDay === undefined) continue;
-
-        // Get module names for display
-        const moduleNames = ev.module_ids
-            .map((mid) => maps.moduleById.get(mid)?.name)
-            .filter(Boolean);
-
-        // Status color
-        const statusColor = STATUS_COLORS[ev.status] || "#6b7280";
-
-        fcEvents.push({
-            id: String(ev.id),
-            title: ev.title,
-            daysOfWeek: [fcDay],
-            startTime: ev.start_time,
-            endTime: ev.end_time,
-            extendedProps: {
-                eventData: ev,
-                isPinned,
-                isExcluded,
-                color,
-                statusColor,
-                moduleNames,
-                typeShort: TYPE_SHORT[ev.type] || "?",
-            },
-            display: isExcluded ? "auto" : "auto",
-            classNames: [
-                isPinned ? "pinned" : "",
-                isExcluded ? "excluded" : "",
-            ].filter(Boolean),
-        });
-    }
-
-    return fcEvents;
-}
-
+// render events
 /**
- * Custom FullCalendar `eventContent` renderer.
- *
- * The `--ev-color` CSS variable is set both on the inner element and on the parent `.fc-event` (via `requestAnimationFrame`) so the border and background tint are correctly coloured.
- *
  * @param {Object} arg - FullCalendar event render argument
  * @param {Object} arg.event - FullCalendar event object
  * @param {string} arg.event.id - String event ID
@@ -148,9 +68,6 @@ function renderEventContent(arg) {
     const el = document.createElement("div");
     el.style.setProperty("--ev-color", color);
     el.className = "fc-event-main-frame";
-    el.style.position = "relative";
-    el.style.height = "100%";
-    el.style.overflow = "hidden";
 
     // Title
     const titleEl = document.createElement("div");
@@ -170,9 +87,6 @@ function renderEventContent(arg) {
     const dotEl = document.createElement("span");
     dotEl.className = "sdot";
     dotEl.style.background = props.statusColor;
-    dotEl.style.position = "absolute";
-    dotEl.style.bottom = "3px";
-    dotEl.style.right = "3px";
     el.appendChild(dotEl);
 
     // Pin icon
@@ -197,22 +111,76 @@ function renderEventContent(arg) {
     return { domNodes: [el] };
 }
 
+// forward event click
 function handleEventClick(info) {
     info.jsEvent.preventDefault();
     const evId = Number(info.event.id);
     if (_openEventPopup) _openEventPopup(evId);
 }
 
-export function refreshCalendarEvents() {
-    if (!calendarInstance) return;
-    calendarInstance.removeAllEvents();
-    const events = buildCalendarEvents();
-    calendarInstance.addEventSource(events);
-}
-
+// handle view change
 export function changeCalendarView(viewName) {
     if (!calendarInstance) return;
-    sel.currentView = viewName;
     calendarInstance.changeView(viewName);
-    saveState();
+}
+
+// handle day view day change
+
+
+// Get a non-date-specific Monday for the generic week
+function getFixedMonday() {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
+}
+
+// display
+function buildCalendarEvents(events) {
+    const fcEvents = [];
+
+    for (const ev of events) {
+        const color = /* getEventColor(ev) || */ "#fff";
+        const fcDay = ev.weekday % 7; //1: 1 [Monday], 2: 2 [Tuesday], ..., 6: 6 [Saturday], 7: 0 [Sunday] 
+
+        // Get module names for display
+        const moduleNames = ev.module_ids
+            .map((moduleId) => fetchedData.modules.find(el => el.id == moduleId).name)
+            .filter(Boolean);
+
+        // Status color
+        const statusColor = /* STATUS_COLORS[ev.status] || */ "#6b7280";
+
+        fcEvents.push({
+            id: String(ev.id),
+            title: ev.title,
+            daysOfWeek: [fcDay],
+            startTime: ev.start_time,
+            endTime: ev.end_time,
+            extendedProps: {
+                eventData: ev,
+                color,
+                statusColor,
+                moduleNames,
+                typeShort: /* TYPE_SHORT[ev.type] || */ "?",
+            },
+            display: "auto",
+            classNames: [
+                /* isPinned ? "pinned" : "",
+                isExcluded ? "excluded" : "", */
+            ].filter(Boolean),
+        });
+    }
+
+    return fcEvents;
+}
+
+// refresh calendar
+export function updateCalendar() {
+    var events = getEvents();
+    if (!calendarInstance) return;
+    calendarInstance.removeAllEvents();
+    console.log(events);
+    const calEvents = buildCalendarEvents(events);
+    calendarInstance.addEventSource(calEvents);
 }
