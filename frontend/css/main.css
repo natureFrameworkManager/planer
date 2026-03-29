@@ -132,11 +132,7 @@ body {
 /* ===== View Buttons ===== */
 
 .vbtn {
-    @apply rounded-md text-[0.72rem] font-medium cursor-pointer border-none bg-transparent px-3 py-1 text-text-secondary transition-all duration-150;
-}
-
-.vbtn:hover {
-    @apply bg-background-hover;
+    @apply rounded-md text-[0.72rem] font-medium cursor-pointer border-none bg-transparent px-3 py-1 text-text-secondary transition-all duration-150 hover:bg-background-hover;
 }
 
 .vbtn.active {
@@ -146,11 +142,7 @@ body {
 /* ===== Icon Buttons ===== */
 
 .icon-btn {
-    @apply flex items-center justify-center w-8.5 h-8.5 rounded-sm border-none bg-transparent cursor-pointer text-text-secondary transition-[background] duration-150;
-}
-
-.icon-btn:hover {
-    @apply bg-background-hover;
+    @apply flex items-center justify-center w-8.5 h-8.5 rounded-sm border-none bg-transparent cursor-pointer text-text-secondary transition-[background] duration-150 hover:bg-background-hover;
 }
 
 .hamburger-btn {
@@ -182,19 +174,11 @@ body {
 }
 
 .btn-reset {
-    @apply bg-background-input text-text-secondary;
-}
-
-.btn-reset:hover {
-    @apply bg-background-hover text-accent;
+    @apply bg-background-input text-text-secondary hover:bg-background-hover hover:text-accent;
 }
 
 .btn-share {
-    @apply bg-accent2-light text-accent2;
-}
-
-.btn-share:hover {
-    @apply bg-accent2 text-white;
+    @apply bg-accent2-light text-accent2 hover:bg-accent2 hover:text-white;
 }
 
 .sb-backdrop {
@@ -220,11 +204,7 @@ body {
 }
 
 .chips-reset {
-    @apply text-[0.6rem] bg-transparent border-none cursor-pointer p-0 text-accent;
-}
-
-.chips-reset:hover {
-    @apply underline;
+    @apply text-[0.6rem] bg-transparent border-none cursor-pointer p-0 text-accent hover:underline;
 }
 
 .chip-area {
@@ -240,11 +220,7 @@ body {
 }
 
 .chip-close {
-    @apply cursor-pointer not-italic leading-none text-[0.7rem] opacity-60 transition-opacity duration-100;
-}
-
-.chip-close:hover {
-    @apply opacity-100;
+    @apply cursor-pointer not-italic leading-none text-[0.7rem] opacity-60 transition-opacity duration-100 hover:opacity-100;
 }
 
 .chip-pin {
@@ -289,11 +265,7 @@ body {
 /* ===== Dropdowns ===== */
 
 .filter-select {
-    @apply w-full text-[0.72rem] font-[inherit] rounded-sm outline-none cursor-pointer px-2 py-1.25 bg-background-input text-text-primary border border-border;
-}
-
-.filter-select:focus {
-    @apply border-accent2 ring-2 ring-accent2-light;
+    @apply w-full text-[0.72rem] font-[inherit] rounded-sm outline-none cursor-pointer px-2 py-1.25 bg-background-input text-text-primary border border-border focus:border-accent2 focus:ring-2 focus:ring-accent2-light;
 }
 
 /* ===== Search Inputs ===== */
@@ -307,15 +279,7 @@ body {
 }
 
 .search-input {
-    @apply w-full text-[0.68rem] font-[inherit] rounded-xs outline-none bg-background-input text-text-primary border border-border py-1 pr-1.5 pl-6.5;
-}
-
-.search-input:focus {
-    @apply border-accent2 ring-2 ring-accent2-light;
-}
-
-.search-input::placeholder {
-    @apply text-text-muted;
+    @apply w-full text-[0.68rem] font-[inherit] rounded-xs outline-none bg-background-input text-text-primary border border-border py-1 pr-1.5 pl-6.5 focus:border-accent2 focus:ring-2 focus:ring-accent2-light placeholder:text-text-muted;
 }
 
 /* ===== Tri-State Toggle ===== */
@@ -356,11 +320,7 @@ body {
 /* ===== Filter Rows ===== */
 
 .frow {
-    @apply flex items-center gap-1.25 text-[0.7rem] rounded-xs cursor-pointer text-text-primary px-1.25 py-0.75 transition-[background] duration-100;
-}
-
-.frow:hover {
-    @apply bg-background-hover;
+    @apply flex items-center gap-1.25 text-[0.7rem] rounded-xs cursor-pointer text-text-primary px-1.25 py-0.75 transition-[background] duration-100 hover:bg-background-hover;
 }
 
 .frow.dimmed {
@@ -394,11 +354,7 @@ body {
 /* ===== Expand Section ===== */
 
 .expand-toggle {
-    @apply flex items-center gap-1 text-[0.72rem] cursor-pointer select-none text-text-secondary py-1;
-}
-
-.expand-toggle:hover {
-    @apply text-text-primary;
+    @apply flex items-center gap-1 text-[0.72rem] cursor-pointer select-none text-text-secondary py-1 hover:text-text-primary;
 }
 
 .expand-toggle .material-icons-round {
@@ -474,13 +430,9 @@ body {
 .fc-event.fc-timegrid-event {
     @apply overflow-hidden cursor-pointer px-1 py-0.5 text-[0.62rem] leading-[1.2] border-none! rounded-xs!;
     border-left: 3px solid var(--ev-color, var(--color-accent2)) !important;
-    @apply transition-[transform,box-shadow] duration-100;
+    @apply transition-[transform,box-shadow] duration-100 hover:shadow-md hover:scale-[1.02] hover:z-10!;
     background: color-mix(in srgb, var(--ev-color, var(--color-accent2)), transparent 82%) !important;
     color: var(--color-text-primary) !important;
-}
-
-.fc-event.fc-timegrid-event:hover {
-    @apply shadow-md scale-[1.02] z-10!;
 }
 
 .fc-event .fc-event-main {
@@ -530,11 +482,7 @@ body {
 }
 
 .list-event {
-    @apply flex items-start gap-2 rounded-sm cursor-pointer px-2.5 py-2 transition-[background] duration-100;
-}
-
-.list-event:hover {
-    @apply bg-background-hover;
+    @apply flex items-start gap-2 rounded-sm cursor-pointer px-2.5 py-2 transition-[background] duration-100 hover:bg-background-hover;
 }
 
 .list-event .le-time {
@@ -604,19 +552,11 @@ body {
 }
 
 .popup-close {
-    @apply text-[1.2rem] cursor-pointer bg-transparent border-none rounded-xs text-text-muted p-0.5 transition-colors duration-150;
-}
-
-.popup-close:hover {
-    @apply text-text-primary;
+    @apply text-[1.2rem] cursor-pointer bg-transparent border-none rounded-xs text-text-muted p-0.5 transition-colors duration-150 hover:text-text-primary;
 }
 
 .popup-pin-btn {
-    @apply flex items-center gap-0.5 text-[0.72rem] rounded-sm cursor-pointer px-2 py-1 text-text-secondary bg-background-input border border-border transition-all duration-150;
-}
-
-.popup-pin-btn:hover {
-    @apply bg-background-hover;
+    @apply flex items-center gap-0.5 text-[0.72rem] rounded-sm cursor-pointer px-2 py-1 text-text-secondary bg-background-input border border-border transition-all duration-150 hover:bg-background-hover;
 }
 
 .popup-pin-btn.pinned {
@@ -658,11 +598,7 @@ body {
 }
 
 .color-menu-item {
-    @apply flex items-center gap-2 w-full text-[0.72rem] border-none bg-transparent cursor-pointer text-left px-3 py-2 text-text-primary;
-}
-
-.color-menu-item:hover {
-    @apply bg-background-hover;
+    @apply flex items-center gap-2 w-full text-[0.72rem] border-none bg-transparent cursor-pointer text-left px-3 py-2 text-text-primary hover:bg-background-hover;
 }
 
 .color-menu-item.active {
@@ -692,11 +628,7 @@ body {
 }
 
 .color-config-header .close-btn {
-    @apply text-[0.62rem] bg-transparent border-none cursor-pointer text-accent;
-}
-
-.color-config-header .close-btn:hover {
-    @apply underline;
+    @apply text-[0.62rem] bg-transparent border-none cursor-pointer text-accent hover:underline;
 }
 
 .color-config-grid {
@@ -712,11 +644,7 @@ body {
 }
 
 .cswatch {
-    @apply w-5 h-5 rounded-[4px] cursor-pointer border-2 border-transparent transition-[border-color] duration-150;
-}
-
-.cswatch:hover {
-    @apply border-text-primary;
+    @apply w-5 h-5 rounded-[4px] cursor-pointer border-2 border-transparent transition-[border-color] duration-150 hover:border-text-primary;
 }
 
 .cswatch.active {
@@ -744,11 +672,7 @@ body {
 }
 
 .app-footer a {
-    @apply underline text-text-secondary;
-}
-
-.app-footer a:hover {
-    @apply text-text-primary;
+    @apply underline text-text-secondary hover:text-text-primary;
 }
 
 /* ===== Empty State ===== */
