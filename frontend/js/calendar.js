@@ -1,10 +1,18 @@
 // js/calendar.js — FullCalendar setup + event rendering
 
 import {
-    sel, data, maps, visibleEventIds, excludedEventIds,
-    getEventColor, WEEKDAY_MAP, WEEKDAY_SHORT,
-    TYPE_SHORT, STATUS_COLORS, saveState,
-} from './state.js';
+    sel,
+    data,
+    maps,
+    visibleEventIds,
+    excludedEventIds,
+    getEventColor,
+    WEEKDAY_MAP,
+    WEEKDAY_SHORT,
+    TYPE_SHORT,
+    STATUS_COLORS,
+    saveState,
+} from "./state.js";
 
 // Callbacks set by app.js to avoid circular imports
 let _onPinToggle = null;
@@ -22,22 +30,22 @@ export function getCalendar() {
 }
 
 export function initCalendar() {
-    const calEl = document.getElementById('calendar');
+    const calEl = document.getElementById("calendar");
     if (!calEl) return;
 
     calendarInstance = new FullCalendar.Calendar(calEl, {
-        initialView: sel.currentView || 'timeGridWeek',
-        locale: 'de',
+        initialView: sel.currentView || "timeGridWeek",
+        locale: "de",
         headerToolbar: false, // We use our own header controls
         allDaySlot: false,
-        slotMinTime: '07:00:00',
-        slotMaxTime: '21:00:00',
-        slotDuration: '00:30:00',
-        slotLabelInterval: '01:00:00',
+        slotMinTime: "07:00:00",
+        slotMaxTime: "21:00:00",
+        slotDuration: "00:30:00",
+        slotLabelInterval: "01:00:00",
         expandRows: true,
         slotEventOverlap: false,
         hiddenDays: [0, 6], // hide Sun/Sat
-        dayHeaderFormat: { weekday: 'short' },
+        dayHeaderFormat: { weekday: "short" },
         // Generic week: use a fixed Monday. Events use daysOfWeek for recurring.
         initialDate: getFixedMonday(),
         navLinks: false,
@@ -46,12 +54,12 @@ export function initCalendar() {
         events: buildCalendarEvents(),
         eventContent: renderEventContent,
         eventClick: handleEventClick,
-        height: '100%',
+        height: "100%",
         stickyHeaderDates: true,
         // List view settings
-        listDayFormat: { weekday: 'long' },
+        listDayFormat: { weekday: "long" },
         listDaySideFormat: false,
-        noEventsContent: 'Keine Veranstaltungen sichtbar',
+        noEventsContent: "Keine Veranstaltungen sichtbar",
     });
 
     calendarInstance.render();
@@ -81,11 +89,11 @@ export function buildCalendarEvents() {
 
         // Get module names for display
         const moduleNames = ev.module_ids
-            .map(mid => maps.moduleById.get(mid)?.name)
+            .map((mid) => maps.moduleById.get(mid)?.name)
             .filter(Boolean);
 
         // Status color
-        const statusColor = STATUS_COLORS[ev.status] || '#6b7280';
+        const statusColor = STATUS_COLORS[ev.status] || "#6b7280";
 
         fcEvents.push({
             id: String(ev.id),
@@ -100,19 +108,18 @@ export function buildCalendarEvents() {
                 color,
                 statusColor,
                 moduleNames,
-                typeShort: TYPE_SHORT[ev.type] || '?',
+                typeShort: TYPE_SHORT[ev.type] || "?",
             },
-            display: isExcluded ? 'auto' : 'auto',
+            display: isExcluded ? "auto" : "auto",
             classNames: [
-                isPinned ? 'pinned' : '',
-                isExcluded ? 'excluded' : '',
+                isPinned ? "pinned" : "",
+                isExcluded ? "excluded" : "",
             ].filter(Boolean),
         });
     }
 
     return fcEvents;
 }
-
 
 /**
  * Custom FullCalendar `eventContent` renderer.
@@ -138,41 +145,41 @@ function renderEventContent(arg) {
     const color = props.color;
 
     // Set CSS variable for color on the element
-    const el = document.createElement('div');
-    el.style.setProperty('--ev-color', color);
-    el.className = 'fc-event-main-frame';
-    el.style.position = 'relative';
-    el.style.height = '100%';
-    el.style.overflow = 'hidden';
+    const el = document.createElement("div");
+    el.style.setProperty("--ev-color", color);
+    el.className = "fc-event-main-frame";
+    el.style.position = "relative";
+    el.style.height = "100%";
+    el.style.overflow = "hidden";
 
     // Title
-    const titleEl = document.createElement('div');
-    titleEl.className = 'ev-title';
+    const titleEl = document.createElement("div");
+    titleEl.className = "ev-title";
     titleEl.textContent = `${props.typeShort} ${arg.event.title}`;
     el.appendChild(titleEl);
 
     // Module name
     if (props.moduleNames.length > 0) {
-        const metaEl = document.createElement('div');
-        metaEl.className = 'ev-meta';
+        const metaEl = document.createElement("div");
+        metaEl.className = "ev-meta";
         metaEl.textContent = props.moduleNames[0];
         el.appendChild(metaEl);
     }
 
     // Status dot
-    const dotEl = document.createElement('span');
-    dotEl.className = 'sdot';
+    const dotEl = document.createElement("span");
+    dotEl.className = "sdot";
     dotEl.style.background = props.statusColor;
-    dotEl.style.position = 'absolute';
-    dotEl.style.bottom = '3px';
-    dotEl.style.right = '3px';
+    dotEl.style.position = "absolute";
+    dotEl.style.bottom = "3px";
+    dotEl.style.right = "3px";
     el.appendChild(dotEl);
 
     // Pin icon
-    const pinEl = document.createElement('span');
-    pinEl.className = 'ev-pin-icon material-icons-round';
-    pinEl.textContent = 'push_pin';
-    pinEl.addEventListener('click', (e) => {
+    const pinEl = document.createElement("span");
+    pinEl.className = "ev-pin-icon material-icons-round";
+    pinEl.textContent = "push_pin";
+    pinEl.addEventListener("click", (e) => {
         e.stopPropagation();
         const evId = Number(arg.event.id);
         if (_onPinToggle) _onPinToggle(evId);
@@ -183,7 +190,7 @@ function renderEventContent(arg) {
     requestAnimationFrame(() => {
         const fcEl = el.closest(".fc-event");
         if (fcEl) {
-            fcEl.style.setProperty('--ev-color', color);
+            fcEl.style.setProperty("--ev-color", color);
         }
     });
 
@@ -200,7 +207,7 @@ export function refreshCalendarEvents() {
     if (!calendarInstance) return;
     calendarInstance.removeAllEvents();
     const events = buildCalendarEvents();
-    calendarInstance.addEventSource(events)
+    calendarInstance.addEventSource(events);
 }
 
 export function changeCalendarView(viewName) {
