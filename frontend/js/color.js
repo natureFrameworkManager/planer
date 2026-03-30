@@ -1,4 +1,4 @@
-import { darkMode, fetchedData } from "./state.js";
+import { colorMode, darkMode, fetchedData } from "./state.js";
 
 let updateColorCallback = null;
 
@@ -50,6 +50,24 @@ export function getEventColor(event) {
     return generatePalette(10)[7];
 }
 
+const COLOR_MODE_LABELS = {
+    type: "Typ",
+    module: "Modul",
+    status: "Status",
+    staff: "Dozent",
+    custom: "Benutzerdefiniert",
+};
+
+function applyColorModeUI(mode) {
+    document.querySelectorAll("#colorDrop .color-menu .color-menu-item").forEach((el) => {
+        const active = el.dataset.mode === mode;
+        el.classList.toggle("active", active);
+        el.querySelector("span").innerText = active ? "check" : "";
+    });
+    document.querySelector("#colorDrop #colorDropBtn span#colorModeLabel").innerText =
+        COLOR_MODE_LABELS[mode] ?? mode;
+}
+
 export function initColorEvents() {
     document.querySelector("#colorDrop #colorDropBtn").addEventListener("click", () => {
         document.querySelector("#colorDrop").classList.toggle("open")
@@ -59,29 +77,12 @@ export function initColorEvents() {
         if (colorDropEl && !colorDropEl.contains(e.target)) colorDropEl.classList.remove("open");
     });
 
-    document.querySelectorAll("#colorDrop .color-menu .color-menu-item").forEach(el => el.addEventListener("click", () => {
-        switch (el.dataset.mode) {
-            case "type":
-                var label = "Type";
-                break;
-            case "module":
-                var label = "Modul";
-                break;
-            case "status":
-                var label = "Status";
-                break;
-            case "staff":
-                var label = "Dozent";
-                break;
-            case "custom":
-                var label = "Benutzerdefiniert";
-                break;
-        }
+    // Apply initial active state from saved colorMode
+    applyColorModeUI(colorMode.value);
 
-        document.querySelectorAll("#colorDrop .color-menu .color-menu-item").forEach(el => {el.classList.remove("active"); el.querySelector("span").innerText = "";});
-        el.classList.add("active");
-        el.querySelector("span").innerText = "check";
-        document.querySelector("#colorDrop #colorDropBtn span#colorModeLabel").innerText = label
+    document.querySelectorAll("#colorDrop .color-menu .color-menu-item").forEach(el => el.addEventListener("click", () => {
+        colorMode.value = el.dataset.mode;
+        applyColorModeUI(el.dataset.mode);
         document.querySelector("#colorDrop").classList.remove("open");
 
         if (updateColorCallback !== null) {

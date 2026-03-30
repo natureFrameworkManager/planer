@@ -81,7 +81,7 @@ export const pinnedEvents = new Set(); // event ids
 export const view = {value: "timeGridWeek"};
 
 // save color mode
-export const colorMode = "type";
+export const colorMode = {value: "type"};
 export const customMap = new Map();
 
 // save dark mode
