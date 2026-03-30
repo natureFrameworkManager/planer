@@ -334,24 +334,33 @@ function handleLocationSelect(ev) {
 export function getEvents() {
     // modules
     if (filterState.degree !== null) {
-        var degeeModules = fetchedData.modules.filter(el => el.degree_ids.includes(parseInt(filterState.degree)));
+        var degreeModules = fetchedData.modules.filter(el => el.degree_ids.includes(parseInt(filterState.degree)));
     } else {
-        var degeeModules = fetchedData.modules;
+        var degreeModules = fetchedData.modules;
     }
-    var modules = degeeModules.map(el => el.id).concat(...filterState.selectedModules);
+    var degreeModulesIds = degreeModules.map(el => el.id);
+    var selectedDegreeModules = [...filterState.selectedModules].filter(el => degreeModulesIds.includes(el));
+    var moreSelectedModules = [...filterState.selectedModules].filter(el => !degreeModulesIds.includes(el));
+    var modules = [];
+    if (selectedDegreeModules.length > 0) {
+        modules = modules.concat(selectedDegreeModules);
+    } else {
+        modules = modules.concat(degreeModulesIds);
+    }
+    modules = modules.concat(moreSelectedModules);
     modules = modules.filter(el => !filterState.hiddenModules.has(el));
 
     return fetchedData.events.filter(el => 
-        (
-            el.module_ids.some(id => modules.includes(id)) &&
-            filterState.status[el.status] !== TRI.HIDDEN  &&
-            !el.staff_ids.some(id => filterState.hiddenStaff.has(id)) &&
-            !filterState.hiddenLocations.has(el.location_id) &&
-            !filterState.hiddenTypes.has(el.type)
-        ) ||
-        filterState.selectedTypes.has(el.type) ||
-        el.staff_ids.some(id => filterState.selectedStaff.has(id)) ||
-        filterState.selectedLocations.has(el.location_id)
+        el.module_ids.some(id => modules.includes(id)) &&
+        filterState.status[el.status] !== TRI.HIDDEN &&
+        !el.staff_ids.some(id => filterState.hiddenStaff.has(id)) &&
+        !filterState.hiddenLocations.has(el.location_id) &&
+        !filterState.hiddenTypes.has(el.type) &&
+
+        (Object.values(filterState.status).filter(el => el == TRI.SELECTED).length > 0 ? filterState.status[el.status] == TRI.SELECTED : true) &&
+        (filterState.selectedTypes.size > 0 ? filterState.selectedTypes.has(el.type) : true) &&
+        (filterState.selectedStaff.size > 0 ? el.staff_ids.some(id => filterState.selectedStaff.has(id)) : true) &&
+        (filterState.selectedLocations.size > 0 ? filterState.selectedLocations.has(el.location_id) : true)
     );
 }
 
