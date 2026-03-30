@@ -3,6 +3,11 @@ import { fetchedData, view } from "./state.js";
 
 // render cal
 let calendarInstance = null;
+let updateCalendarCallback = null;
+
+export function setCalendarUpdateCallback(func) {
+    updateCalendarCallback = func;
+}
 
 function getCalendar() {
     return calendarInstance;

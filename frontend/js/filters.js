@@ -1,5 +1,11 @@
 import { fetchedData, filterState, nextTriState, TRI } from "./state.js"
 
+let updateCallback = null;
+
+export function setFilterUpdateCallback(func) {
+    updateCallback = func;
+}
+
 // display filter section
 export function updateFilters() {
     fillDegreesSemesters();
@@ -54,7 +60,6 @@ function fillDegreesSemesters() {
 // show and fill more module select based on remaining modules
 function fillModules() {
     var currentDegree = document.querySelector("#degreeSelect option:checked").value;
-    console.log(parseInt(currentDegree))
     if (!isNaN(parseInt(currentDegree))) {
         var modules = fetchedData.modules.filter(el => el.degree_ids.includes(parseInt(currentDegree)));
         var moreModules = fetchedData.modules.filter(el => !modules.includes(el));;
@@ -62,7 +67,6 @@ function fillModules() {
         var modules = fetchedData.modules;
         var moreModules = [];
     }
-    console.log(modules, moreModules)
 
     var moduleCon = document.querySelector("#moduleList");
     moduleCon.innerHTML = "";
@@ -70,10 +74,24 @@ function fillModules() {
     moreModuleCon.innerHTML = "";
 
     for (const module of modules) {
-        moduleCon.appendChild(createFilterRow(module.id, module.name, TRI.NEUTRAL, 0, handleModuleSelect));
+        if (filterState.selectedModules.has(module.id)) {
+            var state = TRI.SELECTED;
+        } else if (filterState.hiddenModules.has(module.id)) {
+            var state = TRI.HIDDEN;
+        } else {
+            var state = TRI.NEUTRAL;
+        }
+        moduleCon.appendChild(createFilterRow(module.id, module.name, state, 0, handleModuleSelect));
     }
     for (const module of moreModules) {
-        moreModuleCon.appendChild(createFilterRow(module.id, module.name, TRI.NEUTRAL, 0, handleModuleSelect));
+        if (filterState.selectedModules.has(module.id)) {
+            var state = TRI.SELECTED;
+        } else if (filterState.hiddenModules.has(module.id)) {
+            var state = TRI.HIDDEN;
+        } else {
+            var state = TRI.NEUTRAL;
+        }
+        moreModuleCon.appendChild(createFilterRow(module.id, module.name, state, 0, handleModuleSelect));
     }
     if (moreModules.length > 0) {
         document.querySelector("#weitereSection").style.display = "";
@@ -89,7 +107,14 @@ function fillTypes() {
     typeCon.innerHTML = "";
 
     for (const type of [...types].sort()) {
-        typeCon.appendChild(createFilterRow(type, type, TRI.NEUTRAL, 0, handleTypeSelect));
+        if (filterState.selectedTypes.has(type)) {
+            var state = TRI.SELECTED;
+        } else if (filterState.hiddenTypes.has(type)) {
+            var state = TRI.HIDDEN;
+        } else {
+            var state = TRI.NEUTRAL;
+        }
+        typeCon.appendChild(createFilterRow(type, type, state, 0, handleTypeSelect));
     }
 
 }
@@ -101,7 +126,7 @@ function fillStates() {
     stateCon.innerHTML = "";
 
     for (const state of states) {
-        stateCon.appendChild(createFilterRow(state.key, state.name, TRI.NEUTRAL, 0, handleStateSelect));
+        stateCon.appendChild(createFilterRow(state.key, state.name, (filterState.status[state.key] !== null ? filterState.status[state.key] : TRI.NEUTRAL), 0, handleStateSelect));
     }
 }
 
@@ -113,9 +138,15 @@ function fillStaff() {
     staffCon.innerHTML = "";
 
     for (const staffMember of staff.sort((a,b) => a.name.localeCompare(b.name))) {
-        staffCon.appendChild(createFilterRow(staffMember.id, staffMember.name, TRI.NEUTRAL, 0, handleStaffSelect));
+        if (filterState.selectedStaff.has(staffMember.id)) {
+            var state = TRI.SELECTED;
+        } else if (filterState.hiddenStaff.has(staffMember.id)) {
+            var state = TRI.HIDDEN;
+        } else {
+            var state = TRI.NEUTRAL;
+        }
+        staffCon.appendChild(createFilterRow(staffMember.id, staffMember.name, state, 0, handleStaffSelect));
     }
-
 }
 // fill locations
 function fillLocations() {
@@ -125,9 +156,15 @@ function fillLocations() {
     locationCon.innerHTML = "";
 
     for (const location of locations.sort((a,b) => a.name.localeCompare(b.name))) {
-        locationCon.appendChild(createFilterRow(location.id, location.name, TRI.NEUTRAL, 0, handleLocationSelect));
+        if (filterState.selectedLocations.has(location.id)) {
+            var state = TRI.SELECTED;
+        } else if (filterState.hiddenLocations.has(location.id)) {
+            var state = TRI.HIDDEN;
+        } else {
+            var state = TRI.NEUTRAL;
+        }
+        locationCon.appendChild(createFilterRow(location.id, location.name, state, 0, handleLocationSelect));
     }
-
 }
 
 // search modules
@@ -148,7 +185,9 @@ function handleDegreeSelect(ev) {
     }
     filterState.semester = null;
 
-    updateFilters();
+    if (updateCallback !== null) {
+        updateCallback();
+    };
 }
 function handleSemesterSelect(ev) {
     var selected = ev.target.querySelector("option:checked").value;
@@ -158,31 +197,36 @@ function handleSemesterSelect(ev) {
         filterState.semester = null;
     }
 
-    updateFilters()
+    if (updateCallback !== null) {
+        updateCallback();
+    }
 }
 function handleModuleSelect(ev) {
     var filterRowEl = ev.target.closest("div.frow");
     var triStateEl = filterRowEl.querySelector("span.tri");
     var newState = triStateEl.dataset.state;
-    var moduleId = filterRowEl.dataset.key;
-
-    switch (newState) {
-        case TRI.SELECTED:
-            filterState.selectedModules.add(moduleId);
-            filterState.hiddenModules.delete(moduleId);
-            break;
-        case TRI.HIDDEN:
-            filterState.hiddenModules.add(moduleId);
-            filterState.selectedModules.delete(moduleId);
-            break;
-        case TRI.NEUTRAL:
-            filterState.hiddenModules.delete(moduleId);
-            filterState.selectedModules.delete(moduleId);
-            break;
+    var moduleId = parseInt(filterRowEl.dataset.key);
+    if (!isNaN(moduleId)) {
+        switch (newState) {
+            case TRI.SELECTED:
+                filterState.selectedModules.add(moduleId);
+                filterState.hiddenModules.delete(moduleId);
+                break;
+            case TRI.HIDDEN:
+                filterState.hiddenModules.add(moduleId);
+                filterState.selectedModules.delete(moduleId);
+                break;
+            case TRI.NEUTRAL:
+                filterState.hiddenModules.delete(moduleId);
+                filterState.selectedModules.delete(moduleId);
+                break;
+        }
     }
-    updateFilters()
+
+    if (updateCallback !== null) {
+        updateCallback();
+    }
 }
-// TODO: test with full type name or introduce seperate id for types
 function handleTypeSelect(ev) {
     var filterRowEl = ev.target.closest("div.frow");
     var triStateEl = filterRowEl.querySelector("span.tri");
@@ -203,54 +247,70 @@ function handleTypeSelect(ev) {
             filterState.selectedTypes.delete(typeId);
             break;
     }
-    updateFilters()
+    if (updateCallback !== null) {
+        updateCallback();
+    }
 }
 function handleStateSelect(ev) {
-    console.log(ev)
+    var filterRowEl = ev.target.closest("div.frow");
+    var triStateEl = filterRowEl.querySelector("span.tri");
+    var newState = triStateEl.dataset.state;
+    var stateKey = filterRowEl.dataset.key;
+
+    filterState.status[stateKey] = newState;
+    if (updateCallback !== null) {
+        updateCallback();
+    }
 }
 function handleStaffSelect(ev) {
     var filterRowEl = ev.target.closest("div.frow");
     var triStateEl = filterRowEl.querySelector("span.tri");
     var newState = triStateEl.dataset.state;
-    var staffId = filterRowEl.dataset.key;
-
-    switch (newState) {
-        case TRI.SELECTED:
-            filterState.selectedStaff.add(staffId);
-            filterState.hiddenStaff.delete(staffId);
-            break;
-        case TRI.HIDDEN:
-            filterState.hiddenStaff.add(staffId);
-            filterState.selectedStaff.delete(staffId);
-            break;
-        case TRI.NEUTRAL:
-            filterState.hiddenStaff.delete(staffId);
-            filterState.selectedStaff.delete(staffId);
-            break;
+    var staffId = parseInt(filterRowEl.dataset.key);
+    if (!isNaN(staffId)) {
+        switch (newState) {
+            case TRI.SELECTED:
+                filterState.selectedStaff.add(staffId);
+                filterState.hiddenStaff.delete(staffId);
+                break;
+            case TRI.HIDDEN:
+                filterState.hiddenStaff.add(staffId);
+                filterState.selectedStaff.delete(staffId);
+                break;
+            case TRI.NEUTRAL:
+                filterState.hiddenStaff.delete(staffId);
+                filterState.selectedStaff.delete(staffId);
+                break;
+        }
+        if (updateCallback !== null) {
+            updateCallback();
+        }
     }
-    updateFilters()
 }
 function handleLocationSelect(ev) {
     var filterRowEl = ev.target.closest("div.frow");
     var triStateEl = filterRowEl.querySelector("span.tri");
     var newState = triStateEl.dataset.state;
-    var locationId = filterRowEl.dataset.key;
-
-    switch (newState) {
-        case TRI.SELECTED:
-            filterState.selectedLocations.add(locationId);
-            filterState.hiddenLocations.delete(locationId);
-            break;
-        case TRI.HIDDEN:
-            filterState.hiddenLocations.add(locationId);
-            filterState.selectedLocations.delete(locationId);
-            break;
-        case TRI.NEUTRAL:
-            filterState.hiddenLocations.delete(locationId);
-            filterState.selectedLocations.delete(locationId);
-            break;
+    var locationId = parseInt(filterRowEl.dataset.key);
+    if (!isNaN(locationId)) {
+        switch (newState) {
+            case TRI.SELECTED:
+                filterState.selectedLocations.add(locationId);
+                filterState.hiddenLocations.delete(locationId);
+                break;
+            case TRI.HIDDEN:
+                filterState.hiddenLocations.add(locationId);
+                filterState.selectedLocations.delete(locationId);
+                break;
+            case TRI.NEUTRAL:
+                filterState.hiddenLocations.delete(locationId);
+                filterState.selectedLocations.delete(locationId);
+                break;
+        }
+        if (updateCallback !== null) {
+            updateCallback();
+        }
     }
-    updateFilters()
 }
 
 // handle event pin
@@ -259,7 +319,27 @@ function handleLocationSelect(ev) {
 
 // give events based on filters
 export function getEvents() {
-    return fetchedData.events;
+    // modules
+    if (filterState.degree !== null) {
+        var degeeModules = fetchedData.modules.filter(el => el.degree_ids.includes(parseInt(filterState.degree)));
+    } else {
+        var degeeModules = fetchedData.modules;
+    }
+    var modules = degeeModules.map(el => el.id).concat(...filterState.selectedModules);
+    modules = modules.filter(el => !filterState.hiddenModules.has(el));
+
+    return fetchedData.events.filter(el => 
+        (
+            el.module_ids.some(id => modules.includes(id)) &&
+            filterState.status[el.status] !== TRI.HIDDEN  &&
+            !el.staff_ids.some(id => filterState.hiddenStaff.has(id)) &&
+            !filterState.hiddenLocations.has(el.location_id) &&
+            !filterState.hiddenTypes.has(el.type)
+        ) ||
+        filterState.selectedTypes.has(el.type) ||
+        el.staff_ids.some(id => filterState.selectedStaff.has(id)) ||
+        filterState.selectedLocations.has(el.location_id)
+    );
 }
 
 // compute hidden events based on pinned events
