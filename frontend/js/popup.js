@@ -1,6 +1,11 @@
 import { fetchedData, pinnedEvents, WEEKDAY_LABELS } from "./state.js"
 
 var popupShown = false;
+let updatePopupCallback = null;
+
+export function setPopupUpdateCallback(func) {
+    updatePopupCallback = func;
+}
 
 export function openPopup(eventId) {
     var event = fetchedData.events.find(el => el.id == eventId)
@@ -97,6 +102,9 @@ function handleEventPin(e) {
         pinnedEvents.delete(eventId)
     } else {
         pinnedEvents.add(eventId);
+    }
+    if (updatePopupCallback !== null) {
+        updatePopupCallback();
     }
     openPopup(eventId);
 }

@@ -2,7 +2,7 @@ import { fetchAll } from "./api.js";
 import { initCalendar, setCalendarUpdateCallback, setOpenPopupCallback, updateCalendar } from "./calendar.js";
 import { initColorEvents, setColorUpdateCallback } from "./color.js";
 import { setFilterUpdateCallback, updateFilters } from "./filters.js";
-import { initPopup, openPopup } from "./popup.js";
+import { initPopup, openPopup, setPopupUpdateCallback } from "./popup.js";
 import { fetchedData } from "./state.js";
 
 // glue 
@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setCalendarUpdateCallback(update);
     setOpenPopupCallback(openPopup)
     setColorUpdateCallback(update);
+    setPopupUpdateCallback(update)
 
     document.querySelector("#loadingOverlay").classList.add("hidden");
     globalEventListeners()

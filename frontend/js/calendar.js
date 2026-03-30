@@ -1,6 +1,6 @@
 import { getContrastTextColor, getEventColor } from "./color.js";
 import { getEvents } from "./filters.js";
-import { fetchedData, view } from "./state.js";
+import { fetchedData, pinnedEvents, view } from "./state.js";
 
 // render cal
 let calendarInstance = null;
@@ -107,7 +107,7 @@ function renderEventContent(arg) {
     pinEl.addEventListener("click", (e) => {
         e.stopPropagation();
         const evId = Number(arg.event.id);
-        if (_onPinToggle) _onPinToggle(evId);
+        if (onPinToggle) onPinToggle(evId);
     });
     el.appendChild(pinEl);
 
@@ -155,6 +155,8 @@ function buildCalendarEvents(events) {
         const color = getEventColor(ev) || "#3B82F6";
         const fcDay = ev.weekday % 7; //1: 1 [Monday], 2: 2 [Tuesday], ..., 6: 6 [Saturday], 7: 0 [Sunday] 
 
+        var isPinned = pinnedEvents.has(ev.id);
+
         // Get module names for display
         const moduleNames = ev.module_ids
             .map((moduleId) => fetchedData.modules.find(el => el.id == moduleId).name)
@@ -178,8 +180,8 @@ function buildCalendarEvents(events) {
             },
             display: "auto",
             classNames: [
-                /* isPinned ? "pinned" : "",
-                isExcluded ? "excluded" : "", */
+                isPinned ? "pinned" : "",
+                /* isExcluded ? "excluded" : "", */
             ].filter(Boolean),
         });
     }
@@ -195,4 +197,15 @@ export function updateCalendar() {
     console.log(events);
     const calEvents = buildCalendarEvents(events);
     calendarInstance.addEventSource(calEvents);
+}
+
+function onPinToggle(eventId) {
+    if (pinnedEvents.has(eventId)) {
+        pinnedEvents.delete(eventId)
+    } else {
+        pinnedEvents.add(eventId);
+    }
+    if (updateCalendarCallback !== null) {
+        updateCalendarCallback();
+    }
 }

@@ -33,7 +33,7 @@
     --color-hidden-border: #e06c5d;
     --color-hidden-text: #c0524a;
     --color-pin-color: #d4a017;
-    --color-pin-bg: rgba(212, 160, 23, 0.10);
+    --color-pin-bg: rgb(59, 44, 7);
     --color-glass: rgba(255, 255, 255, 0.75);
     --color-glass-border: rgba(255, 255, 255, 0.40);
 }
@@ -451,7 +451,7 @@ body {
 }
 
 .ev-pin-icon {
-    @apply absolute top-0.5 right-0.5 rounded-[3px] leading-none cursor-pointer opacity-0 text-text-secondary text-[0.65rem] transition-opacity duration-150 bg-black/25 px-0.5 py-px;
+    @apply absolute top-0.5 right-0.5 rounded-[3px] leading-none cursor-pointer opacity-0 text-text-secondary text-[0.8rem] transition-opacity duration-150 bg-accent2 dark:bg-pin-bg px-0.5 py-px;
 }
 
 .fc-event.fc-timegrid-event:hover .ev-pin-icon {
