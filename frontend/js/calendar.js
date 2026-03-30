@@ -1,3 +1,4 @@
+import { getContrastTextColor, getEventColor } from "./color.js";
 import { getEvents } from "./filters.js";
 import { fetchedData, view } from "./state.js";
 
@@ -71,7 +72,8 @@ function renderEventContent(arg) {
 
     // Set CSS variable for color on the element
     const el = document.createElement("div");
-    el.style.setProperty("--ev-color", color);
+    el.style.setProperty("--ev-background", color);
+    el.style.setProperty("--ev-color", getContrastTextColor(color));
     el.className = "fc-event-main-frame";
 
     // Title
@@ -109,7 +111,8 @@ function renderEventContent(arg) {
     requestAnimationFrame(() => {
         const fcEl = el.closest(".fc-event");
         if (fcEl) {
-            fcEl.style.setProperty("--ev-color", color);
+            fcEl.style.setProperty("--ev-background", color);
+            fcEl.style.setProperty("--ev-color", getContrastTextColor(color));
         }
     });
 
@@ -145,7 +148,7 @@ function buildCalendarEvents(events) {
     const fcEvents = [];
 
     for (const ev of events) {
-        const color = /* getEventColor(ev) || */ "#fff";
+        const color = getEventColor(ev) || "#3B82F6";
         const fcDay = ev.weekday % 7; //1: 1 [Monday], 2: 2 [Tuesday], ..., 6: 6 [Saturday], 7: 0 [Sunday] 
 
         // Get module names for display

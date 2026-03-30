@@ -1,5 +1,6 @@
 import { fetchAll } from "./api.js";
 import { initCalendar, setCalendarUpdateCallback, updateCalendar } from "./calendar.js";
+import { initColorEvents, setColorUpdateCallback } from "./color.js";
 import { setFilterUpdateCallback, updateFilters } from "./filters.js";
 import { fetchedData } from "./state.js";
 
@@ -13,9 +14,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateFilters();
     initCalendar();
     updateCalendar();
+    initColorEvents();
 
     setFilterUpdateCallback(update);
     setCalendarUpdateCallback(update);
+    setColorUpdateCallback(update);
 
     document.querySelector("#loadingOverlay").classList.add("hidden");
     globalEventListeners()

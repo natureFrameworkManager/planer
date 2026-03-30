@@ -429,10 +429,13 @@ body {
 
 .fc-event.fc-timegrid-event {
     @apply overflow-hidden cursor-pointer px-1 py-0.5 text-[0.62rem] leading-[1.2] border-none! rounded-xs!;
-    border-left: 3px solid var(--ev-color, var(--color-accent2)) !important;
+    border-left: 3px solid var(--ev-background, var(--color-accent2)) !important;
     @apply transition-[transform,box-shadow] duration-100 hover:shadow-md hover:scale-[1.02] hover:z-10!;
-    background: color-mix(in srgb, var(--ev-color, var(--color-accent2)), transparent 82%) !important;
-    color: var(--color-text-primary) !important;
+    background: color-mix(in srgb, var(--ev-background, var(--color-accent2)), transparent 82%) !important;
+    color: var(--ev-color, var(--color-text-primary)) !important;
+}
+.fc-event-main-frame {
+    color: var(--ev-color, var(--color-text-primary)) !important;
 }
 
 .fc-event .fc-event-main {

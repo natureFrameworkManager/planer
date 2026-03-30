@@ -75,4 +75,4 @@ export const colorMode = "type";
 export const customMap = new Map();
 
 // save dark mode
-export const darkMode = "system";
+export const darkMode = {value: true};
