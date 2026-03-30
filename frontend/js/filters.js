@@ -81,7 +81,8 @@ function fillModules() {
         } else {
             var state = TRI.NEUTRAL;
         }
-        moduleCon.appendChild(createFilterRow(module.id, module.name, state, 0, handleModuleSelect));
+        var count = getEvents().filter(el => el.module_ids.some(id => module.id == id)).length
+        moduleCon.appendChild(createFilterRow(module.id, module.name, state, count, handleModuleSelect, count == 0 && state == TRI.NEUTRAL));
     }
     for (const module of moreModules) {
         if (filterState.selectedModules.has(module.id)) {
@@ -91,7 +92,8 @@ function fillModules() {
         } else {
             var state = TRI.NEUTRAL;
         }
-        moreModuleCon.appendChild(createFilterRow(module.id, module.name, state, 0, handleModuleSelect));
+        var count = getEvents().filter(el => el.module_ids.some(id => module.id == id)).length
+        moreModuleCon.appendChild(createFilterRow(module.id, module.name, state, count, handleModuleSelect));
     }
     if (moreModules.length > 0) {
         document.querySelector("#weitereSection").style.display = "";
@@ -114,7 +116,8 @@ function fillTypes() {
         } else {
             var state = TRI.NEUTRAL;
         }
-        typeCon.appendChild(createFilterRow(type, type, state, 0, handleTypeSelect));
+        var count = getEvents().filter(el => el.type == type).length
+        typeCon.appendChild(createFilterRow(type, type, state, count, handleTypeSelect, count == 0 && state == TRI.NEUTRAL));
     }
 
 }
@@ -126,7 +129,9 @@ function fillStates() {
     stateCon.innerHTML = "";
 
     for (const state of states) {
-        stateCon.appendChild(createFilterRow(state.key, state.name, (filterState.status[state.key] !== null ? filterState.status[state.key] : TRI.NEUTRAL), 0, handleStateSelect));
+        var rowState = (filterState.status[state.key] !== null ? filterState.status[state.key] : TRI.NEUTRAL)
+        var count = getEvents().filter(el => el.status == state.key).length
+        stateCon.appendChild(createFilterRow(state.key, state.name, rowState, count, handleStateSelect, count == 0 && rowState == TRI.NEUTRAL));
     }
 }
 
@@ -145,7 +150,11 @@ function fillStaff() {
         } else {
             var state = TRI.NEUTRAL;
         }
-        staffCon.appendChild(createFilterRow(staffMember.id, staffMember.name, state, 0, handleStaffSelect));
+        var count = getEvents().filter(el => el.staff_ids.some(id => staffMember.id == id)).length
+        if (count == 0 && state == TRI.NEUTRAL) {
+            continue;
+        }
+        staffCon.appendChild(createFilterRow(staffMember.id, staffMember.name, state, count, handleStaffSelect));
     }
 }
 // fill locations
@@ -163,7 +172,11 @@ function fillLocations() {
         } else {
             var state = TRI.NEUTRAL;
         }
-        locationCon.appendChild(createFilterRow(location.id, location.name, state, 0, handleLocationSelect));
+        var count = getEvents().filter(el => el.location_id == location.id).length
+        if (count == 0 && state == TRI.NEUTRAL) {
+            continue;
+        }
+        locationCon.appendChild(createFilterRow(location.id, location.name, state, count, handleLocationSelect));
     }
 }
 
