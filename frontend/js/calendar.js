@@ -23,7 +23,7 @@ export function initCalendar() {
     if (!calEl) return;
 
     calendarInstance = new FullCalendar.Calendar(calEl, {
-        initialView: view || "timeGridWeek",
+        initialView: view.value || "timeGridWeek",
         locale: "de",
         headerToolbar: false, // We use our own header controls
         allDaySlot: false,
@@ -52,6 +52,23 @@ export function initCalendar() {
     });
 
     calendarInstance.render();
+
+    document.querySelectorAll(".vbtn").forEach(el => el.addEventListener("click", () => {
+        var viewType = el.dataset.view;
+        document.querySelectorAll(".vbtn").forEach(el => el.classList.remove("active"));
+        el.classList.add("active");
+        switch (viewType) {
+            case "week":
+                changeCalendarView("timeGridWeek");
+                break;
+            case "day":
+                changeCalendarView("timeGridDay");
+                break;
+            case "list":
+                changeCalendarView("listWeek");
+                break;
+        }
+    }));
 }
 
 // render events
@@ -134,6 +151,7 @@ function handleEventClick(info) {
 export function changeCalendarView(viewName) {
     if (!calendarInstance) return;
     calendarInstance.changeView(viewName);
+    view.value = viewName;
 }
 
 // handle day view day change

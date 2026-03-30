@@ -78,7 +78,7 @@ export const filterState = {
 export const pinnedEvents = new Set(); // event ids
 
 // save selected view
-export const view = "timeGridWeek";
+export const view = {value: "timeGridWeek"};
 
 // save color mode
 export const colorMode = "type";
