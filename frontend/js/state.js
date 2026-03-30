@@ -11,6 +11,16 @@ export function nextTriState(current) {
     return TRI_CYCLE[(i + 1) % 3];
 }
 
+export const WEEKDAY_LABELS = {
+    1: "Montag",
+    2: "Dienstag",
+    3: "Mittwoch",
+    4: "Donnerstag",
+    5: "Freitag",
+    6: "Samstag",
+    7: "Sonntag",
+}
+
 // save last fetched data
 export const fetchedData = {
     degrees: [],

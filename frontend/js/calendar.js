@@ -5,9 +5,13 @@ import { fetchedData, view } from "./state.js";
 // render cal
 let calendarInstance = null;
 let updateCalendarCallback = null;
+let openEventPopupCallback = null;
 
 export function setCalendarUpdateCallback(func) {
     updateCalendarCallback = func;
+}
+export function setOpenPopupCallback(func) {
+    openEventPopupCallback = func;
 }
 
 function getCalendar() {
@@ -123,7 +127,7 @@ function renderEventContent(arg) {
 function handleEventClick(info) {
     info.jsEvent.preventDefault();
     const evId = Number(info.event.id);
-    if (_openEventPopup) _openEventPopup(evId);
+    if (openEventPopupCallback) openEventPopupCallback(evId);
 }
 
 // handle view change

@@ -575,7 +575,7 @@ body {
 }
 
 .popup-degrees {
-    @apply text-[0.65rem] mt-2.5 pt-2 text-text-secondary border-t border-border;
+    @apply text-[0.65rem] mt-2.5 pt-2 text-text-secondary border-t border-border flex gap-x-1;
 }
 
 .popup-exclusion-note {
