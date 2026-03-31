@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlmodel import select
-from sqlalchemy.orm import selectinload, aliased
+from sqlalchemy.orm import aliased
 from contextlib import asynccontextmanager
 
 from database.database import create_db_and_tables, SessionDep
@@ -65,7 +65,7 @@ def get_modules(
     credits_min: int | None = Query(None, description="Filter by minimum credits (inclusive)"),
     credits_max: int | None = Query(None, description="Filter by maximum credits (inclusive)"),
     degree_id: int | None = Query(None, description="Filter by associated degree ID"),
-    semester: int | None = Query(None, description="Filter by semester number (used with degree_id)"),
+    semester: int | None = Query(None, description="Filter by degree semester number"),
 ):
     """
     Retrieve a list of all modules with optional filtering.
@@ -140,30 +140,24 @@ def get_module(module_id: int, session: SessionDep, include_relationships: bool 
 
     Returns **404** if the module does not exist.
     """
-    if include_relationships:
-        module = session.exec(
-            select(Module).where(Module.id == module_id)
-            .options(selectinload(Module.degrees), selectinload(Module.events))
-        ).first()
-    else:
-        module = session.get(Module, module_id)
+    module = session.get(Module, module_id)
 
     if module is None:
         raise HTTPException(status_code=404, detail="Module not found")
 
     if include_relationships:
         links = session.exec(
-            select(ModuleDegreeLink).where(ModuleDegreeLink.module_id == module.id)
+            select(ModuleDegreeLink).where(ModuleDegreeLink.module_id == module_id)
         ).all()
         degree_links: dict[int, list[ModuleDegreeLink]] = defaultdict(list)
         for link in links:
             degree_links[link.degree_id].append(link)
-        seen_degree_ids: set[int] = set()
-        unique_degrees = []
-        for d in module.degrees:
-            if d.id not in seen_degree_ids:
-                seen_degree_ids.add(d.id)
-                unique_degrees.append(d)
+        degrees = session.exec(
+            select(Degree).where(Degree.id.in_(degree_links.keys()))  # type: ignore[union-attr]
+        ).all()
+        events = session.exec(
+            select(Event).join(ModuleEventLink).where(ModuleEventLink.module_id == module_id)
+        ).all()
         return ModuleDetailResponse(
             **module.model_dump(),
             degrees=[
@@ -172,9 +166,10 @@ def get_module(module_id: int, session: SessionDep, include_relationships: bool 
                     semesters=sorted(lnk.semester for lnk in degree_links.get(d.id, []) if lnk.semester is not None),
                     note=next((lnk.note for lnk in degree_links.get(d.id, []) if lnk.note is not None), None),
                 )
-                for d in unique_degrees
+                for d in degrees 
+                if d.id is not None
             ],
-            events=[EventResponse.model_validate(e) for e in module.events],
+            events=[EventResponse.model_validate(e) for e in events],
         )
     return ModuleResponse.model_validate(module)
 
@@ -234,8 +229,8 @@ def get_events(
         mel_alias = aliased(ModuleEventLink)
         query = (
             query
-            .join(mel_alias, mel_alias.event_id == Event.id)
-            .join(ModuleDegreeLink, ModuleDegreeLink.module_id == mel_alias.module_id)
+            .join(mel_alias, mel_alias.event_id == Event.id)  # type: ignore[arg-type]
+            .join(ModuleDegreeLink, ModuleDegreeLink.module_id == mel_alias.module_id)  # type: ignore[arg-type]
             .where(ModuleDegreeLink.degree_id.in_(degree_id))  # type: ignore[union-attr]
         )
         if semester is not None:
@@ -244,23 +239,39 @@ def get_events(
         mel_alias = aliased(ModuleEventLink)
         query = (
             query
-            .join(mel_alias, mel_alias.event_id == Event.id)
-            .join(ModuleDegreeLink, ModuleDegreeLink.module_id == mel_alias.module_id)
+            .join(mel_alias, mel_alias.event_id == Event.id)  # type: ignore[arg-type]
+            .join(ModuleDegreeLink, ModuleDegreeLink.module_id == mel_alias.module_id)  # type: ignore[arg-type]
             .where(ModuleDegreeLink.semester == semester)
         )
     query = query.distinct()
 
     if include_relationships:
-        events = session.exec(
-            query.options(selectinload(Event.module), selectinload(Event.staff))
+        events = session.exec(query).all()
+        event_ids = [e.id for e in events]
+        module_rows = session.exec(
+            select(ModuleEventLink.event_id, ModuleEventLink.module_id)
+            .where(ModuleEventLink.event_id.in_(event_ids))  # type: ignore
         ).all()
+        staff_rows = session.exec(
+            select(EventStaffLink.event_id, EventStaffLink.staff_id)
+            .where(EventStaffLink.event_id.in_(event_ids))  # type: ignore
+        ).all()
+        module_map: dict[int, list[int]] = defaultdict(list)
+        for eid, mid in module_rows:
+            if eid is not None and mid is not None:
+                module_map[eid].append(mid)
+        staff_map: dict[int, list[int]] = defaultdict(list)
+        for eid, sid in staff_rows:
+            if eid is not None and sid is not None:
+                staff_map[eid].append(sid)
         return [
             EventWithRelationshipsResponse(
                 **e.model_dump(),
-                module_ids=[m.id for m in e.module if m.id is not None],
-                staff_ids=[s.id for s in e.staff if s.id is not None],
+                module_ids=module_map.get(e.id, []),
+                staff_ids=staff_map.get(e.id, []),
             )
             for e in events
+            if e.id is not None
         ]
     return [EventResponse.model_validate(e) for e in session.exec(query).all()]
 
@@ -275,22 +286,22 @@ def get_event(event_id: int, session: SessionDep, include_relationships: bool = 
 
     Returns **404** if the event does not exist.
     """
-    if include_relationships:
-        event = session.exec(
-            select(Event).where(Event.id == event_id)
-            .options(selectinload(Event.module), selectinload(Event.staff))
-        ).first()
-    else:
-        event = session.get(Event, event_id)
+    event = session.get(Event, event_id)
 
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
 
     if include_relationships:
+        modules = session.exec(
+            select(Module).join(ModuleEventLink).where(ModuleEventLink.event_id == event_id)
+        ).all()
+        staff = session.exec(
+            select(Staff).join(EventStaffLink).where(EventStaffLink.event_id == event_id)
+        ).all()
         return EventDetailResponse(
             **event.model_dump(),
-            module=[ModuleResponse.model_validate(m) for m in event.module],
-            staff=[StaffResponse.model_validate(s) for s in event.staff],
+            module=[ModuleResponse.model_validate(m) for m in modules],
+            staff=[StaffResponse.model_validate(s) for s in staff],
         )
     return EventResponse.model_validate(event)
 
@@ -319,15 +330,23 @@ def get_staff(
         query = query.join(EventStaffLink).where(EventStaffLink.event_id == event_id)
 
     if include_relationships:
-        staff = session.exec(
-            query.options(selectinload(Staff.events))
+        staff_list = session.exec(query).all()
+        staff_ids = [s.id for s in staff_list]
+        event_rows = session.exec(
+            select(EventStaffLink.staff_id, EventStaffLink.event_id)
+            .where(EventStaffLink.staff_id.in_(staff_ids))  # type: ignore
         ).all()
+        event_map: dict[int, list[int]] = defaultdict(list)
+        for sid, eid in event_rows:
+            if sid is not None and eid is not None:
+                event_map[sid].append(eid)
         return [
             StaffWithRelationshipsResponse(
                 **s.model_dump(),
-                event_ids=[e.id for e in s.events if e.id is not None],
+                event_ids=event_map.get(s.id, []),
             )
-            for s in staff
+            for s in staff_list
+            if s.id is not None
         ]
     return [StaffResponse.model_validate(s) for s in session.exec(query).all()]
 
@@ -342,21 +361,18 @@ def get_staff_member(staff_id: int, session: SessionDep, include_relationships: 
 
     Returns **404** if the staff member does not exist.
     """
-    if include_relationships:
-        staff_member = session.exec(
-            select(Staff).where(Staff.id == staff_id)
-            .options(selectinload(Staff.events))
-        ).first()
-    else:
-        staff_member = session.get(Staff, staff_id)
+    staff_member = session.get(Staff, staff_id)
 
     if staff_member is None:
         raise HTTPException(status_code=404, detail="Staff member not found")
 
     if include_relationships:
+        events = session.exec(
+            select(Event).join(EventStaffLink).where(EventStaffLink.staff_id == staff_id)
+        ).all()
         return StaffDetailResponse(
             **staff_member.model_dump(),
-            events=[EventResponse.model_validate(e) for e in staff_member.events],
+            events=[EventResponse.model_validate(e) for e in events],
         )
     return StaffResponse.model_validate(staff_member)
 
@@ -382,15 +398,23 @@ def get_locations(
         query = query.where(Location.name.ilike(f"%{name}%"))  # type: ignore[union-attr]
 
     if include_relationships:
-        locations = session.exec(
-            query.options(selectinload(Location.events))
+        locations = session.exec(query).all()
+        location_ids = [l.id for l in locations]
+        event_rows = session.exec(
+            select(Event.location_id, Event.id)
+            .where(Event.location_id.in_(location_ids))  # type: ignore
         ).all()
+        event_map: dict[int, list[int]] = defaultdict(list)
+        for lid, eid in event_rows:
+            if lid is not None and eid is not None:
+                event_map[lid].append(eid)
         return [
             LocationWithRelationshipsResponse(
                 **l.model_dump(),
-                event_ids=[e.id for e in l.events if e.id is not None],
+                event_ids=event_map.get(l.id, []),
             )
             for l in locations
+            if l.id is not None
         ]
     return [LocationResponse.model_validate(l) for l in session.exec(query).all()]
 
@@ -405,21 +429,18 @@ def get_location(location_id: int, session: SessionDep, include_relationships: b
 
     Returns **404** if the location does not exist.
     """
-    if include_relationships:
-        location = session.exec(
-            select(Location).where(Location.id == location_id)
-            .options(selectinload(Location.events))
-        ).first()
-    else:
-        location = session.get(Location, location_id)
+    location = session.get(Location, location_id)
 
     if location is None:
         raise HTTPException(status_code=404, detail="Location not found")
 
     if include_relationships:
+        events = session.exec(
+            select(Event).where(Event.location_id == location_id)
+        ).all()
         return LocationDetailResponse(
             **location.model_dump(),
-            events=[EventResponse.model_validate(e) for e in location.events],
+            events=[EventResponse.model_validate(e) for e in events],
         )
     return LocationResponse.model_validate(location)
 
@@ -450,21 +471,27 @@ def get_degrees(
         query = query.join(ModuleDegreeLink).where(ModuleDegreeLink.module_id == module_id)
 
     if include_relationships or include_semesters:
-        degrees = session.exec(
-            query.options(selectinload(Degree.modules))
+        degrees = session.exec(query).all()
+        degree_ids = [d.id for d in degrees]
+        link_rows = session.exec(
+            select(ModuleDegreeLink.degree_id, ModuleDegreeLink.module_id, ModuleDegreeLink.semester)
+            .where(ModuleDegreeLink.degree_id.in_(degree_ids))  # type: ignore
         ).all()
+        module_map: dict[int, set[int]] = defaultdict(set)
+        semester_map: dict[int, set[int]] = defaultdict(set)
+        for did, mid, sem in link_rows:
+            if did is not None and mid is not None:
+                module_map[did].add(mid)
+            if did is not None and sem is not None and isinstance(sem, int):
+                semester_map[did].add(sem)
         return [
             DegreeWithRelationshipsResponse(
                 **d.model_dump(),
-                module_ids=list({m.id for m in d.modules if m.id is not None}) if include_relationships else [],
-                semesters=sorted(set(
-                    lnk.semester for lnk in session.exec(
-                        select(ModuleDegreeLink).where(ModuleDegreeLink.degree_id == d.id)
-                    ).all()
-                    if lnk.semester is not None and isinstance(lnk.semester, int)
-                )) if include_semesters else [],
+                module_ids=list(module_map.get(d.id, set())) if include_relationships else [],
+                semesters=sorted(semester_map.get(d.id, set())) if include_semesters else [],
             )
             for d in degrees
+            if d.id is not None
         ]
     return [DegreeResponse.model_validate(d) for d in session.exec(query).all()]
 
@@ -480,30 +507,21 @@ def get_degree(degree_id: int, session: SessionDep, include_relationships: bool 
 
     Returns **404** if the degree does not exist.
     """
-    if include_relationships or include_semesters:
-        degree = session.exec(
-            select(Degree).where(Degree.id == degree_id)
-            .options(selectinload(Degree.modules))
-        ).first()
-    else:
-        degree = session.get(Degree, degree_id)
+    degree = session.get(Degree, degree_id)
 
     if degree is None:
         raise HTTPException(status_code=404, detail="Degree not found")
 
     if include_relationships or include_semesters:
         links = session.exec(
-            select(ModuleDegreeLink).where(ModuleDegreeLink.degree_id == degree.id)
+            select(ModuleDegreeLink).where(ModuleDegreeLink.degree_id == degree_id)
         ).all()
         module_links: dict[int, list[ModuleDegreeLink]] = defaultdict(list)
         for link in links:
             module_links[link.module_id].append(link)
-        seen_module_ids: set[int] = set()
-        unique_modules = []
-        for m in degree.modules:
-            if m.id not in seen_module_ids:
-                seen_module_ids.add(m.id)
-                unique_modules.append(m)
+        modules = session.exec(
+            select(Module).where(Module.id.in_(module_links.keys()))  # type: ignore[union-attr]
+        ).all() if include_relationships else []
         return DegreeDetailResponse(
             **degree.model_dump(),
             modules=[
@@ -512,8 +530,9 @@ def get_degree(degree_id: int, session: SessionDep, include_relationships: bool 
                     semesters=sorted(int(lnk.semester) for lnk in module_links.get(m.id, []) if lnk.semester is not None),
                     note=next((lnk.note for lnk in module_links.get(m.id, []) if lnk.note is not None), None),
                 )
-                for m in unique_modules
-            ] if include_relationships else [],
+                for m in modules
+                if m.id is not None
+            ],
             semesters=sorted(set(
                 lnk.semester for lnk in links
                 if lnk.semester is not None and isinstance(lnk.semester, int)
