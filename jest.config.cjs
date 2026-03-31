@@ -8,4 +8,5 @@ module.exports = {
     collectCoverageFrom: ["frontend/js/**/*.js"],
     coveragePathIgnorePatterns: ["/node_modules/"],
     testPathIgnorePatterns: ["/node_modules/"],
+    testResultsProcessor: "./node_modules/jest-stare",
 };
