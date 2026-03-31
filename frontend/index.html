@@ -278,6 +278,27 @@
             </div>
         </div>
 
+        <div class="popup-overlay" id="share-link-popup">
+            <div class="popup-box">
+                <div class="popup-header">
+                    <div>
+                        <div id="shareLinkSuccessMSg" class="popup-title"></div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:4px">
+                        <button id="shareLinkCloseBtn" class="popup-close">
+                            <span class="material-icons-round">close</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:4px">
+                    <div class="popup-row">
+                        <span class="material-icons-round">link_2</span>
+                        <span id="shareLink"></span>
+                    </div>
+                </div>
+        </div>
+
         <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
         <script type="module" src="js/app.js"></script>
     </body>

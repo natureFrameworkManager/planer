@@ -126,4 +126,4 @@ export const customMap = new Map();
  * It should be set based on the user's system preference on initial load, and can be toggled by the user.
  * @type {{ value: boolean }} 
  */
-export const darkMode = { value: true };
+export const darkMode = { value: globalThis.matchMedia?.("(prefers-color-scheme: dark)").matches ?? true };

@@ -19,8 +19,7 @@ export function setColorUpdateCallback(func) {
  * @returns {string}
  */
 export function getEventColor(event) {
-    var colorMode = (/** @type {HTMLElement|null} */ (document.querySelector("#colorDrop .color-menu .color-menu-item.active")))?.["dataset"]["mode"];
-    switch (colorMode) {
+    switch (colorMode.value) {
         case "type":
             var types = [...new Set(fetchedData.events.map(el => el.type))];
             var palette = generatePalette(types.length);
@@ -118,18 +117,16 @@ export function initColorEvents() {
         darkMode.value = !darkMode.value;
         document.querySelector("html")?.classList.toggle("dark", darkMode.value);
         const themeIcon = /** @type {HTMLElement|null} */ (document.querySelector("#themeToggle #themeIcon"));
-        if (themeIcon) themeIcon.innerText = (darkMode.value ? "dark_mode" : "light_mode");
+        if (themeIcon) themeIcon.innerText = (darkMode.value ? "light_mode" : "dark_mode");
 
         if (updateColorCallback !== null) {
             updateColorCallback();
         }
     });
     const themeIconEl = /** @type {HTMLElement|null} */ (document.querySelector("#themeToggle #themeIcon"));
-    if (themeIconEl) themeIconEl.innerText = (darkMode.value ? "dark_mode" : "light_mode");
-} 
-
-// TODO: handle color mode change
-// TODO: respect dark mode
+    if (themeIconEl) themeIconEl.innerText = (darkMode.value ? "light_mode" : "dark_mode");
+    document.querySelector("html")?.classList.toggle("dark", darkMode.value);
+}
 
 
 const GOLDEN_ANGLE = 137.508;
