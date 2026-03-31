@@ -22,7 +22,7 @@ export function updateFilters() {
 }
 // fill degree and semester select
 function fillDegreesSemesters() {
-    var degrees = fetchedData.degrees;
+    var degrees = fetchedData.degrees.sort((a, b) => a.name.localeCompare(b.name));
 
     var degreeEl = /** @type {HTMLSelectElement | null} */ (document.querySelector("#degreeSelect"));
     var semesterEl = /** @type {HTMLSelectElement | null} */ (document.querySelector("#semesterSelect"));
@@ -39,7 +39,7 @@ function fillDegreesSemesters() {
 
     if (filterState.degree !== null) {
         if (semFilterSec) semFilterSec.style.display = "";
-        var semesters = degrees.find(el => el.id === filterState.degree)?.semesters ?? [];
+        var semesters = (degrees.find(el => el.id === filterState.degree)?.semesters ?? []).sort();
         var semHtml = "<option value=''>Alle Semester</option>";
         for (const semester of semesters) {
             semHtml += '<option value="' + semester + '"' + (filterState.semester === semester ? " selected" : "") + '>' + semester + "</option>";

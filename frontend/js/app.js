@@ -11,7 +11,7 @@ import { fetchedData } from "./state.js";
 // 
 document.addEventListener("DOMContentLoaded", async () => {
     [fetchedData.degrees, fetchedData.modules, fetchedData.events, fetchedData.staff, fetchedData.locations, fetchedData.semesters] = await fetchAll();
-    console.log(fetchedData )
+    console.log(fetchedData)
 
     updateFilters();
     initCalendar();
