@@ -7,35 +7,35 @@
 #### nextTriState
 - [x] cycles neutral → selected → hidden → neutral (existing)
 - [x] returns neutral for unknown/invalid input (existing)
-- [ ] returns neutral for empty string
-- [ ] returns neutral for undefined
+- [x] returns neutral for empty string (existing)
+- [x] returns neutral for undefined (existing)
 
 #### WEEKDAY_LABELS
 - [x] maps numbers 1–7 to German weekday names (existing)
-- [ ] does not have keys outside 1–7
-- [ ] has exactly 7 entries
+- [x] does not have keys outside 1–7 (existing)
+- [x] has exactly 7 entries (existing)
 
 #### TRI constants
-- [ ] TRI.NEUTRAL is "neutral"
-- [ ] TRI.SELECTED is "selected"
-- [ ] TRI.HIDDEN is "hidden"
+- [x] TRI.NEUTRAL is "neutral" (existing)
+- [x] TRI.SELECTED is "selected" (existing)
+- [x] TRI.HIDDEN is "hidden" (existing)
 
 #### fetchedData defaults
-- [ ] all arrays start empty
-- [ ] states has 5 predefined entries with correct keys (ok, tok, pok, alt, reserve)
+- [x] all arrays start empty (existing)
+- [x] states has 5 predefined entries with correct keys (ok, tok, pok, alt, reserve) (existing)
 
 #### filterState defaults
-- [ ] degree and semester are null by default
-- [ ] all Sets are empty
-- [ ] all status values are null
+- [x] degree and semester are null by default (existing)
+- [x] all Sets are empty (existing)
+- [x] all status values are null (existing)
 
 #### pinnedEvents
-- [ ] is an empty Set initially
+- [x] is an empty Set initially (existing)
 
 #### view / colorMode / darkMode
-- [ ] view defaults to "timeGridWeek"
-- [ ] colorMode defaults to "type"
-- [ ] darkMode defaults based on matchMedia (or true if unavailable)
+- [x] view defaults to "timeGridWeek" (existing)
+- [x] colorMode defaults to "type" (existing)
+- [x] darkMode defaults based on matchMedia (or true if unavailable) (existing)
 
 ---
 
@@ -44,28 +44,32 @@
 #### generatePalette
 - [x] returns requested number of colors (existing)
 - [x] supports deterministic overrides (existing)
-- [ ] returns empty array for count 0
-- [ ] single color uses t=0.5 midpoint values
-- [ ] all colors are unique for small palette (e.g. 10)
-- [ ] uses golden angle spacing – hue increases by 137.508 per step
-- [ ] respects custom hueOffset
-- [ ] negative count returns empty array (edge case)
-- [ ] large palette (100+ colors) returns correct length
+- [x] returns empty array for count 0 (existing)
+- [x] single color uses t=0.5 midpoint values (existing)
+- [x] all colors are unique for small palette (e.g. 10) (existing)
+- [x] uses golden angle spacing – hue increases by 137.508 per step (existing)
+- [x] respects custom hueOffset (existing)
+- [ ] negative count returns empty array (edge case / BUG: negative count causes loop issue)
+- [x] large palette (100+ colors) returns correct length (existing)
 
 #### getEventColor
-- [ ] returns color from type palette when colorMode is "type"
-- [ ] returns color from module palette when colorMode is "module"
-- [ ] returns color from status palette when colorMode is "status"
-- [ ] returns color from staff palette when colorMode is "staff"
-- [ ] returns fallback color for "custom" mode (currently unimplemented)
-- [ ] returns fallback color for unknown color mode
+- [x] returns color from type palette when colorMode is "type" (existing)
+- [x] returns color from module palette when colorMode is "module" (existing)
+- [x] returns color from status palette when colorMode is "status" (existing)
+- [x] returns color from staff palette when colorMode is "staff" (existing)
+- [x] returns fallback color for "custom" mode (currently unimplemented) (existing)
+- [x] returns fallback color for unknown color mode (existing)
+- [x] different events get different colors in type mode when types differ (existing)
+- [ ] returns undefined for module mode when event has no module_ids (BUG: module_ids[0] undefined)
+- [ ] returns undefined for staff mode when event has no staff_ids (BUG: staff_ids[0] undefined)
+- [ ] type mode with single unique type gives all events the same color
+- [ ] module mode returns undefined when event's module not in fetchedData.modules (BUG)
 
 #### getContrastTextColor
-- [ ] returns "#000000" when canvas context is unavailable
-- [ ] returns black or white based on luminance of background
+- [x] returns "#000000" when canvas context is unavailable (existing)
 
 #### setColorUpdateCallback
-- [ ] stores the callback function
+- [x] stores the callback function (existing)
 
 ---
 
@@ -76,10 +80,10 @@
 - [x] throws on non-ok responses (existing)
 - [x] fetchAll calls all endpoints (existing)
 - [x] individual wrappers delegate to correct paths (existing)
-- [ ] fetchDegreeDetail includes id in URL path
-- [ ] fetchDegreeDetail throws on non-ok response
-- [ ] fetchAll rejects if any single fetch fails
-- [ ] fetch with network error (fetch rejects, not just non-ok)
+- [x] fetchDegreeDetail includes id in URL path (existing)
+- [x] fetchDegreeDetail throws on non-ok response (existing)
+- [x] fetchAll rejects if any single fetch fails (existing)
+- [x] fetch with network error (fetch rejects, not just non-ok) (existing)
 
 ---
 
@@ -90,172 +94,234 @@
 - [x] limits to selected modules (existing)
 - [x] applies hidden + selected tri-state (existing)
 - [x] filters by degree (existing)
-- [ ] filters by degree AND semester combined
-- [ ] hidden modules excludes their events
-- [ ] hidden staff excludes events with that staff
-- [ ] hidden locations excludes events at that location
-- [ ] selected types only shows matching types
-- [ ] selected staff only shows events with matching staff
-- [ ] selected locations only shows events at matching location
-- [ ] selected status only shows events with matching status
-- [ ] combined selected modules from degree + "more" modules
-- [ ] returns empty when all modules hidden
-- [ ] event with multiple module_ids: included if any module matches
+- [x] filters by degree AND semester combined (existing)
+- [x] hidden modules excludes their events (existing)
+- [x] hidden staff excludes events with that staff (existing)
+- [x] hidden locations excludes events at that location (existing)
+- [x] selected types only shows matching types (existing)
+- [x] selected staff only shows events with matching staff (existing)
+- [x] selected locations only shows events at matching location (existing)
+- [x] selected status only shows events with matching status (existing)
+- [x] combined selected modules from degree + "more" modules (existing)
+- [x] returns empty when all modules hidden (existing)
+- [x] event with multiple module_ids: included if any module matches (existing)
+- [x] hidden status excludes events with that status (existing)
+- [x] hidden types excludes events of that type (existing)
+- [ ] degree filter uses `in` operator on degree_ids (checks string key existence)
+- [ ] selecting a module outside current degree ("more modules") includes its events
+- [ ] combining hidden and selected on same dimension (e.g. selected + hidden types)
+- [ ] event with empty module_ids never matches any module filter
+- [ ] all filter dimensions simultaneously: degree + semester + module + type + status + staff + location
+- [ ] hidden events from pinned are excluded even when they match all filters
+- [ ] getEvents with entirely empty fetchedData.events returns []
+- [ ] getEvents with empty fetchedData.modules returns []
 
 #### getHiddenEvents
-- [ ] returns empty when no events are pinned
-- [ ] hides similar events (same module + type) when one is pinned
-- [ ] does not hide the pinned event itself
-- [ ] does not hide events with different type even if same module
-- [ ] handles pinned event ID not found in events gracefully
-- [ ] multiple pinned events accumulate hidden events
+- [x] returns empty when no events are pinned (existing)
+- [x] hides similar events (same module + type) when one is pinned (existing)
+- [x] does not hide the pinned event itself (existing)
+- [x] does not hide events with different type even if same module (existing)
+- [x] handles pinned event ID not found in events gracefully (existing)
+- [x] multiple pinned events accumulate hidden events (existing)
+- [ ] pinning two events of same module+type: both stay visible, no duplicates in hidden
+- [ ] hidden events may contain duplicates when multiple pins overlap (BUG: no dedup)
+- [ ] event with multiple module_ids: pinning hides events sharing ANY module with same type
 
 #### clearFilters
-- [ ] resets degree and semester to null
-- [ ] clears all Sets (selectedModules, hiddenModules, etc.)
-- [ ] resets all status values to null
-- [ ] clears pinnedEvents
-- [ ] calls update callback if set
+- [x] resets degree and semester to null (existing)
+- [x] clears all Sets (selectedModules, hiddenModules, etc.) (existing)
+- [x] resets all status values to null (existing)
+- [x] clears pinnedEvents (existing)
+- [x] calls update callback if set (existing)
+- [ ] does not throw if callback is null
 
-#### createFilterRow (indirectly via DOM)
+#### createFilterRow (internal, tested via updateFilters DOM)
 - [ ] creates row with correct data-key attribute
 - [ ] creates row with correct data-state attribute
 - [ ] click toggles tri-state via nextTriState
 - [ ] disabled row has "dimmed" class
+- [ ] always attaches click handler even when disabled (BUG: `if (true)` dead branch)
+- [ ] count label reflects event count
 
 ---
 
 ### 1.5 sharing_storage.js
 
-#### saveState / restoreState (localStorage)
-- [ ] saveState writes serialized state to localStorage
-- [ ] restoreState reads and applies state from localStorage
-- [ ] returns true on successful save
+#### saveState / restoreState
+- [x] saveState writes serialized state to localStorage (existing)
+- [x] restoreState reads and applies state from localStorage (existing)
+- [x] returns true on successful save (existing)
 - [ ] returns false if localStorage throws
 
 #### getShareLink
-- [ ] includes degree param when set
-- [ ] includes semester param when set
-- [ ] includes selected modules as comma-separated
-- [ ] includes pin param with pinned event IDs
-- [ ] includes view and colorMode params
-- [ ] includes darkMode param
-- [ ] encodes status params with "status_" prefix
-- [ ] does not include empty arrays/null values
-- [ ] includes customMap entries when present
+- [x] includes degree param when set (existing)
+- [x] includes semester param when set (existing)
+- [x] includes selected modules as comma-separated (existing)
+- [x] includes pin param with pinned event IDs (existing)
+- [x] includes view and colorMode params (existing)
+- [x] includes darkMode param (existing)
+- [x] encodes status params with "status_" prefix (existing)
+- [x] does not include null degree (existing)
+- [x] includes customMap entries when present (existing)
+- [ ] does not include empty Sets (no sm/hm/st/ht/ss/hs/sl/hl when empty)
+- [ ] round-trips share link via URL params restoreState
 
 #### clearStateStorage
-- [ ] removes the storage key from localStorage
+- [x] removes the storage key from localStorage (existing)
 
 #### restoreState priority
-- [ ] URL params take precedence over localStorage
-- [ ] falls back to localStorage if no URL params
+- [x] URL params take precedence over localStorage (existing)
+- [x] falls back to localStorage if no URL params (existing)
+- [x] restoreState does nothing when localStorage is empty and no URL params (existing)
+- [ ] handles malformed JSON in localStorage gracefully
+- [ ] ignores unknown status values in URL params
+
+#### saveFetchedData / loadFetchedDataAsync
+- [x] saveFetchedData returns true (existing)
+- [x] loadFetchedDataAsync returns data from localStorage fallback (existing)
+- [x] loadFetchedDataAsync returns null when nothing stored (existing)
 
 ---
 
 ### 1.6 popup.js
 
 #### openPopup
-- [ ] populates title from event data
-- [ ] populates time with weekday, start and end
-- [ ] populates location name from fetched locations
-- [ ] shows "–" when location not found
-- [ ] populates staff names joined by comma
-- [ ] shows "–" when no staff found
-- [ ] populates module names
-- [ ] shows credits as single value or range
-- [ ] shows "-" for credits when none available
-- [ ] shows degree names from module→degree lookup
-- [ ] hides degrees section when no degrees found
-- [ ] sets pin button state based on pinnedEvents
-- [ ] adds "show" class to popup element
+- [x] populates title from event data (existing)
+- [x] populates type from event data (existing)
+- [x] populates time with weekday, start and end (existing)
+- [x] populates location name from fetched locations (existing)
+- [x] shows dash when location not found (existing)
+- [x] populates staff names joined by comma (existing)
+- [x] shows dash when no staff found (existing)
+- [x] populates module names (existing)
+- [x] shows credits as single value or range (existing)
+- [x] shows dash for credits when none available (existing)
+- [x] shows degree names from module to degree lookup (existing)
+- [x] hides degrees section when no degrees found (existing)
+- [x] sets pin button state based on pinnedEvents (existing)
+- [x] adds "show" class to popup element (existing)
+- [x] does nothing for non-existent event (existing)
+- [ ] shows single credit value with "LP" when all modules have same credits
+- [ ] deduplicates staff names
+- [ ] deduplicates degree names
+- [ ] popup with event weekday 0 or >7 shows empty weekday label (BUG: WEEKDAY_LABELS undefined)
+- [ ] re-opening popup for different event replaces old data
+- [ ] pin button accumulates event listeners on repeated openPopup calls (BUG: no removeEventListener)
 
 #### initPopup
-- [ ] close button removes "show" class
-- [ ] clicking outside popup box removes "show" class
+- [x] close button removes "show" class (existing)
+- [x] clicking outside popup box removes "show" class (existing)
+- [x] clicking inside popup box does NOT remove "show" class (existing)
 
-#### handleEventPin (via openPopup pin button)
-- [ ] toggles pin state for event
-- [ ] calls updatePopupCallback after toggle
+#### handleEventPin
+- [x] toggles pin state for event (existing)
+- [x] calls updatePopupCallback after toggle (existing)
+- [ ] does nothing when eventId is NaN
 
 ---
 
-### 1.7 calendar.js
+### 1.7 calendar.js (NEW — no existing tests)
 
-#### buildCalendarEvents (indirectly via updateCalendar)
-- [ ] maps event weekday to FullCalendar daysOfWeek (weekday % 7)
+#### buildCalendarEvents (tested indirectly)
+- [ ] maps weekday 1 (Monday) to fcDay 1
+- [ ] maps weekday 7 (Sunday) to fcDay 0
+- [ ] maps weekday 6 (Saturday) to fcDay 6
 - [ ] adds "pinned" class for pinned events
+- [ ] empty class list for unpinned events
 - [ ] includes module names in extendedProps
-- [ ] sets color from getEventColor
+- [ ] sets fallback color "#3B82F6" when getEventColor returns falsy
+- [ ] typeShort is always "?" (hardcoded, maps commented out)
+- [ ] statusColor is always "#6b7280" (hardcoded)
+- [ ] event id is stringified in fc event
+- [ ] empty events array produces empty fc events
+- [ ] event with module_ids referencing non-existent modules: empty moduleNames
 
 #### getFixedMonday
-- [ ] returns a Monday (day of week = 1)
+- [ ] returns a date that is a Monday (getDay() === 1)
+- [ ] BUG edge case: when today is Sunday, getDay()===0 path may produce wrong week
 
 #### changeCalendarView
 - [ ] updates view.value state
 - [ ] does nothing if calendarInstance is null
 
----
+#### setCalendarUpdateCallback / setOpenPopupCallback
+- [ ] stores callback without error
 
-## 2. Integration Tests
+#### updateCalendar
+- [ ] exits early if calendarInstance is null
 
-### 2.1 filters + state integration
-- [ ] changing filterState.degree and calling getEvents reflects new filter
-- [ ] adding to filterState.selectedModules and hiddenModules together works correctly
-- [ ] pinning an event causes getHiddenEvents to exclude similar events from getEvents
-- [ ] multiple filter dimensions combined: degree + type + staff
+#### onPinToggle (internal via rendered event pin click)
+- [ ] adds event to pinnedEvents if not present
+- [ ] removes event from pinnedEvents if present
+- [ ] calls updateCalendarCallback after toggle
 
-### 2.2 color + state integration
-- [ ] changing colorMode.value and calling getEventColor returns different palettes
-- [ ] getEventColor uses fetchedData.events for type-based coloring
-- [ ] getEventColor with empty fetchedData returns fallback
-
-### 2.3 sharing_storage + state integration
-- [ ] saveState → restoreState round-trip preserves filterState
-- [ ] saveState → restoreState preserves pinnedEvents
-- [ ] saveState → restoreState preserves view, colorMode, darkMode
-- [ ] getShareLink → applyParams round-trip preserves state
-- [ ] saveFetchedData → loadFetchedDataAsync round-trip preserves data (localStorage fallback)
-
-### 2.4 popup + state integration
-- [ ] openPopup reads correct data from fetchedData
-- [ ] pin toggle in popup updates pinnedEvents and re-renders
+#### initCalendar
+- [ ] creates FullCalendar instance and renders
+- [ ] does nothing if #calendar element is missing
+- [ ] sets up view toggle buttons (.vbtn)
 
 ---
 
-## 3. Functional Tests
+### 1.8 app.js (NEW — no existing tests)
 
-### 3.1 Filter workflow
-- [ ] selecting a degree shows only its modules' events, then selecting a module narrows further
-- [ ] hiding a type removes those events, then un-hiding restores them
-- [ ] selecting a status filters accordingly, disabling it shows all again
-- [ ] clearFilters restores all events after complex filtering
+#### initApp (tested via DOMContentLoaded simulation)
+- [ ] sets semester badge text from fetchedData.semesters[0].name
+- [ ] falls back to "Semester" when name is nullish
+- [ ] calls updateFilters, initCalendar, updateCalendar, initColorEvents, initPopup
+- [ ] hides loading overlay by adding "hidden" class
+- [ ] sets up filter/calendar/color/popup callbacks
 
-### 3.2 Popup workflow
-- [ ] opening popup → pinning event → closing → getEvents excludes similar events
-- [ ] opening popup for non-existent event does nothing (no crash)
+#### globalEventListeners
+- [ ] resetAllBtn click clears state storage and filters
+- [ ] shareLinkBtn click copies share link to clipboard
+- [ ] shareLinkCloseBtn closes share link popup
+- [ ] clicking outside share link popup box closes it
+- [ ] weitereToggle toggles "open" class on #weitereExp
 
-### 3.3 Color mode workflow
-- [ ] switching color modes produces different colors for same event
-- [ ] setColorUpdateCallback fires when mode changes via initColorEvents
-
-### 3.4 Share link workflow
-- [ ] applying filters → getShareLink → new page restoreState → same events visible
-- [ ] share link with all filter types populated restores correctly
+#### update
+- [ ] calls updateFilters, updateCalendar, and saveState
 
 ---
 
-## 4. End-to-End Tests
+## 2. Integration Tests (existing)
 
-### 4.1 Full app data flow
-- [ ] fetch data → populate state → getEvents returns correct events → buildCalendarEvents maps them
-- [ ] fetch data → apply filters → getEvents → updateCalendar cycle
-- [ ] fetch fails → error propagation (no state corruption)
+### 2.1 Filters + State
+- [x] changing filterState.degree and calling getEvents reflects new filter
+- [x] pinning an event causes getHiddenEvents to exclude similar events from getEvents
+- [x] multiple filter dimensions combined: degree + type + staff
 
-### 4.2 State persistence flow
-- [ ] set filters → saveState → clear filters → restoreState → filters restored → getEvents matches
-- [ ] URL params override localStorage: set different filters in both, URL wins
+### 2.2 Color + State
+- [x] changing colorMode.value and calling getEventColor returns different palettes
+- [x] getEventColor with empty fetchedData returns fallback
 
-### 4.3 Pin + filter combined flow
-- [ ] pin event → filter by degree → pinned event still affects hidden calculation
-- [ ] pin event from one module → events of same module+type hidden → change degree → verify consistency
+### 2.3 Storage + State
+- [x] saveState/restoreState round-trip preserves filterState
+- [x] getShareLink/applyParams round-trip preserves state
+- [x] saveFetchedData/loadFetchedDataAsync round-trip (localStorage fallback)
+
+### 2.4 Popup + State
+- [x] openPopup reads correct data from fetchedData
+- [x] pin toggle in popup updates pinnedEvents and re-renders
+
+---
+
+## 3. Functional Tests (existing)
+
+- [x] selecting a degree shows only its modules events, then selecting module narrows further
+- [x] hiding a type removes events, un-hiding restores them
+- [x] selecting a status filters accordingly, disabling shows all again
+- [x] clearFilters restores all events after complex filtering
+- [x] opening popup, pinning event, closing: getEvents excludes similar events
+- [x] switching color modes produces different colors for same event
+- [x] applying filters then getShareLink then restoreState: same events visible
+
+---
+
+## 4. End-to-End Tests (existing)
+
+- [x] fetch data, populate state, getEvents, buildCalendarEvents flow
+- [x] fetch data, apply filters, getEvents, updateCalendar cycle
+- [x] fetch fails: error propagation, no state corruption
+- [x] set filters, saveState, clear, restoreState, filters restored
+- [x] URL params override localStorage
+- [x] pin event, filter by degree, pinned event still affects hidden calculation
