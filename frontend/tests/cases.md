@@ -1,3 +1,121 @@
+# 5. Additional Unit & Edge Case Tests (2026)
+
+## 5.1 app.js
+
+### initApp
+- [ ] semesterBadge: handles missing #semesterBadge element gracefully
+- [ ] semesterBadge: handles empty fetchedData.semesters array (no error, fallback to "Semester")
+- [ ] semesterBadge: handles missing .name property on semester (fallback to "Semester")
+- [ ] calls all init/update functions even if some DOM elements are missing
+- [ ] does not throw if set*Callback functions are undefined
+- [ ] loading overlay: handles missing #loadingOverlay element
+
+### globalEventListeners
+- [ ] resetAllBtn: does nothing if button missing
+- [ ] shareLinkBtn: does nothing if button missing
+- [ ] shareLinkBtn: handles clipboard writeText rejection (shows error message)
+- [ ] shareLinkBtn: handles missing #shareLinkSuccessMSg element
+- [ ] shareLinkBtn: handles missing #shareLink element
+- [ ] shareLinkBtn: handles missing #share-link-popup element
+- [ ] shareLinkCloseBtn: does nothing if button missing
+- [ ] shareLinkPopup: does nothing if popup missing
+- [ ] shareLinkPopup: clicking outside popup box with no .popup-box element does not throw
+- [ ] weitereToggle: does nothing if button missing
+- [ ] weitereExp: does nothing if #weitereExp missing
+
+### update
+- [ ] calls updateFilters, updateCalendar, and saveState in order
+
+## 5.2 calendar.js
+
+### initCalendar
+- [ ] does nothing if #calendar element is missing
+- [ ] creates calendarInstance with correct initial view from view.value
+- [ ] sets up .vbtn click handlers for all present buttons
+- [ ] handles missing .vbtn elements gracefully
+- [ ] does not throw if FullCalendar is undefined (simulate missing import)
+
+### buildCalendarEvents
+- [ ] returns empty array if input events is empty
+- [ ] handles events with missing/empty module_ids array
+- [ ] handles events with module_ids referencing non-existent modules (moduleNames empty)
+- [ ] sets fallback color if getEventColor returns falsy
+- [ ] sets pinned class only for pinned events
+- [ ] event id is always stringified
+- [ ] typeShort is always "?" (hardcoded)
+- [ ] statusColor is always "#6b7280" (hardcoded)
+
+### getFixedMonday
+- [ ] returns a Date object
+- [ ] always returns a Monday (getDay() === 1)
+- [ ] edge case: when today is Sunday (getDay()===0), returns previous Monday
+
+### changeCalendarView
+- [ ] does nothing if calendarInstance is null
+- [ ] updates view.value to new viewName
+
+### updateCalendar
+- [ ] exits early if calendarInstance is null
+- [ ] removes all events before adding new ones
+- [ ] adds correct number of events from buildCalendarEvents
+
+### renderEventContent
+- [ ] sets CSS variables for color and contrast
+- [ ] creates title, meta, dot, and pin elements
+- [ ] attaches pin click handler
+- [ ] handles missing/empty moduleNames array
+- [ ] handles missing getContrastTextColor function (simulate error)
+
+## 5.3 filters.js
+
+### getEvents
+- [ ] returns [] if fetchedData.events is empty
+- [ ] returns [] if fetchedData.modules is empty
+- [ ] returns only events matching selectedModules, hiddenModules, selectedTypes, hiddenTypes, selectedStaff, hiddenStaff, selectedLocations, hiddenLocations, and status filters
+- [ ] returns [] if all modules are hidden
+- [ ] returns [] if event.module_ids is empty
+- [ ] returns [] if event's module_ids do not match any selected or degree modules
+- [ ] returns [] if event is hidden by getHiddenEvents
+- [ ] returns all events if no filters are set and nothing is hidden
+- [ ] supports selecting modules outside current degree ("more modules")
+- [ ] supports combining hidden and selected on same dimension (e.g. selected + hidden types)
+- [ ] supports all filter dimensions simultaneously
+
+### getHiddenEvents
+- [ ] returns [] if no events are pinned
+- [ ] does not hide the pinned event itself
+- [ ] hides events sharing ANY module with same type as pinned event
+- [ ] handles multiple pinned events (accumulates hidden events)
+- [ ] does not deduplicate hidden events (BUG: duplicates possible)
+- [ ] handles pinned event ID not found in events gracefully
+
+### clearFilters
+- [ ] resets all filterState properties to default
+- [ ] clears pinnedEvents
+- [ ] calls updateCallback if set
+- [ ] does not throw if updateCallback is null
+
+### createFilterRow
+- [ ] creates row with correct data-key and data-state attributes
+- [ ] click toggles tri-state via nextTriState
+- [ ] disabled row has "dimmed" class
+- [ ] always attaches click handler even when disabled (BUG: `if (true)` dead branch)
+- [ ] count label reflects event count
+
+### fillDegreesSemesters
+- [ ] handles missing degreeEl, semesterEl, or semFilterSec elements
+- [ ] handles empty fetchedData.degrees array
+- [ ] handles degree with no semesters
+
+### fillModules
+- [ ] handles missing moduleCon or moreModuleCon elements
+- [ ] handles empty fetchedData.modules array
+- [ ] handles modules with no events
+
+### fillTypes, fillStates, fillStaff, fillLocations
+- [ ] handle missing container elements
+- [ ] handle empty fetchedData.events, states, staff, or locations arrays
+- [ ] skip types/staff/locations with no events unless selected
 # Frontend Test Cases
 
 ## 1. Unit Tests
