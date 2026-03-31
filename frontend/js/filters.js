@@ -451,7 +451,7 @@ function createFilterRow(
     row.appendChild(cnt);
 
     // Click handler
-    if (!disabled) {
+    if (true) {
         row.addEventListener("click", (ev) => {
             const triEl = /** @type {HTMLElement | null} */ (row.querySelector("span.tri"));
             const current = /** @type {import('./state.js').TriState} */ (triEl?.dataset['state'] ?? TRI.NEUTRAL);

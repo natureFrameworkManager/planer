@@ -314,7 +314,7 @@ body {
 }
 
 .tri.dimmed {
-    @apply opacity-35 pointer-events-none;
+    @apply opacity-35;
 }
 
 /* ===== Filter Rows ===== */
@@ -324,7 +324,7 @@ body {
 }
 
 .frow.dimmed {
-    @apply opacity-35 pointer-events-none;
+    @apply opacity-35;
 }
 
 .frow[data-s    ="hidden"] .lbl {
