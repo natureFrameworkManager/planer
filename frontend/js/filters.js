@@ -5,13 +5,16 @@ import { fetchedData, filterState, nextTriState, pinnedEvents, TRI } from "./sta
 let updateCallback = null;
 
 /**
+ * Set callback for when filters are updated (e.g. after select change)
  * @param {() => void} func
  */
 export function setFilterUpdateCallback(func) {
     updateCallback = func;
 }
 
-// display filter section
+/**
+ * Update all filter sections based on fetched data and filter state. This should be called after fetching data and whenever filter state changes.
+ */
 export function updateFilters() {
     fillDegreesSemesters();
     fillModules();
@@ -20,7 +23,9 @@ export function updateFilters() {
     fillStaff();
     fillLocations();
 }
-// fill degree and semester select
+/**
+ * Fill the degree and semester filter sections with degrees and semesters from fetched data. Show semesters based on selected degree. If no degree is selected, hide semester filter.
+ */
 function fillDegreesSemesters() {
     var degrees = fetchedData.degrees.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -51,8 +56,10 @@ function fillDegreesSemesters() {
         semesterEl.innerHTML = "<option value=''>Alle Semester</option>";
     }
 }
-// fill module select based on degree
-// show and fill more module select based on remaining modules
+/**
+ * Fill the module filter section with modules from fetched data based on selected degree and semester. Show event count for each module and disable modules with no events.
+ * Also separate modules of selected degree and semester from other modules and show them in different sections. If no degree is selected, show all modules in the first section.
+ */
 function fillModules() {
     var currentDegree = /** @type {HTMLOptionElement | null} */ (document.querySelector("#degreeSelect option:checked"))?.value ?? "";
     if (!isNaN(parseInt(currentDegree))) {
@@ -105,7 +112,9 @@ function fillModules() {
         if (weitereSection) weitereSection.style.display = "none";
     }
 }
-// fill event types (+ count), disable types with count == 0
+/**
+ * Fill the type filter section with types from fetched data. Show event count for each type and disable types with no events.
+ */
 function fillTypes() {
     var types = new Set(fetchedData.events.map(el => el.type));
 
@@ -126,7 +135,9 @@ function fillTypes() {
     }
 
 }
-// fill states
+/**
+ * Fill the state filter section with states from fetched data. Show event count for each state and disable states with no events.
+ */
 function fillStates() {
     var states = fetchedData.states;
 
@@ -140,8 +151,9 @@ function fillStates() {
         stateCon.appendChild(createFilterRow(state.key, state.name, rowState, count, handleStateSelect, count == 0 && rowState == TRI.NEUTRAL));
     }
 }
-
-// fill staff
+/**
+ * Fill the staff filter section with staff from fetched data. Show event count for each staff and disable staff with no events. Hide staff with no events if they are not selected.
+ */
 function fillStaff() {
     var staff = fetchedData.staff;
 
@@ -164,7 +176,9 @@ function fillStaff() {
         staffCon.appendChild(createFilterRow(staffMember.id, staffMember.name, state, count, handleStaffSelect));
     }
 }
-// fill locations
+/**
+ * Fill the location filter section with locations from fetched data. Show event count for each location and disable locations with no events. Hide locations with no events if they are not selected.
+ */
 function fillLocations() {
     var locations = fetchedData.locations;
 
@@ -196,9 +210,8 @@ function fillLocations() {
 
 // search locations
 
-// handle select of filter element (degree, semester, module, more module, type, status, staff, location)
 /**
- * 
+ * Handle degree select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
 function handleDegreeSelect(ev) {
@@ -215,7 +228,7 @@ function handleDegreeSelect(ev) {
     };
 }
 /**
- * 
+ * Handle semester select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
 function handleSemesterSelect(ev) {
@@ -231,7 +244,7 @@ function handleSemesterSelect(ev) {
     }
 }
 /**
- * 
+ * Handle module select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
 function handleModuleSelect(ev) {
@@ -261,7 +274,7 @@ function handleModuleSelect(ev) {
     }
 }
 /**
- * 
+ * Handle type select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
 function handleTypeSelect(ev) {
@@ -289,7 +302,7 @@ function handleTypeSelect(ev) {
     }
 }
 /**
- * 
+ * Handle state select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
 function handleStateSelect(ev) {
@@ -304,7 +317,7 @@ function handleStateSelect(ev) {
     }
 }
 /**
- * 
+ * Handle staff select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
 function handleStaffSelect(ev) {
@@ -333,7 +346,7 @@ function handleStaffSelect(ev) {
     }
 }
 /**
- * 
+ * Handle location select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
 function handleLocationSelect(ev) {
@@ -361,10 +374,6 @@ function handleLocationSelect(ev) {
         }
     }
 }
-
-// handle event pin
-
-// hide unpinned events
 
 /**
  * Compute events based on selected degree, semester, modules, types, staff, locations and states.
@@ -434,7 +443,7 @@ export function getHiddenEvents() {
 }
 
 /**
- * 
+ * Create a filter row element with tri-state toggle, label and count. Attach click handler to toggle tri-state and trigger filter update.
  * @param {string | number} key 
  * @param {string} content displayed content 
  * @param {string} state element of TRI 

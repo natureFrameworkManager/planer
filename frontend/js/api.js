@@ -2,6 +2,7 @@
 const API_BASE = "http://127.0.0.1:8000/api";
 
 /**
+ * Helper function to fetch from API and "handle" errors
  * @param {string} path
  * @returns {Promise<unknown>}
  */
@@ -86,7 +87,7 @@ async function apiFetch(path) {
  */
 
 /**
- * 
+ * Query API for degrees with relationships and semesters included
  * @returns {Promise<Degree[]>}
  */
 export async function fetchDegrees() {
@@ -98,7 +99,7 @@ export async function fetchDegrees() {
 }
 
 /**
- * 
+ * Query API for degree details with relationships and semesters included
  * @param {number} id 
  * @returns {Promise<DegreeDetail>}
  */
@@ -111,7 +112,7 @@ export async function fetchDegreeDetail(id) {
 }
 
 /**
- * 
+ * Query API for modules with relationships included (degrees with semesters and events)
  * @returns {Promise<Module[]>}
  */
 export async function fetchModules() {
@@ -121,7 +122,7 @@ export async function fetchModules() {
 }
 
 /**
- * 
+ * Query API for events with relationships included (modules, staff, locations)
  * @returns {Promise<Event[]>}
  */
 export async function fetchEvents() {
@@ -131,7 +132,7 @@ export async function fetchEvents() {
 }
 
 /**
- * 
+ * Query API for staff
  * @returns {Promise<Staff[]>}
  */
 export async function fetchStaff() {
@@ -139,7 +140,7 @@ export async function fetchStaff() {
 }
 
 /**
- * 
+ * Query API for locations
  * @returns {Promise<Location[]>}
  */
 export async function fetchLocations() {
@@ -147,7 +148,7 @@ export async function fetchLocations() {
 }
 
 /**
- * 
+ * Query API for semesters
  * @returns {Promise<Semester[]>}
  */
 export async function fetchSemesters() {
@@ -156,7 +157,7 @@ export async function fetchSemesters() {
 
 // request all initial data
 /**
- * 
+ * Bundle function to fetch all data in parallel
  * @returns {Promise<[Degree[], Module[], Event[], Staff[], Location[], Semester[]]>}
  */
 export async function fetchAll() {
@@ -170,4 +171,4 @@ export async function fetchAll() {
     ])
 }
 
-// sync data and fire callback
+// TODO: sync data and fire callback

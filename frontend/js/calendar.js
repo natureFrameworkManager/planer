@@ -42,36 +42,35 @@ export function initCalendar() {
     if (!calEl) return;
 
     calendarInstance = new FullCalendar.Calendar(calEl, {
-        initialView: view.value || "timeGridWeek",
-        locale: "de",
+        initialView: view.value || "timeGridWeek", // Initial view
+        locale: "de", // German locale
         headerToolbar: false, // We use our own header controls
-        allDaySlot: false,
-        slotMinTime: "07:00:00",
-        slotMaxTime: "21:00:00",
-        slotDuration: "00:30:00",
-        slotLabelInterval: "01:00:00",
-        expandRows: true,
-        slotEventOverlap: false,
+        allDaySlot: false, // No all-day events
+        slotMinTime: "07:00:00", // Start time for calendar (7am)
+        slotMaxTime: "21:00:00", // End time for calendar (9pm)
+        slotDuration: "00:30:00", // Duration of each time slot
+        slotLabelInterval: "01:00:00", // Interval for time labels
+        expandRows: true, // Expand rows to fill available height
+        slotEventOverlap: false, // Prevent events from overlapping
         hiddenDays: [0, 6], // hide Sun/Sat
-        dayHeaderFormat: { weekday: "short" },
-        // Generic week: use a fixed Monday. Events use daysOfWeek for recurring.
-        initialDate: getFixedMonday(),
-        navLinks: false,
-        weekNumbers: false,
-        nowIndicator: false,
-        events: buildCalendarEvents(getEvents()),
-        eventContent: renderEventContent,
-        eventClick: handleEventClick,
-        height: "100%",
-        stickyHeaderDates: true,
-        // List view settings
-        listDayFormat: { weekday: "long" },
-        listDaySideFormat: false,
-        noEventsContent: "Keine Veranstaltungen sichtbar",
+        dayHeaderFormat: { weekday: "short" }, // e.g. "Mo", "Di", etc.
+        initialDate: getFixedMonday(), // Generic week: use a fixed Monday. Events use daysOfWeek for recurring.
+        navLinks: false, // Disable built-in navigation (we have our own controls)
+        weekNumbers: false, // No week numbers
+        nowIndicator: false, // No current time indicator
+        events: buildCalendarEvents(getEvents()), // Initial events based on current filters
+        eventContent: renderEventContent, // Custom render function for events
+        eventClick: handleEventClick, // Handle event clicks to open popup
+        height: "100%", // Make calendar take full height of container
+        stickyHeaderDates: true, // Keep day headers visible when scrolling
+        listDayFormat: { weekday: "long" }, // Format for list view day headers
+        listDaySideFormat: false, // No side format for list view days
+        noEventsContent: "Keine Veranstaltungen sichtbar", // Message when no events are visible
     });
 
     calendarInstance?.render();
 
+    // Set up view toggle buttons
     document.querySelectorAll(".vbtn").forEach((el) => el.addEventListener("click", () => {
         var viewType = ( /** @type {HTMLElement} */(el)).dataset["view"];
         document.querySelectorAll(".vbtn").forEach(el => el.classList.remove("active"));
@@ -183,7 +182,7 @@ export function changeCalendarView(viewName) {
     view.value = viewName;
 }
 
-// handle day view day change
+// TODO: handle day view day change
 
 
 /** 
@@ -248,10 +247,12 @@ function buildCalendarEvents(events) {
  * @returns {void}
  */
 export function updateCalendar() {
+    // Query filtered events
     var events = getEvents();
+    // Exit early if calendar is not initialized
     if (!calendarInstance) return;
+    // Remove all existing events and add updated events
     calendarInstance.removeAllEvents();
-    console.log(events);
     const calEvents = buildCalendarEvents(events);
     calendarInstance.addEventSource(calEvents);
 }

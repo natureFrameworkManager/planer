@@ -6,8 +6,10 @@
 /** @typedef {{ degrees: import("./api").Degree[], modules: import("./api").Module[], events: import("./api").Event[], staff: import("./api").Staff[], locations: import("./api").Location[], semesters: import("./api").Semester[], states: EventStateOption[] }} FetchedDataState */
 /** @typedef {{ degree: number | null, semester: number | null, selectedModules: Set<number>, hiddenModules: Set<number>, selectedTypes: Set<string>, hiddenTypes: Set<string>, status: StatusFilterState, selectedStaff: Set<number>, hiddenStaff: Set<number>, selectedLocations: Set<number>, hiddenLocations: Set<number> }} FilterState */
 
-// tri-state
-/** @type {{ NEUTRAL: TriState, SELECTED: TriState, HIDDEN: TriState }} */
+/** 
+ * TriState enum for filter states, with a helper function to cycle through states.
+ * @type {{ NEUTRAL: TriState, SELECTED: TriState, HIDDEN: TriState }} 
+ */
 export const TRI = {
     NEUTRAL: "neutral",
     SELECTED: "selected",
@@ -36,8 +38,10 @@ export const WEEKDAY_LABELS = {
     7: "Sonntag",
 }
 
-// save last fetched data
-/** @type {FetchedDataState} */
+/** 
+ * Save the fetched data from the API for use across the application. This is populated on initial load and can be updated when needed.
+ * @type {FetchedDataState} 
+ */
 export const fetchedData = {
     degrees: [],
     modules: [],
@@ -69,8 +73,10 @@ export const fetchedData = {
     ]
 }
 
-// save filter selection
-/** @type {FilterState} */
+/** 
+ * Save the current filter state for use across the application. This is updated when the user changes filter settings.
+ * @type {FilterState} 
+ */
 export const filterState = {
     degree: null,
     semester: null,
@@ -91,20 +97,33 @@ export const filterState = {
     hiddenLocations: new Set()
 }
 
-// save pinned events
-/** @type {Set<number>} */
+/** 
+ * Save the IDs of pinned events for use across the application. This is updated when the user pins or unpins events.
+ * @type {Set<number>} 
+ */
 export const pinnedEvents = new Set(); // event ids
 
-// save selected view
-/** @type {{ value: string }} */
+/** 
+ * Save the currently selected view for the calendar. This is updated when the user changes the view.
+ * @type {{ value: string }} 
+ */
 export const view = { value: "timeGridWeek" };
 
-// save color mode
-/** @type {{ value: string }} */
+/** 
+ * Save the current color mode for the calendar. This is updated when the user changes the color mode.
+ * @type {{ value: string }} 
+ */
 export const colorMode = { value: "type" };
-/** @type {Map<number, string>} */
+/** 
+ * Save custom mappings for color mode. 
+ * This is updated when the user sets custom colors.
+ * @type {Map<number, string>} 
+ */
 export const customMap = new Map();
 
-// save dark mode
-/** @type {{ value: boolean }} */
+/** 
+ * Save the current dark mode setting for the calendar. This is updated when the user toggles dark mode.
+ * It should be set based on the user's system preference on initial load, and can be toggled by the user.
+ * @type {{ value: boolean }} 
+ */
 export const darkMode = { value: true };

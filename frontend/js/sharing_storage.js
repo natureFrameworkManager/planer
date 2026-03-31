@@ -1,6 +1,6 @@
 // @ts-check
-// generate share link
+// TODO: generate share link
 
-// save state and selection
+// TODO: save state and selection
 
-// restore from link or storage
+// TODO: restore from link or storage

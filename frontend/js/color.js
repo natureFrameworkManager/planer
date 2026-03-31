@@ -12,8 +12,13 @@ export function setColorUpdateCallback(func) {
     updateColorCallback = func;
 }
 
-// generate color for events
-export function getEventColor(/** @type {import('./api.js').Event} */ event) {
+/**
+ * Get the color for an event based on the currently selected color mode and the event's properties.
+ * Falls back to a default color if the event's relevant property is not found in the data.
+ * @param {import('./api.js').Event} event 
+ * @returns {string}
+ */
+export function getEventColor(event) {
     var colorMode = (/** @type {HTMLElement|null} */ (document.querySelector("#colorDrop .color-menu .color-menu-item.active")))?.["dataset"]["mode"];
     switch (colorMode) {
         case "type":
@@ -49,13 +54,14 @@ export function getEventColor(/** @type {import('./api.js').Event} */ event) {
             }
             return colorMap.get(event.staff_ids[0]);
         case "custom":
-            
+            // TODO: implement custom color picker and return selected color for event
             break;
     }
 
     return generatePalette(10)[7];
 }
 
+// Labels for color modes in the dropdown menu
 const COLOR_MODE_LABELS = /** @type {Record<string, string>} */ ({
     type: "Typ",
     module: "Modul",
@@ -80,6 +86,11 @@ function applyColorModeUI(mode) {
     if (labelEl) labelEl.innerText = COLOR_MODE_LABELS[mode] ?? mode;
 }
 
+/**
+ * Initialize event listeners for color mode dropdown and theme toggle, and apply initial color mode UI state.
+ * Also triggers the color update callback when the color mode or theme changes, so dependent components can refresh their colors.
+ * @returns {void}
+ */
 export function initColorEvents() {
     document.querySelector("#colorDrop #colorDropBtn")?.addEventListener("click", () => {
         document.querySelector("#colorDrop")?.classList.toggle("open")
@@ -117,8 +128,9 @@ export function initColorEvents() {
     if (themeIconEl) themeIconEl.innerText = (darkMode.value ? "dark_mode" : "light_mode");
 } 
 
-// handle color mode change
-// respect dark mode
+// TODO: handle color mode change
+// TODO: respect dark mode
+
 
 const GOLDEN_ANGLE = 137.508;
 
@@ -157,12 +169,11 @@ export function generatePalette(count, opts = {}) {
 }
 
 /**
- * Give a text color with maximum contrast given a background color.
+ * Give a text color with maximum contrast given a background color.  
  * Composites `color` over `bgColor` (defaults to --color-background)
  * so semi-transparent event backgrounds are resolved correctly.
  * @param {string} color       CSS color string (may be semi-transparent)
- * @param {string} [bgColor]   Opaque background to composite against.
- *                             Defaults to the current --color-background variable.
+ * @param {string} [bgColor]   Opaque background to composite against. Defaults to the current --color-background variable.
  * @returns {"#ffffff"|"#000000"}
  */
 export function getContrastTextColor(color, bgColor) {
@@ -196,3 +207,5 @@ export function getContrastTextColor(color, bgColor) {
 
     return contrastWithWhite >= contrastWithBlack ? "#ffffff" : "#000000";
 }
+
+// TODO: implement custom color picker and save selected colors in state
