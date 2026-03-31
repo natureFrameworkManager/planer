@@ -1,14 +1,20 @@
+// @ts-check
 import { colorMode, darkMode, fetchedData } from "./state.js";
 
+/** @type {(() => void) | null} */
 let updateColorCallback = null;
 
+/**
+ * Set callback for when color mode or dark mode changes, so dependent components (e.g. calendar) can update their colors.
+ * @param {() => void} func 
+ */
 export function setColorUpdateCallback(func) {
     updateColorCallback = func;
 }
 
 // generate color for events
-export function getEventColor(event) {
-    var colorMode = document.querySelector("#colorDrop .color-menu .color-menu-item.active").dataset.mode;
+export function getEventColor(/** @type {import('./api.js').Event} */ event) {
+    var colorMode = (/** @type {HTMLElement|null} */ (document.querySelector("#colorDrop .color-menu .color-menu-item.active")))?.["dataset"]["mode"];
     switch (colorMode) {
         case "type":
             var types = [...new Set(fetchedData.events.map(el => el.type))];
@@ -50,56 +56,65 @@ export function getEventColor(event) {
     return generatePalette(10)[7];
 }
 
-const COLOR_MODE_LABELS = {
+const COLOR_MODE_LABELS = /** @type {Record<string, string>} */ ({
     type: "Typ",
     module: "Modul",
     status: "Status",
     staff: "Dozent",
     custom: "Benutzerdefiniert",
-};
+});
 
+/**
+ * Update UI to reflect current color mode selection, and update the label of the color mode dropdown button.
+ * @param {string} mode 
+ */
 function applyColorModeUI(mode) {
     document.querySelectorAll("#colorDrop .color-menu .color-menu-item").forEach((el) => {
-        const active = el.dataset.mode === mode;
-        el.classList.toggle("active", active);
-        el.querySelector("span").innerText = active ? "check" : "";
+        const htmlEl = /** @type {HTMLElement} */ (el);
+        const active = htmlEl.dataset['mode'] === mode;
+        htmlEl.classList.toggle("active", active);
+        const span = /** @type {HTMLElement|null} */ (htmlEl.querySelector("span"));
+        if (span) span.innerText = active ? "check" : "";
     });
-    document.querySelector("#colorDrop #colorDropBtn span#colorModeLabel").innerText =
-        COLOR_MODE_LABELS[mode] ?? mode;
+    const labelEl = /** @type {HTMLElement|null} */ (document.querySelector("#colorDrop #colorDropBtn span#colorModeLabel"));
+    if (labelEl) labelEl.innerText = COLOR_MODE_LABELS[mode] ?? mode;
 }
 
 export function initColorEvents() {
-    document.querySelector("#colorDrop #colorDropBtn").addEventListener("click", () => {
-        document.querySelector("#colorDrop").classList.toggle("open")
+    document.querySelector("#colorDrop #colorDropBtn")?.addEventListener("click", () => {
+        document.querySelector("#colorDrop")?.classList.toggle("open")
     })
     document.addEventListener("click", (e) => {
         const colorDropEl = document.querySelector("#colorDrop");
-        if (colorDropEl && !colorDropEl.contains(e.target)) colorDropEl.classList.remove("open");
+        if (colorDropEl && !colorDropEl.contains(/** @type {Node|null} */ (e.target))) colorDropEl.classList.remove("open");
     });
 
     // Apply initial active state from saved colorMode
     applyColorModeUI(colorMode.value);
 
     document.querySelectorAll("#colorDrop .color-menu .color-menu-item").forEach(el => el.addEventListener("click", () => {
-        colorMode.value = el.dataset.mode;
-        applyColorModeUI(el.dataset.mode);
-        document.querySelector("#colorDrop").classList.remove("open");
+        const htmlEl = /** @type {HTMLElement} */ (el);
+        colorMode.value = htmlEl.dataset['mode'] ?? "";
+        applyColorModeUI(htmlEl.dataset['mode'] ?? "");
+        document.querySelector("#colorDrop")?.classList.remove("open");
 
         if (updateColorCallback !== null) {
             updateColorCallback();
         }
     }));
 
-    document.querySelector("#themeToggle").addEventListener("click", () => {
+    document.querySelector("#themeToggle")?.addEventListener("click", () => {
         darkMode.value = !darkMode.value;
-        document.querySelector("html").classList.toggle("dark", darkMode.value);
-        document.querySelector("#themeToggle #themeIcon").innerText = (darkMode.value ? "dark_mode" : "light_mode");
+        document.querySelector("html")?.classList.toggle("dark", darkMode.value);
+        const themeIcon = /** @type {HTMLElement|null} */ (document.querySelector("#themeToggle #themeIcon"));
+        if (themeIcon) themeIcon.innerText = (darkMode.value ? "dark_mode" : "light_mode");
 
         if (updateColorCallback !== null) {
             updateColorCallback();
         }
-    })
-    document.querySelector("#themeToggle #themeIcon").innerText = (darkMode.value ? "dark_mode" : "light_mode");
+    });
+    const themeIconEl = /** @type {HTMLElement|null} */ (document.querySelector("#themeToggle #themeIcon"));
+    if (themeIconEl) themeIconEl.innerText = (darkMode.value ? "dark_mode" : "light_mode");
 } 
 
 // handle color mode change
@@ -114,8 +129,8 @@ const GOLDEN_ANGLE = 137.508;
  *
  * @param {number} count        Number of colors to generate (≥ 1)
  * @param {object} [opts]       Optional overrides
- * @param {number} [opts.lightness=[0.60, 0.82]]  Min/max lightness
- * @param {number} [opts.chroma=[0.13, 0.24]]     Min/max chroma
+ * @param {[number, number]} [opts.lightness=[0.60, 0.82]]  Min/max lightness
+ * @param {[number, number]} [opts.chroma=[0.13, 0.24]]     Min/max chroma
  * @param {number} [opts.hueOffset=0]             Starting hue offset (°)
  * @returns {string[]}          Array of "oklch(L C H)" strings
  */
@@ -158,6 +173,7 @@ export function getContrastTextColor(color, bgColor) {
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = 1;
     const ctx = canvas.getContext("2d");
+    if (!ctx) return "#000000";
 
     // Paint the opaque background first, then composite the event color on top.
     ctx.fillStyle = resolvedBg || "#ffffff";
@@ -168,7 +184,7 @@ export function getContrastTextColor(color, bgColor) {
     const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
 
     // Relative luminance per WCAG 2.1
-    const toLinear = (c) => {
+    const toLinear = (/** @type {number} */ c) => {
         const s = c / 255;
         return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
     };

@@ -1,5 +1,10 @@
+// @ts-check
 const API_BASE = "http://127.0.0.1:8000/api";
 
+/**
+ * @param {string} path
+ * @returns {Promise<unknown>}
+ */
 async function apiFetch(path) {
     const res = await fetch(`${API_BASE}${path}`);
     if (!res.ok) throw new Error(`API ${path}: ${res.status}`);
@@ -85,8 +90,10 @@ async function apiFetch(path) {
  * @returns {Promise<Degree[]>}
  */
 export async function fetchDegrees() {
-    return apiFetch(
-        "/degrees?include_relationships=true&include_semesters=true",
+    return /** @type {Promise<Degree[]>} */ (
+        apiFetch(
+            "/degrees?include_relationships=true&include_semesters=true",
+        )
     );
 }
 
@@ -96,8 +103,10 @@ export async function fetchDegrees() {
  * @returns {Promise<DegreeDetail>}
  */
 export async function fetchDegreeDetail(id) {
-    return apiFetch(
-        `/degrees/${id}?include_relationships=true&include_semesters=true`,
+    return /** @type {Promise<DegreeDetail>} */ (
+        apiFetch(
+            `/degrees/${id}?include_relationships=true&include_semesters=true`,
+        )
     );
 }
 
@@ -106,7 +115,9 @@ export async function fetchDegreeDetail(id) {
  * @returns {Promise<Module[]>}
  */
 export async function fetchModules() {
-    return apiFetch("/modules?include_relationships=true");
+    return /** @type {Promise<Module[]>} */ (
+        apiFetch("/modules?include_relationships=true")
+    );
 }
 
 /**
@@ -114,7 +125,9 @@ export async function fetchModules() {
  * @returns {Promise<Event[]>}
  */
 export async function fetchEvents() {
-    return apiFetch("/events?include_relationships=true");
+    return /** @type {Promise<Event[]>} */ (
+        apiFetch("/events?include_relationships=true")
+    );
 }
 
 /**
@@ -122,7 +135,7 @@ export async function fetchEvents() {
  * @returns {Promise<Staff[]>}
  */
 export async function fetchStaff() {
-    return apiFetch("/staff");
+    return /** @type {Promise<Staff[]>} */ (apiFetch("/staff"));
 }
 
 /**
@@ -130,7 +143,7 @@ export async function fetchStaff() {
  * @returns {Promise<Location[]>}
  */
 export async function fetchLocations() {
-    return apiFetch("/locations");
+    return /** @type {Promise<Location[]>} */ (apiFetch("/locations"));
 }
 
 /**
@@ -138,7 +151,7 @@ export async function fetchLocations() {
  * @returns {Promise<Semester[]>}
  */
 export async function fetchSemesters() {
-    return apiFetch("/semesters");
+    return /** @type {Promise<Semester[]>} */ (apiFetch("/semesters"));
 }
 
 // request all initial data

@@ -1,7 +1,12 @@
+// @ts-check
 import { fetchedData, filterState, nextTriState, TRI } from "./state.js"
 
+/** @type {(() => void) | null} */
 let updateCallback = null;
 
+/**
+ * @param {() => void} func
+ */
 export function setFilterUpdateCallback(func) {
     updateCallback = func;
 }
@@ -19,16 +24,18 @@ export function updateFilters() {
 function fillDegreesSemesters() {
     var degrees = fetchedData.degrees;
 
-    var degreeEl = document.querySelector("#degreeSelect");
-    var semesterEl = document.querySelector("#semesterSelect");
-    
-    if (degreeEl.children.length > 1) {
-        var selected = document.querySelector("#degreeSelect option:checked").value;
-        if (!isNaN(parseInt(selected))) {
-            // else fill with correct semesters 
-            document.querySelector("#semester-filter-section").style.display = "";
+    var degreeEl = /** @type {HTMLSelectElement | null} */ (document.querySelector("#degreeSelect"));
+    var semesterEl = /** @type {HTMLSelectElement | null} */ (document.querySelector("#semesterSelect"));
+    var semFilterSec = /** @type {HTMLElement | null} */ (document.querySelector("#semester-filter-section"));
 
-            var semesters = degrees.find(el => el.id == parseInt(selected)).semesters;
+    if (!degreeEl || !semesterEl) return;
+    if (degreeEl.children.length > 1) {
+        var selectedEl = /** @type {HTMLOptionElement | null} */ (document.querySelector("#degreeSelect option:checked"))?.value ?? "";
+        if (!isNaN(parseInt(selectedEl))) {
+            // else fill with correct semesters 
+            if (semFilterSec) semFilterSec.style.display = "";
+
+            var semesters = degrees.find(el => el.id == parseInt(selectedEl))?.semesters ?? [];
 
             var html = "<option value=''>Alle Semester</option>";
             for (const semester of semesters) {
@@ -38,20 +45,20 @@ function fillDegreesSemesters() {
             semesterEl.addEventListener("change", handleSemesterSelect);
         } else {
             // if selected el is first dont fill semesters
-            document.querySelector("#semester-filter-section").style.display = "none";
+            if (semFilterSec) semFilterSec.style.display = "none";
 
             semesterEl.innerHTML = "<option value=''>Alle Semester</option>";
         }
     } else {
         // if selected el is first dont fill semesters
-        document.querySelector("#semester-filter-section").style.display = "none";
+        if (semFilterSec) semFilterSec.style.display = "none";
 
         semesterEl.innerHTML = "<option value=''>Alle Semester</option>";
     }
     var html = "<option value=''>Alle Studiengänge</option>";
     for (const degree of degrees) {
-        var selected = degreeEl.children.length > 1 && parseInt(document.querySelector("#degreeSelect option:checked").value) == degree.id;
-        html += '<option value="' + degree.id + '"' + (selected ? " selected" : "")+ '>' + degree.name + "</option>";
+        var isSelected = degreeEl.children.length > 1 && parseInt(/** @type {HTMLOptionElement | null} */(document.querySelector("#degreeSelect option:checked"))?.value ?? "") == degree.id;
+        html += '<option value="' + degree.id + '"' + (isSelected ? " selected" : "") + '>' + degree.name + "</option>";
     }
     degreeEl.innerHTML = html;
     degreeEl.addEventListener("change", handleDegreeSelect);
@@ -59,18 +66,21 @@ function fillDegreesSemesters() {
 // fill module select based on degree
 // show and fill more module select based on remaining modules
 function fillModules() {
-    var currentDegree = document.querySelector("#degreeSelect option:checked").value;
+    var currentDegree = /** @type {HTMLOptionElement | null} */ (document.querySelector("#degreeSelect option:checked"))?.value ?? "";
     if (!isNaN(parseInt(currentDegree))) {
-        var modules = fetchedData.modules.filter(el => el.degree_ids.includes(parseInt(currentDegree)));
+        var modules = fetchedData.modules.filter(el => parseInt(currentDegree) in el.degree_ids);
         var moreModules = fetchedData.modules.filter(el => !modules.includes(el));;
     } else {
         var modules = fetchedData.modules;
+        /** @type {import('./api.js').Module[]} */
         var moreModules = [];
     }
 
-    var moduleCon = document.querySelector("#moduleList");
+    var moduleCon = /** @type {HTMLElement | null} */ (document.querySelector("#moduleList"));
+    if (!moduleCon) return;
     moduleCon.innerHTML = "";
-    var moreModuleCon = document.querySelector("#weitereModuleList");
+    var moreModuleCon = /** @type {HTMLElement | null} */ (document.querySelector("#weitereModuleList"));
+    if (!moreModuleCon) return;
     moreModuleCon.innerHTML = "";
 
     for (const module of modules) {
@@ -95,17 +105,19 @@ function fillModules() {
         var count = getEvents().filter(el => el.module_ids.some(id => module.id == id)).length
         moreModuleCon.appendChild(createFilterRow(module.id, module.name, state, count, handleModuleSelect));
     }
+    const weitereSection = /** @type {HTMLElement | null} */ (document.querySelector("#weitereSection"));
     if (moreModules.length > 0) {
-        document.querySelector("#weitereSection").style.display = "";
+        if (weitereSection) weitereSection.style.display = "";
     } else {
-        document.querySelector("#weitereSection").style.display = "none";
+        if (weitereSection) weitereSection.style.display = "none";
     }
 }
 // fill event types (+ count), disable types with count == 0
 function fillTypes() {
     var types = new Set(fetchedData.events.map(el => el.type));
 
-    var typeCon = document.querySelector("#typeList");
+    var typeCon = /** @type {HTMLElement | null} */ (document.querySelector("#typeList"));
+    if (!typeCon) return;
     typeCon.innerHTML = "";
 
     for (const type of [...types].sort()) {
@@ -125,11 +137,12 @@ function fillTypes() {
 function fillStates() {
     var states = fetchedData.states;
 
-    var stateCon = document.querySelector("#statusList");
+    var stateCon = /** @type {HTMLElement | null} */ (document.querySelector("#statusList"));
+    if (!stateCon) return;
     stateCon.innerHTML = "";
 
     for (const state of states) {
-        var rowState = (filterState.status[state.key] !== null ? filterState.status[state.key] : TRI.NEUTRAL)
+        var rowState = filterState.status[state.key] ?? TRI.NEUTRAL;
         var count = getEvents().filter(el => el.status == state.key).length
         stateCon.appendChild(createFilterRow(state.key, state.name, rowState, count, handleStateSelect, count == 0 && rowState == TRI.NEUTRAL));
     }
@@ -139,10 +152,11 @@ function fillStates() {
 function fillStaff() {
     var staff = fetchedData.staff;
 
-    var staffCon = document.querySelector("#staffList");
+    var staffCon = /** @type {HTMLElement | null} */ (document.querySelector("#staffList"));
+    if (!staffCon) return;
     staffCon.innerHTML = "";
 
-    for (const staffMember of staff.sort((a,b) => a.name.localeCompare(b.name))) {
+    for (const staffMember of staff.sort((a, b) => a.name.localeCompare(b.name))) {
         if (filterState.selectedStaff.has(staffMember.id)) {
             var state = TRI.SELECTED;
         } else if (filterState.hiddenStaff.has(staffMember.id)) {
@@ -161,10 +175,11 @@ function fillStaff() {
 function fillLocations() {
     var locations = fetchedData.locations;
 
-    var locationCon = document.querySelector("#locationList");
+    var locationCon = /** @type {HTMLElement | null} */ (document.querySelector("#locationList"));
+    if (!locationCon) return;
     locationCon.innerHTML = "";
 
-    for (const location of locations.sort((a,b) => a.name.localeCompare(b.name))) {
+    for (const location of locations.sort((a, b) => a.name.localeCompare(b.name))) {
         if (filterState.selectedLocations.has(location.id)) {
             var state = TRI.SELECTED;
         } else if (filterState.hiddenLocations.has(location.id)) {
@@ -189,8 +204,12 @@ function fillLocations() {
 // search locations
 
 // handle select of filter element (degree, semester, module, more module, type, status, staff, location)
+/**
+ * 
+ * @param {Event} ev 
+ */
 function handleDegreeSelect(ev) {
-    var selected = ev.target.querySelector("option:checked").value;
+    var selected = /** @type {HTMLOptionElement | null} */ (/** @type {HTMLSelectElement} */ (ev.target).querySelector("option:checked"))?.value ?? "";
     if (!isNaN(parseInt(selected))) {
         filterState.degree = parseInt(selected);
     } else {
@@ -202,8 +221,12 @@ function handleDegreeSelect(ev) {
         updateCallback();
     };
 }
+/**
+ * 
+ * @param {Event} ev 
+ */
 function handleSemesterSelect(ev) {
-    var selected = ev.target.querySelector("option:checked").value;
+    var selected = /** @type {HTMLOptionElement | null} */ (/** @type {HTMLSelectElement} */ (ev.target).querySelector("option:checked"))?.value ?? "";
     if (!isNaN(parseInt(selected))) {
         filterState.semester = parseInt(selected);
     } else {
@@ -214,11 +237,15 @@ function handleSemesterSelect(ev) {
         updateCallback();
     }
 }
+/**
+ * 
+ * @param {Event} ev 
+ */
 function handleModuleSelect(ev) {
-    var filterRowEl = ev.target.closest("div.frow");
-    var triStateEl = filterRowEl.querySelector("span.tri");
-    var newState = triStateEl.dataset.state;
-    var moduleId = parseInt(filterRowEl.dataset.key);
+    var filterRowEl = /** @type {HTMLElement | null} */ (/** @type {Element} */ (ev.target).closest("div.frow"));
+    var triStateEl = /** @type {HTMLElement | null} */ (filterRowEl?.querySelector("span.tri"));
+    var newState = triStateEl?.dataset['state'];
+    var moduleId = parseInt(filterRowEl?.dataset['key'] ?? "");
     if (!isNaN(moduleId)) {
         switch (newState) {
             case TRI.SELECTED:
@@ -240,11 +267,15 @@ function handleModuleSelect(ev) {
         updateCallback();
     }
 }
+/**
+ * 
+ * @param {Event} ev 
+ */
 function handleTypeSelect(ev) {
-    var filterRowEl = ev.target.closest("div.frow");
-    var triStateEl = filterRowEl.querySelector("span.tri");
-    var newState = triStateEl.dataset.state;
-    var typeId = filterRowEl.dataset.key;
+    var filterRowEl = /** @type {HTMLElement | null} */ (/** @type {Element} */ (ev.target).closest("div.frow"));
+    var triStateEl = /** @type {HTMLElement | null} */ (filterRowEl?.querySelector("span.tri"));
+    var newState = triStateEl?.dataset['state'];
+    var typeId = filterRowEl?.dataset['key'] ?? "";
 
     switch (newState) {
         case TRI.SELECTED:
@@ -264,22 +295,30 @@ function handleTypeSelect(ev) {
         updateCallback();
     }
 }
+/**
+ * 
+ * @param {Event} ev 
+ */
 function handleStateSelect(ev) {
-    var filterRowEl = ev.target.closest("div.frow");
-    var triStateEl = filterRowEl.querySelector("span.tri");
-    var newState = triStateEl.dataset.state;
-    var stateKey = filterRowEl.dataset.key;
+    var filterRowEl = /** @type {HTMLElement | null} */ (/** @type {Element} */ (ev.target).closest("div.frow"));
+    var triStateEl = /** @type {HTMLElement | null} */ (filterRowEl?.querySelector("span.tri"));
+    var newState = triStateEl?.dataset['state'];
+    var stateKey = filterRowEl?.dataset['key'];
 
-    filterState.status[stateKey] = newState;
+    filterState.status[/** @type {import('./state.js').StatusKey} */ (stateKey ?? "")] = /** @type {import('./state.js').TriState | null} */ (newState ?? null);
     if (updateCallback !== null) {
         updateCallback();
     }
 }
+/**
+ * 
+ * @param {Event} ev 
+ */
 function handleStaffSelect(ev) {
-    var filterRowEl = ev.target.closest("div.frow");
-    var triStateEl = filterRowEl.querySelector("span.tri");
-    var newState = triStateEl.dataset.state;
-    var staffId = parseInt(filterRowEl.dataset.key);
+    var filterRowEl = /** @type {HTMLElement | null} */ (/** @type {Element} */ (ev.target).closest("div.frow"));
+    var triStateEl = /** @type {HTMLElement | null} */ (filterRowEl?.querySelector("span.tri"));
+    var newState = triStateEl?.dataset['state'];
+    var staffId = parseInt(filterRowEl?.dataset['key'] ?? "");
     if (!isNaN(staffId)) {
         switch (newState) {
             case TRI.SELECTED:
@@ -300,11 +339,15 @@ function handleStaffSelect(ev) {
         }
     }
 }
+/**
+ * 
+ * @param {Event} ev 
+ */
 function handleLocationSelect(ev) {
-    var filterRowEl = ev.target.closest("div.frow");
-    var triStateEl = filterRowEl.querySelector("span.tri");
-    var newState = triStateEl.dataset.state;
-    var locationId = parseInt(filterRowEl.dataset.key);
+    var filterRowEl = /** @type {HTMLElement | null} */ (/** @type {Element} */ (ev.target).closest("div.frow"));
+    var triStateEl = /** @type {HTMLElement | null} */ (filterRowEl?.querySelector("span.tri"));
+    var newState = triStateEl?.dataset['state'];
+    var locationId = parseInt(filterRowEl?.dataset['key'] ?? "");
     if (!isNaN(locationId)) {
         switch (newState) {
             case TRI.SELECTED:
@@ -334,13 +377,14 @@ function handleLocationSelect(ev) {
 export function getEvents() {
     // modules
     if (filterState.degree !== null) {
-        var degreeModules = fetchedData.modules.filter(el => el.degree_ids.includes(parseInt(filterState.degree)));
+        var degreeModules = fetchedData.modules.filter(el => /** @type {number} */(filterState.degree) in el.degree_ids);
     } else {
         var degreeModules = fetchedData.modules;
     }
     var degreeModulesIds = degreeModules.map(el => el.id);
     var selectedDegreeModules = [...filterState.selectedModules].filter(el => degreeModulesIds.includes(el));
     var moreSelectedModules = [...filterState.selectedModules].filter(el => !degreeModulesIds.includes(el));
+    /** @type {number[]} */
     var modules = [];
     if (selectedDegreeModules.length > 0) {
         modules = modules.concat(selectedDegreeModules);
@@ -350,14 +394,14 @@ export function getEvents() {
     modules = modules.concat(moreSelectedModules);
     modules = modules.filter(el => !filterState.hiddenModules.has(el));
 
-    return fetchedData.events.filter(el => 
+    return fetchedData.events.filter(el =>
         el.module_ids.some(id => modules.includes(id)) &&
-        filterState.status[el.status] !== TRI.HIDDEN &&
+        filterState.status[/** @type {import('./state.js').StatusKey} */ (el.status)] !== TRI.HIDDEN &&
         !el.staff_ids.some(id => filterState.hiddenStaff.has(id)) &&
         !filterState.hiddenLocations.has(el.location_id) &&
         !filterState.hiddenTypes.has(el.type) &&
 
-        (Object.values(filterState.status).filter(el => el == TRI.SELECTED).length > 0 ? filterState.status[el.status] == TRI.SELECTED : true) &&
+        (Object.values(filterState.status).filter(el => el == TRI.SELECTED).length > 0 ? filterState.status[/** @type {import('./state.js').StatusKey} */ (el.status)] == TRI.SELECTED : true) &&
         (filterState.selectedTypes.size > 0 ? filterState.selectedTypes.has(el.type) : true) &&
         (filterState.selectedStaff.size > 0 ? el.staff_ids.some(id => filterState.selectedStaff.has(id)) : true) &&
         (filterState.selectedLocations.size > 0 ? filterState.selectedLocations.has(el.location_id) : true)
@@ -368,8 +412,8 @@ export function getEvents() {
 
 /**
  * 
- * @param {string} key 
- * @param {string|HTMLElement} content displayed content 
+ * @param {string | number} key 
+ * @param {string} content displayed content 
  * @param {string} state element of TRI 
  * @param {number} count event count of row 
  * @param {Function} handler
@@ -387,7 +431,7 @@ function createFilterRow(
     const row = document.createElement("div");
     row.className = `frow${disabled ? " dimmed" : ""}`;
     row.setAttribute("data-state", state);
-    row.setAttribute("data-key", key);
+    row.setAttribute("data-key", String(key));
 
     // Tri-state toggle
     const tri = document.createElement("span");
@@ -405,15 +449,16 @@ function createFilterRow(
     // Count
     const cnt = document.createElement("span");
     cnt.className = "cnt";
-    cnt.textContent = count;
+    cnt.textContent = String(count);
     row.appendChild(cnt);
 
     // Click handler
     if (!disabled) {
         row.addEventListener("click", (ev) => {
-            const current = row.querySelector("span.tri").dataset.state;
+            const triEl = /** @type {HTMLElement | null} */ (row.querySelector("span.tri"));
+            const current = /** @type {import('./state.js').TriState} */ (triEl?.dataset['state'] ?? TRI.NEUTRAL);
             const next = nextTriState(current);
-            row.querySelector("span.tri").dataset.state = next;
+            if (triEl) triEl.dataset['state'] = next;
             handler(ev);
         });
     }

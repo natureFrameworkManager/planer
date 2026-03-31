@@ -1,3 +1,4 @@
+// @ts-check
 import { fetchAll } from "./api.js";
 import { initCalendar, setCalendarUpdateCallback, setOpenPopupCallback, updateCalendar } from "./calendar.js";
 import { initColorEvents, setColorUpdateCallback } from "./color.js";
@@ -24,7 +25,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setColorUpdateCallback(update);
     setPopupUpdateCallback(update)
 
-    document.querySelector("#loadingOverlay").classList.add("hidden");
+    document.querySelector("#loadingOverlay")?.classList.add("hidden");
     globalEventListeners()
 });
 
@@ -34,7 +35,7 @@ function update() {
 }
 
 function globalEventListeners() {
-    document.querySelector("#weitereToggle").addEventListener("click", () => {
-        document.querySelector("#weitereExp").classList.toggle("open");
+    document.querySelector("#weitereToggle")?.addEventListener("click", () => {
+        document.querySelector("#weitereExp")?.classList.toggle("open");
     })
 }

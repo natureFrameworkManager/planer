@@ -1,3 +1,4 @@
+// @ts-check
 // generate share link
 
 // save state and selection

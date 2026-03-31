@@ -1,23 +1,42 @@
+// @ts-check
 import { getContrastTextColor, getEventColor } from "./color.js";
 import { getEvents } from "./filters.js";
 import { fetchedData, pinnedEvents, view } from "./state.js";
 
-// render cal
-let calendarInstance = null;
-let updateCalendarCallback = null;
-let openEventPopupCallback = null;
+/** @typedef {import('@fullcalendar/core').Calendar} fullCalendar */
 
+// render cal
+let calendarInstance = /** @type {fullCalendar | null} */ (null);
+let updateCalendarCallback = /** @type {(() => void) | null} */ (null);
+let openEventPopupCallback = /** @type {((eventId: number) => void) | null} */ (null);
+
+/**
+ * Set callback for when calendar needs to be updated (e.g. after pin toggle)
+ * @param {(() => void)} func 
+ */
 export function setCalendarUpdateCallback(func) {
     updateCalendarCallback = func;
 }
+/**
+ * Set callback for when an event is clicked to open the popup
+ * @param {(eventId: number) => void} func 
+ */
 export function setOpenPopupCallback(func) {
     openEventPopupCallback = func;
 }
 
-function getCalendar() {
+/**
+ * Get the FullCalendar instance
+ * @returns {fullCalendar | null}
+ */
+export function getCalendar() {
     return calendarInstance;
 }
 
+/**
+ * Initialize the FullCalendar instance
+ * @returns {void}
+ */
 export function initCalendar() {
     const calEl = document.getElementById("calendar");
     if (!calEl) return;
@@ -51,10 +70,10 @@ export function initCalendar() {
         noEventsContent: "Keine Veranstaltungen sichtbar",
     });
 
-    calendarInstance.render();
+    calendarInstance?.render();
 
-    document.querySelectorAll(".vbtn").forEach(el => el.addEventListener("click", () => {
-        var viewType = el.dataset.view;
+    document.querySelectorAll(".vbtn").forEach((el) => el.addEventListener("click", () => {
+        var viewType = ( /** @type {HTMLElement} */(el)).dataset["view"];
         document.querySelectorAll(".vbtn").forEach(el => el.classList.remove("active"));
         el.classList.add("active");
         switch (viewType) {
@@ -71,14 +90,14 @@ export function initCalendar() {
     }));
 }
 
-// render events
 /**
+ * Custom render function for calendar events
  * @param {Object} arg - FullCalendar event render argument
  * @param {Object} arg.event - FullCalendar event object
  * @param {string} arg.event.id - String event ID
  * @param {string} arg.event.title - Event title
  * @param {Object} arg.event.extendedProps - Custom event properties
- * @param {Object} arg.event.extendedProps.eventData - Event
+ * @param {Object} arg.event.extendedProps.eventData - Event data from API
  * @param {boolean} arg.event.extendedProps.isPinned - Event
  * @param {boolean} arg.event.extendedProps.isExcluded - Event
  * @param {string} arg.event.extendedProps.color - Event color
@@ -130,7 +149,7 @@ function renderEventContent(arg) {
 
     // Apply color to parent event element
     requestAnimationFrame(() => {
-        const fcEl = el.closest(".fc-event");
+        const fcEl = /** @type {HTMLElement | null} */ (el.closest(".fc-event"));
         if (fcEl) {
             fcEl.style.setProperty("--ev-background", color);
             fcEl.style.setProperty("--ev-color", getContrastTextColor(color));
@@ -140,14 +159,24 @@ function renderEventContent(arg) {
     return { domNodes: [el] };
 }
 
-// forward event click
+/**
+ * Handle event click to open popup
+ * @param {Object} info - FullCalendar event click info
+ * @param {Object} info.event - Clicked event object
+ * @param {string} info.event.id - String event ID
+ * @param {MouseEvent} info.jsEvent - Original click event
+ */
 function handleEventClick(info) {
     info.jsEvent.preventDefault();
     const evId = Number(info.event.id);
     if (openEventPopupCallback) openEventPopupCallback(evId);
 }
 
-// handle view change
+/**
+ * Handle calendar view change
+ * @param {string} viewName 
+ * @returns {void}
+ */
 export function changeCalendarView(viewName) {
     if (!calendarInstance) return;
     calendarInstance.changeView(viewName);
@@ -157,7 +186,10 @@ export function changeCalendarView(viewName) {
 // handle day view day change
 
 
-// Get a non-date-specific Monday for the generic week
+/** 
+ * Get a fixed Monday date for consistent calendar rendering
+ * @returns {Date}
+ */
 function getFixedMonday() {
     const d = new Date();
     const day = d.getDay();
@@ -165,7 +197,11 @@ function getFixedMonday() {
     return new Date(d.setDate(diff));
 }
 
-// display
+/**
+ * Build FullCalendar event objects from our event data
+ * @param {import("./api").Event[]} events 
+ * @returns {Object[]}
+ */
 function buildCalendarEvents(events) {
     const fcEvents = [];
 
@@ -177,7 +213,7 @@ function buildCalendarEvents(events) {
 
         // Get module names for display
         const moduleNames = ev.module_ids
-            .map((moduleId) => fetchedData.modules.find(el => el.id == moduleId).name)
+            .map((moduleId) => fetchedData.modules.find(el => el.id == moduleId)?.name)
             .filter(Boolean);
 
         // Status color
@@ -207,7 +243,10 @@ function buildCalendarEvents(events) {
     return fcEvents;
 }
 
-// refresh calendar
+/** 
+ * Update calendar events based on current filters and pinned status
+ * @returns {void}
+ */
 export function updateCalendar() {
     var events = getEvents();
     if (!calendarInstance) return;
@@ -217,6 +256,10 @@ export function updateCalendar() {
     calendarInstance.addEventSource(calEvents);
 }
 
+/**
+ * Handle pin toggle for an event
+ * @param {number} eventId 
+ */
 function onPinToggle(eventId) {
     if (pinnedEvents.has(eventId)) {
         pinnedEvents.delete(eventId)
