@@ -29,47 +29,40 @@ function fillDegreesSemesters() {
     var semFilterSec = /** @type {HTMLElement | null} */ (document.querySelector("#semester-filter-section"));
 
     if (!degreeEl || !semesterEl) return;
-    if (degreeEl.children.length > 1) {
-        var selectedEl = /** @type {HTMLOptionElement | null} */ (document.querySelector("#degreeSelect option:checked"))?.value ?? "";
-        if (!isNaN(parseInt(selectedEl))) {
-            // else fill with correct semesters 
-            if (semFilterSec) semFilterSec.style.display = "";
 
-            var semesters = degrees.find(el => el.id == parseInt(selectedEl))?.semesters ?? [];
+    var degreeHtml = "<option value=''>Alle Studiengänge</option>";
+    for (const degree of degrees) {
+        degreeHtml += '<option value="' + degree.id + '"' + (filterState.degree === degree.id ? " selected" : "") + '>' + degree.name + "</option>";
+    }
+    degreeEl.innerHTML = degreeHtml;
+    degreeEl.addEventListener("change", handleDegreeSelect);
 
-            var html = "<option value=''>Alle Semester</option>";
-            for (const semester of semesters) {
-                html += '<option value="' + semester + '">' + semester + "</option>";
-            }
-            semesterEl.innerHTML = html;
-            semesterEl.addEventListener("change", handleSemesterSelect);
-        } else {
-            // if selected el is first dont fill semesters
-            if (semFilterSec) semFilterSec.style.display = "none";
-
-            semesterEl.innerHTML = "<option value=''>Alle Semester</option>";
+    if (filterState.degree !== null) {
+        if (semFilterSec) semFilterSec.style.display = "";
+        var semesters = degrees.find(el => el.id === filterState.degree)?.semesters ?? [];
+        var semHtml = "<option value=''>Alle Semester</option>";
+        for (const semester of semesters) {
+            semHtml += '<option value="' + semester + '"' + (filterState.semester === semester ? " selected" : "") + '>' + semester + "</option>";
         }
+        semesterEl.innerHTML = semHtml;
+        semesterEl.addEventListener("change", handleSemesterSelect);
     } else {
-        // if selected el is first dont fill semesters
         if (semFilterSec) semFilterSec.style.display = "none";
-
         semesterEl.innerHTML = "<option value=''>Alle Semester</option>";
     }
-    var html = "<option value=''>Alle Studiengänge</option>";
-    for (const degree of degrees) {
-        var isSelected = degreeEl.children.length > 1 && parseInt(/** @type {HTMLOptionElement | null} */(document.querySelector("#degreeSelect option:checked"))?.value ?? "") == degree.id;
-        html += '<option value="' + degree.id + '"' + (isSelected ? " selected" : "") + '>' + degree.name + "</option>";
-    }
-    degreeEl.innerHTML = html;
-    degreeEl.addEventListener("change", handleDegreeSelect);
 }
 // fill module select based on degree
 // show and fill more module select based on remaining modules
 function fillModules() {
     var currentDegree = /** @type {HTMLOptionElement | null} */ (document.querySelector("#degreeSelect option:checked"))?.value ?? "";
     if (!isNaN(parseInt(currentDegree))) {
-        var modules = fetchedData.modules.filter(el => parseInt(currentDegree) in el.degree_ids);
-        var moreModules = fetchedData.modules.filter(el => !modules.includes(el));;
+        var degreeId = parseInt(currentDegree);
+        var modules = fetchedData.modules.filter(el => degreeId in el.degree_ids);
+        if (filterState.semester !== null) {
+            const semesterNum = /** @type {number} */ (filterState.semester);
+            modules = modules.filter(el => el.degree_ids[degreeId]?.includes(semesterNum));
+        }
+        var moreModules = fetchedData.modules.filter(el => !modules.includes(el));
     } else {
         var modules = fetchedData.modules;
         /** @type {import('./api.js').Module[]} */
@@ -378,6 +371,11 @@ export function getEvents() {
     // modules
     if (filterState.degree !== null) {
         var degreeModules = fetchedData.modules.filter(el => /** @type {number} */(filterState.degree) in el.degree_ids);
+        if (filterState.semester !== null) {
+            const degreeId = /** @type {number} */ (filterState.degree);
+            const semesterNumber = /** @type {number} */ (filterState.semester);
+            degreeModules = degreeModules.filter(el => el.degree_ids[degreeId]?.includes(semesterNumber));
+        }
     } else {
         var degreeModules = fetchedData.modules;
     }
