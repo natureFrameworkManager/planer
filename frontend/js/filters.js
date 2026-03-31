@@ -1,5 +1,5 @@
 // @ts-check
-import { fetchedData, filterState, nextTriState, TRI } from "./state.js"
+import { fetchedData, filterState, nextTriState, pinnedEvents, TRI } from "./state.js"
 
 /** @type {(() => void) | null} */
 let updateCallback = null;
@@ -366,7 +366,12 @@ function handleLocationSelect(ev) {
 
 // hide unpinned events
 
-// give events based on filters
+/**
+ * Compute events based on selected degree, semester, modules, types, staff, locations and states.
+ * Also consider hidden modules, types, staff, locations and states.
+ * If there are selected states, only show events with these states.
+ * @returns {import('./api.js').Event[]}
+ */
 export function getEvents() {
     // modules
     if (filterState.degree !== null) {
@@ -403,10 +408,30 @@ export function getEvents() {
         (filterState.selectedTypes.size > 0 ? filterState.selectedTypes.has(el.type) : true) &&
         (filterState.selectedStaff.size > 0 ? el.staff_ids.some(id => filterState.selectedStaff.has(id)) : true) &&
         (filterState.selectedLocations.size > 0 ? filterState.selectedLocations.has(el.location_id) : true)
-    );
+    ).filter(el => !getHiddenEvents().some(he => he.id == el.id));
 }
 
-// compute hidden events based on pinned events
+/**
+ * Compute hidden events based on pinned events, when they share the same module and type.
+ * For example a pinned exercise would have a group name, so all events with the same module and type "exercise" would be hidden, except the pinned one.
+ * @returns {import('./api.js').Event[]}
+ */
+export function getHiddenEvents() {
+    /** @type {import('./api.js').Event[]} */
+    var hidden = [];
+    var eventsPinned = [...pinnedEvents];
+    for (const pinnedId of eventsPinned) {
+        var pinnedEvent = fetchedData.events.find(el => el.id == pinnedId);
+        if (!pinnedEvent || pinnedEvent === undefined) continue;
+        var similar = fetchedData.events.filter(el =>
+            el.id !== pinnedId &&
+            el.module_ids.some(id => pinnedEvent?.module_ids.includes(id)) &&
+            el.type == pinnedEvent?.type
+        );
+        hidden = hidden.concat(similar);
+    }
+    return hidden;
+}
 
 /**
  * 
