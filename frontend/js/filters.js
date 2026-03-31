@@ -443,6 +443,30 @@ export function getHiddenEvents() {
 }
 
 /**
+ * Reset all filters and pinned events to default state and trigger update callback.
+ */
+export function clearFilters() {
+    filterState.degree = null;
+    filterState.semester = null;
+    filterState.selectedModules.clear();
+    filterState.hiddenModules.clear();
+    filterState.selectedTypes.clear();
+    filterState.hiddenTypes.clear();
+    for (const key of /** @type {(import('./state.js').StatusKey)[]} */ (Object.keys(filterState.status))) {
+        filterState.status[key] = null;
+    }
+    filterState.selectedStaff.clear();
+    filterState.hiddenStaff.clear();
+    filterState.selectedLocations.clear();
+    filterState.hiddenLocations.clear();
+    pinnedEvents.clear();
+
+    if (updateCallback !== null) {
+        updateCallback();
+    }
+}
+
+/**
  * Create a filter row element with tri-state toggle, label and count. Attach click handler to toggle tri-state and trigger filter update.
  * @param {string | number} key 
  * @param {string} content displayed content 

@@ -2,7 +2,7 @@
 import { fetchAll } from "./api.js";
 import { initCalendar, setCalendarUpdateCallback, setOpenPopupCallback, updateCalendar } from "./calendar.js";
 import { initColorEvents, setColorUpdateCallback } from "./color.js";
-import { setFilterUpdateCallback, updateFilters } from "./filters.js";
+import { clearFilters, setFilterUpdateCallback, updateFilters } from "./filters.js";
 import { initPopup, openPopup, setPopupUpdateCallback } from "./popup.js";
 import { fetchedData } from "./state.js";
 
@@ -54,6 +54,7 @@ function update() {
  * Set up global event listeners for UI controls (e.g. toggle buttons)
  */
 function globalEventListeners() {
+    document.querySelector("#resetAllBtn")?.addEventListener("click", clearFilters);
     document.querySelector("#weitereToggle")?.addEventListener("click", () => {
         document.querySelector("#weitereExp")?.classList.toggle("open");
     })
