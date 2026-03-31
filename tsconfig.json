@@ -30,14 +30,14 @@
     ]
   },
   "include": [
-    "frontend/js/**/*.js",
-    "frontend/tests/**/*.js"
+    "frontend/js/**/*.js"
   ],
   "exclude": [
     "backend/**",
     "coverage/**",
     "jest-stare/**",
-    "node_modules/**"
+    "node_modules/**",
+    "tests/**"
   ],
   "compileOnSave": false
 }
