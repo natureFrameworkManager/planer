@@ -51,12 +51,12 @@ def _clear_database() -> None:
 
 
 def _get_or_create_location(session: Session, name: str) -> Location:
-    loc = session.exec(select(Location).where(Location.name == name)).first()
-    if loc is None:
-        loc = Location(name=name)
-        session.add(loc)
+    location = session.exec(select(Location).where(Location.name == name)).first()
+    if location is None:
+        location = Location(name=name)
+        session.add(location)
         session.flush()
-    return loc
+    return location
 
 
 def _get_or_create_staff(session: Session, name: str) -> Staff:
@@ -121,15 +121,19 @@ def _link_module_degree(
     semesters: list[int],
     note: str | None,
 ) -> None:
+    """
+    Create ModuleDegreeLink entries for the given module and degree, and for each specified semester if provided.  
+    Checks if a link already exists before creating a new one to avoid duplicates.
+    """
     if not semesters:
         existing = session.exec(
             select(ModuleDegreeLink).where(
                 ModuleDegreeLink.module_id == module.id,
                 ModuleDegreeLink.degree_id == degree.id,
-                ModuleDegreeLink.semester == None,  # noqa: E711
+                ModuleDegreeLink.semester == None, 
             )
         ).first()
-        if existing is None:
+        if existing is None and module.id is not None and degree.id is not None:
             link = ModuleDegreeLink(
                 module_id=module.id,
                 degree_id=degree.id,
@@ -147,7 +151,7 @@ def _link_module_degree(
                     ModuleDegreeLink.semester == sem,
                 )
             ).first()
-            if existing is None:
+            if existing is None and module.id is not None and degree.id is not None:
                 link = ModuleDegreeLink(
                     module_id=module.id,
                     degree_id=degree.id,
@@ -173,6 +177,7 @@ def _get_or_create_module(
 
 def _parse_time_cell(td: Tag) -> tuple[Weekday | None, time | None, time | None]:
     text = td.get_text("\n")
+    # TODO: Handle "[offen]", specific dates "01.10.2024", "n.V." etc. more gracefully instead of just skipping the event entirely
     if not text.strip() or "[offen]" in text:
         return None, None, None
 
@@ -246,8 +251,8 @@ def _find_existing_event(
     ).first()
 
 
-def _parse_module_info(info_table: Tag) -> dict:
-    info: dict = {
+def _parse_module_info(info_table: Tag) -> dict[str, str | int | list[str]]:
+    info: dict[str, str | int | list[str]] = {
         "module_number": "",
         "credits": 0,
         "planung": "",
@@ -309,19 +314,24 @@ def parse_and_populate() -> None:
 
     with Session(engine) as session:
         existing = session.exec(select(Semester)).first()
-        if existing and existing.name == semester_name:
-            logger.info("Semester '%s' already in database – updating", semester_name)
-        elif existing and existing.name != semester_name:
+        needs_clear = existing is not None and existing.name != semester_name
+
+        if needs_clear:
             logger.info(
                 "New semester '%s' detected (was '%s') – clearing database",
                 semester_name,
-                existing.name,
+                existing.name if existing else "None",
             )
-            session.close()
             _clear_database()
-        else: # No semester in DB yet
+
+    with Session(engine) as session:
+        existing = session.exec(select(Semester)).first()
+        if existing:
+            logger.info("Semester '%s' already in database – updating", semester_name)
+        else:
             logger.info("Adding new semester '%s' to database", semester_name)
             session.add(Semester(name=semester_name))
+            session.commit()
 
     with Session(engine) as session:
         for h2 in soup.find_all("h2"):
@@ -345,14 +355,17 @@ def parse_and_populate() -> None:
 
             module = _get_or_create_module(
                 session,
-                info["module_number"],
+                str(info.get("module_number") or ""),
                 name=module_name,
                 credits=info["credits"],
                 planung=info["planung"],
                 language=info["language"],
             )
 
-            for deg_raw in info["degree_names"]:
+            degree_names = info.get("degree_names", [])
+            if not isinstance(degree_names, list):
+                degree_names = []
+            for deg_raw in degree_names:
                 deg_name, semesters, note = _parse_degree_string(deg_raw)
                 if not deg_name:
                     logger.warning(
@@ -400,7 +413,7 @@ def parse_and_populate() -> None:
                     )
                     continue
 
-                row_classes = row.get("class", [])
+                row_classes = row.get("class") or []
                 if (row_classes == []): 
                     tds[6].get_text(strip=True) # Status is in 7th cell (index 6)
                     status_key = tds[6].get_text(strip=True).lower()
@@ -430,15 +443,23 @@ def parse_and_populate() -> None:
                     )
                     continue
 
-                loc_name = _parse_location_name(tds[4])
+                location_name = _parse_location_name(tds[4])
                 # Use default location if none specified
-                if not loc_name:
-                    loc_name = "Unbekannt" # "Unknown" in German
+                if not location_name:
+                    location_name = "Unbekannt" # "Unknown" in German
 
-                location = _get_or_create_location(session, loc_name)
+                location = _get_or_create_location(session, location_name)
                 title = tds[2].get_text(strip=True)
                 event_type = _extract_event_type(title)
                 status = STATUS_MAP[status_key]
+                if location.id is None:
+                    logger.warning(
+                        "Skipping event '%s' in module '%s': location '%s' has no ID after creation",
+                        title,
+                        module_name,
+                        location_name,
+                    )
+                    continue
 
                 existing_event = _find_existing_event(
                     session, title, weekday, start_t, end_t, location.id
@@ -461,9 +482,10 @@ def parse_and_populate() -> None:
                 if module not in event.module:
                     event.module.append(module)
 
+                # Link other modules that share the same event
                 unit_numbers = _parse_unit_module_numbers(tds[0])
                 for num in unit_numbers:
-                    if num == info["module_number"]:
+                    if num == info.get("module_number"):
                         continue
                     other = session.exec(
                         select(Module).where(Module.module_number == num)
