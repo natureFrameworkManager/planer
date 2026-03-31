@@ -16,6 +16,17 @@ async function apiFetch(path) {
  * @property {string} language
  */
 /**
+ * @typedef {Object} ModuleInDegree
+ * @property {number} id
+ * @property {string} name
+ * @property {string} module_number
+ * @property {number} credits
+ * @property {string} planung
+ * @property {string} language
+ * @property {number[]} semesters
+ * @property {string | null} note
+ */
+/**
  * @typedef {Object} Module
  * @property {number} id
  * @property {string} name
@@ -23,8 +34,8 @@ async function apiFetch(path) {
  * @property {number} credits
  * @property {string} planung
  * @property {string} language
- * @property {number[]} degrees
- * @property {number[]} events
+ * @property {Object.<number, number[]>} degree_ids
+ * @property {number[]} event_ids
  */
 /**
  * @typedef {Object} Degree
@@ -38,7 +49,7 @@ async function apiFetch(path) {
  * @property {number} id
  * @property {string} name
  * @property {number[]} semesters
- * @property {ModuleSimple[]} modules
+ * @property {ModuleInDegree[]} modules
  */
 /**
  * @typedef {Object} Event
@@ -52,6 +63,21 @@ async function apiFetch(path) {
  * @property {string} status
  * @property {number[]} module_ids
  * @property {number[]} staff_ids
+ */
+/**
+ * @typedef {Object} Staff
+ * @property {number} id
+ * @property {string} name
+ */
+/**
+ * @typedef {Object} Location
+ * @property {number} id
+ * @property {string} name
+ */
+/**
+ * @typedef {Object} Semester
+ * @property {number} id
+ * @property {string} name
  */
 
 /**
@@ -93,7 +119,7 @@ export async function fetchEvents() {
 
 /**
  * 
- * @returns {Promise<{id: number, name: string}[]>}
+ * @returns {Promise<Staff[]>}
  */
 export async function fetchStaff() {
     return apiFetch("/staff");
@@ -101,7 +127,7 @@ export async function fetchStaff() {
 
 /**
  * 
- * @returns {Promise<{id: number, name: string}[]>}
+ * @returns {Promise<Location[]>}
  */
 export async function fetchLocations() {
     return apiFetch("/locations");
@@ -109,7 +135,7 @@ export async function fetchLocations() {
 
 /**
  * 
- * @returns {Promise<{id: number, name: string}[]>}
+ * @returns {Promise<Semester[]>}
  */
 export async function fetchSemesters() {
     return apiFetch("/semesters");
@@ -118,7 +144,7 @@ export async function fetchSemesters() {
 // request all initial data
 /**
  * 
- * @returns {Promise<[Degree[], Module[], Event[], {id: number, name: string}[], {id: number, name: string}[], {id: number, name: string}[]]>}
+ * @returns {Promise<[Degree[], Module[], Event[], Staff[], Location[], Semester[]]>}
  */
 export async function fetchAll() {
     return Promise.all([
