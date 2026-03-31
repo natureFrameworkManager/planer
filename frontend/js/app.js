@@ -13,6 +13,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     [fetchedData.degrees, fetchedData.modules, fetchedData.events, fetchedData.staff, fetchedData.locations, fetchedData.semesters] = await fetchAll();
     console.log(fetchedData)
 
+    const semesterBadge = document.querySelector("#semesterBadge");
+    if (semesterBadge) {
+        semesterBadge.textContent = fetchedData.semesters[0].name ?? "Semester";
+    }
+
     updateFilters();
     initCalendar();
     updateCalendar();
