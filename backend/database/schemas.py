@@ -43,7 +43,7 @@ class SemesterResponse(SQLModel):
 # --- List schemas (IDs only for relationships) ---
 
 class ModuleWithRelationshipsResponse(ModuleResponse):
-    degree_ids: list[int] = []
+    degree_ids: dict[int, list[int]] = {}
     event_ids: list[int] = []
 
 class StaffWithRelationshipsResponse(StaffResponse):
