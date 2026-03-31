@@ -73,7 +73,7 @@ def get_modules(
     All filters are combined with **AND**.
 
     - **include_relationships=false** (default): Returns flat module data only.
-    - **include_relationships=true**: Each module also includes `degree_ids` and `event_ids`.
+    - **include_relationships=true**: Each module also includes `degree_ids` (with semester numbers or empty arrays) and `event_ids`.
     """
     query = select(Module)
     if name is not None:
@@ -96,18 +96,38 @@ def get_modules(
         query = query.join(ModuleDegreeLink).where(ModuleDegreeLink.semester == semester)
 
     if include_relationships:
-        modules = session.exec(
-            query.options(selectinload(Module.degrees), selectinload(Module.events))
+        modules = session.exec(query.distinct()).all()
+        module_ids = [m.id for m in modules]
+        degree_rows = session.exec(
+            select(ModuleDegreeLink.module_id, ModuleDegreeLink.degree_id, ModuleDegreeLink.semester, ModuleDegreeLink.note)
+            .where(ModuleDegreeLink.module_id.in_(module_ids)) # type: ignore
+            .where(ModuleDegreeLink.degree_id.is_not(None)) # type: ignore
         ).all()
+        event_rows = session.exec(
+            select(ModuleEventLink.module_id, ModuleEventLink.event_id)
+            .where(ModuleEventLink.module_id.in_(module_ids)) # type: ignore
+            .where(ModuleEventLink.event_id.is_not(None)) # type: ignore
+        ).all()
+        degree_map: dict[int, dict[int, list[int]]] = defaultdict(lambda: defaultdict(list))
+        for module_id, degree_id, semester_num, note in degree_rows:
+            if degree_id not in degree_map[module_id]:
+                degree_map[module_id][degree_id] = []
+            if semester_num is not None:
+                degree_map[module_id][degree_id].append(semester_num)
+        event_map: dict[int, list[int]] = defaultdict(list)
+        for module_id, event_id in event_rows:
+            if module_id is not None and event_id is not None:
+                event_map[module_id].append(event_id)
         return [
             ModuleWithRelationshipsResponse(
-                **m.model_dump(),
-                degree_ids=list({d.id for d in m.degrees if d.id is not None}),
-                event_ids=[e.id for e in m.events if e.id is not None],
+                **module.model_dump(),
+                degree_ids=degree_map.get(module.id, {}),
+                event_ids=event_map.get(module.id, []),
             )
-            for m in modules
+            for module in modules
+            if module.id is not None
         ]
-    return [ModuleResponse.model_validate(m) for m in session.exec(query).all()]
+    return [ModuleResponse.model_validate(module) for module in session.exec(query).all()]
 
 
 @prefix_router.get("/modules/{module_id}", response_model=ModuleDetailResponse | ModuleResponse, summary="Get a module by ID")
