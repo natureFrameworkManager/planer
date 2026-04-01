@@ -4,6 +4,8 @@ import { fetchedData, filterState, nextTriState, pinnedEvents, TRI } from "./sta
 /** @type {(() => void) | null} */
 let updateCallback = null;
 
+// TODO: Bug when restoring light mode from localstorage display event text as wrong color based on contrast
+
 /**
  * Set callback for when filters are updated (e.g. after select change)
  * @param {() => void} func
