@@ -2,7 +2,7 @@
 import { fetchAll } from "./api.js";
 import { initCalendar, setCalendarUpdateCallback, setOpenPopupCallback, updateCalendar } from "./calendar.js";
 import { initColorEvents, setColorUpdateCallback } from "./color.js";
-import { clearFilters, setFilterUpdateCallback, updateFilters } from "./filters.js";
+import { clearFilters, initFilters, setFilterUpdateCallback, updateFilters } from "./filters.js";
 import { initPopup, openPopup, setPopupUpdateCallback } from "./popup.js";
 import { restoreState, saveFetchedData, saveState, getShareLink, clearStateStorage, loadFetchedDataAsync } from "./sharing_storage.js";
 import { fetchedData } from "./state.js";
@@ -56,6 +56,7 @@ function initApp() {
     }
 
     // Initialize filters, calendar, colors, and popup, then update calendar with fetched data
+    initFilters();
     updateFilters();
     initCalendar();
     updateCalendar();
@@ -125,9 +126,4 @@ function globalEventListeners() {
             }
         });
     }
-
-    // Toogle "weitere Module" in filter section
-    document.querySelector("#weitereToggle")?.addEventListener("click", () => {
-        document.querySelector("#weitereExp")?.classList.toggle("open");
-    })
 }

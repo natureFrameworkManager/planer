@@ -12,6 +12,21 @@ export function setFilterUpdateCallback(func) {
     updateCallback = func;
 }
 
+export function initFilters() {
+    // Toogle "weitere Module" in filter section
+    document.querySelector("#weitereToggle")?.addEventListener("click", () => {
+        document.querySelector("#weitereExp")?.classList.toggle("open");
+    })
+
+    document.querySelector("#moduleSearch")?.addEventListener("input", handleModuleSearch);
+    
+    document.querySelector("#weitereModuleSearch")?.addEventListener("input", handleMoreModuleSearch);
+
+    document.querySelector("#staffSearch")?.addEventListener("input", handleStaffSearch);
+
+    document.querySelector("#locationSearch")?.addEventListener("input", handleLocationSearch);
+}
+
 /**
  * Update all filter sections based on fetched data and filter state. This should be called after fetching data and whenever filter state changes.
  */
@@ -202,13 +217,119 @@ function fillLocations() {
     }
 }
 
-// search modules
+/**
+ * Handle module search input, filter modules based on search query and update module filter sections.
+ * @param {Event} ev 
+ */
+function handleModuleSearch(ev) {
+    const filterList = document.querySelector("#moduleList");
+    if (!filterList) return;
+    const searchTerm = /** @type {HTMLInputElement} */ (ev.target).value.toLowerCase();
+    const rows = filterList.querySelectorAll("div.frow");
+    rows.forEach(row => {
+        var filterRow = /** @type {HTMLElement | null} */ (row);
+        if (!filterRow) return;
+        const moduleId = parseInt(filterRow.dataset['key'] ?? "");
+        if (isNaN(moduleId)) return;
+        const module = fetchedData.modules.find(el => el.id == moduleId);
+        if (!module) return;
+        const moduleName = module.name.toLowerCase();
+        const moduleNumber = module.module_number.toLowerCase();
+        if (moduleName.includes(searchTerm) || moduleNumber.includes(searchTerm)) {
+            filterRow.style.display = "";
+        } else {
+            filterRow.style.display = "none";
+        }
+    });
+}
 
-// search more modules
+/**
+ * Handle more module search input, filter more modules based on search query and update more module filter section.
+ * @param {Event} ev 
+ */
+function handleMoreModuleSearch(ev) {
+    const filterList = document.querySelector("#weitereModuleList");
+    if (!filterList) return;
+    const searchTerm = /** @type {HTMLInputElement} */ (ev.target).value.toLowerCase();
+    const rows = filterList.querySelectorAll("div.frow");
+    rows.forEach(row => {
+        var filterRow = /** @type {HTMLElement | null} */ (row);
+        if (!filterRow) return;
+        const moduleId = parseInt(filterRow.dataset['key'] ?? "");
+        if (isNaN(moduleId)) return;
+        const module = fetchedData.modules.find(el => el.id == moduleId);
+        if (!module) return;
+        const moduleName = module.name.toLowerCase();
+        const moduleNumber = module.module_number.toLowerCase();
+        if (moduleName.includes(searchTerm) || moduleNumber.includes(searchTerm)) {
+            filterRow.style.display = "";
+        } else {
+            filterRow.style.display = "none";
+        }
+    });
+}
 
-// search staff
+/**
+ * Handle staff search input, filter staff based on search query and update staff filter section.
+ * Search over the full staff array from fetched data, not just the currently shown staff in the filter section, to also show hidden staff that match the search query.
+ * Then fill the staff filter section newly based on the search query only, not based on the selected degree and semester, to also show staff that are not in the selected degree and semester but match the search query.
+ * @param {Event} ev 
+ */
+function handleStaffSearch(ev) {
+    const staffCon = /** @type {HTMLElement | null} */ (document.querySelector("#staffList"));
+    if (!staffCon) return;
+    const searchTerm = /** @type {HTMLInputElement} */ (ev.target).value.toLowerCase();
 
-// search locations
+    if (!searchTerm) {
+        fillStaff();
+        return;
+    }
+
+    staffCon.innerHTML = "";
+    for (const staffMember of fetchedData.staff.sort((a, b) => a.name.localeCompare(b.name))) {
+        if (!staffMember.name.toLowerCase().includes(searchTerm)) continue;
+        if (filterState.selectedStaff.has(staffMember.id)) {
+            var state = TRI.SELECTED;
+        } else if (filterState.hiddenStaff.has(staffMember.id)) {
+            var state = TRI.HIDDEN;
+        } else {
+            var state = TRI.NEUTRAL;
+        }
+        var count = getEvents().filter(el => el.staff_ids.some(id => staffMember.id == id)).length;
+        staffCon.appendChild(createFilterRow(staffMember.id, staffMember.name, state, count, handleStaffSelect));
+    }
+}
+
+/**
+ * Handle location search input, filter locations based on search query and update location filter section.
+ * Search over the full location array from fetched data, not just the currently shown locations in the filter section, to also show hidden locations that match the search query.
+ * Then fill the location filter section newly based on the search query only, not based on the selected degree and semester, to also show locations that are not in the selected degree and semester but match the search query.
+ * @param {Event} ev
+ */
+function handleLocationSearch(ev) {
+    const locationCon = /** @type {HTMLElement | null} */ (document.querySelector("#locationList"));
+    if (!locationCon) return;
+    const searchTerm = /** @type {HTMLInputElement} */ (ev.target).value.toLowerCase();
+
+    if (!searchTerm) {
+        fillLocations();
+        return;
+    }
+
+    locationCon.innerHTML = "";
+    for (const location of fetchedData.locations.sort((a, b) => a.name.localeCompare(b.name))) {
+        if (!location.name.toLowerCase().includes(searchTerm)) continue;
+        if (filterState.selectedLocations.has(location.id)) {
+            var state = TRI.SELECTED;
+        } else if (filterState.hiddenLocations.has(location.id)) {
+            var state = TRI.HIDDEN;
+        } else {
+            var state = TRI.NEUTRAL;
+        }
+        var count = getEvents().filter(el => el.location_id == location.id).length;
+        locationCon.appendChild(createFilterRow(location.id, location.name, state, count, handleLocationSelect));
+    }
+}
 
 /**
  * Handle degree select change, update filter state and trigger update callback.
