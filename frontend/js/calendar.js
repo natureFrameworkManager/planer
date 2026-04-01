@@ -44,7 +44,9 @@ export function initCalendar() {
     calendarInstance = new FullCalendar.Calendar(calEl, {
         initialView: view.value || "timeGridWeek", // Initial view
         locale: "de", // German locale
-        headerToolbar: false, // We use our own header controls
+        headerToolbar: (view.value || "timeGridWeek") === "timeGridDay"
+        ? { start: "", center: "", end: "prev,next" }
+        : false, // Disable built-in header outside of timeGridDay view, then display prev,next buttons on the right for day view
         allDaySlot: false, // No all-day events
         slotMinTime: "07:00:00", // Start time for calendar (7am)
         slotMaxTime: "21:00:00", // End time for calendar (9pm)
@@ -177,6 +179,10 @@ function handleEventClick(info) {
 export function changeCalendarView(viewName) {
     if (!calendarInstance) return;
     calendarInstance.changeView(viewName);
+    calendarInstance.setOption("headerToolbar", viewName === "timeGridDay"
+        ? { start: "", center: "", end: "prev,next" }
+        : false
+    );
     view.value = viewName;
 }
 
