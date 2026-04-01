@@ -100,6 +100,14 @@ function fillModules() {
     if (!moreModuleCon) return;
     moreModuleCon.innerHTML = "";
 
+    const eventsForModules = getEvents();
+    const moduleCountMap = new Map();
+    for (const ev of eventsForModules) {
+        for (const id of ev.module_ids) {
+            moduleCountMap.set(id, (moduleCountMap.get(id) ?? 0) + 1);
+        }
+    }
+
     for (const module of modules) {
         if (filterState.selectedModules.has(module.id)) {
             var state = TRI.SELECTED;
@@ -108,7 +116,7 @@ function fillModules() {
         } else {
             var state = TRI.NEUTRAL;
         }
-        var count = getEvents().filter(el => el.module_ids.some(id => module.id == id)).length
+        var count = moduleCountMap.get(module.id) ?? 0;
         moduleCon.appendChild(createFilterRow(module.id, module.name, state, count, handleModuleSelect, count == 0 && state == TRI.NEUTRAL));
     }
     for (const module of moreModules) {
@@ -119,7 +127,7 @@ function fillModules() {
         } else {
             var state = TRI.NEUTRAL;
         }
-        var count = getEvents().filter(el => el.module_ids.some(id => module.id == id)).length
+        var count = moduleCountMap.get(module.id) ?? 0;
         moreModuleCon.appendChild(createFilterRow(module.id, module.name, state, count, handleModuleSelect));
     }
     const weitereSection = /** @type {HTMLElement | null} */ (document.querySelector("#weitereSection"));
@@ -139,6 +147,12 @@ function fillTypes() {
     if (!typeCon) return;
     typeCon.innerHTML = "";
 
+    const eventsForTypes = getEvents();
+    const typeCountMap = new Map();
+    for (const ev of eventsForTypes) {
+        typeCountMap.set(ev.type, (typeCountMap.get(ev.type) ?? 0) + 1);
+    }
+
     for (const type of [...types].sort()) {
         if (filterState.selectedTypes.has(type)) {
             var state = TRI.SELECTED;
@@ -147,7 +161,7 @@ function fillTypes() {
         } else {
             var state = TRI.NEUTRAL;
         }
-        var count = getEvents().filter(el => el.type == type).length
+        var count = typeCountMap.get(type) ?? 0;
         typeCon.appendChild(createFilterRow(type, type, state, count, handleTypeSelect, count == 0 && state == TRI.NEUTRAL));
     }
 
@@ -162,9 +176,15 @@ function fillStates() {
     if (!stateCon) return;
     stateCon.innerHTML = "";
 
+    const eventsForStates = getEvents();
+    const statusCountMap = new Map();
+    for (const ev of eventsForStates) {
+        statusCountMap.set(ev.status, (statusCountMap.get(ev.status) ?? 0) + 1);
+    }
+
     for (const state of states) {
         var rowState = filterState.status[state.key] ?? TRI.NEUTRAL;
-        var count = getEvents().filter(el => el.status == state.key).length
+        var count = statusCountMap.get(state.key) ?? 0;
         stateCon.appendChild(createFilterRow(state.key, state.name, rowState, count, handleStateSelect, count == 0 && rowState == TRI.NEUTRAL));
     }
 }
@@ -178,6 +198,14 @@ function fillStaff() {
     if (!staffCon) return;
     staffCon.innerHTML = "";
 
+    const eventsForStaff = getEvents();
+    const staffCountMap = new Map();
+    for (const ev of eventsForStaff) {
+        for (const id of ev.staff_ids) {
+            staffCountMap.set(id, (staffCountMap.get(id) ?? 0) + 1);
+        }
+    }
+
     for (const staffMember of staff.sort((a, b) => a.name.localeCompare(b.name))) {
         if (filterState.selectedStaff.has(staffMember.id)) {
             var state = TRI.SELECTED;
@@ -186,7 +214,7 @@ function fillStaff() {
         } else {
             var state = TRI.NEUTRAL;
         }
-        var count = getEvents().filter(el => el.staff_ids.some(id => staffMember.id == id)).length
+        var count = staffCountMap.get(staffMember.id) ?? 0;
         if (count == 0 && state == TRI.NEUTRAL) {
             continue;
         }
@@ -203,6 +231,12 @@ function fillLocations() {
     if (!locationCon) return;
     locationCon.innerHTML = "";
 
+    const eventsForLocations = getEvents();
+    const locationCountMap = new Map();
+    for (const ev of eventsForLocations) {
+        locationCountMap.set(ev.location_id, (locationCountMap.get(ev.location_id) ?? 0) + 1);
+    }
+
     for (const location of locations.sort((a, b) => a.name.localeCompare(b.name))) {
         if (filterState.selectedLocations.has(location.id)) {
             var state = TRI.SELECTED;
@@ -211,7 +245,7 @@ function fillLocations() {
         } else {
             var state = TRI.NEUTRAL;
         }
-        var count = getEvents().filter(el => el.location_id == location.id).length
+        var count = locationCountMap.get(location.id) ?? 0;
         if (count == 0 && state == TRI.NEUTRAL) {
             continue;
         }
@@ -554,8 +588,9 @@ export function getEvents() {
     modules = modules.concat(moreSelectedModules);
     modules = modules.filter(el => !filterState.hiddenModules.has(el));
 
+    const modulesSet = new Set(modules);
     var result = fetchedData.events.filter(el =>
-        el.module_ids.some(id => modules.includes(id)) &&
+        el.module_ids.some(id => modulesSet.has(id)) &&
         filterState.status[/** @type {import('./state.js').StatusKey} */ (el.status)] !== TRI.HIDDEN &&
         !el.staff_ids.some(id => filterState.hiddenStaff.has(id)) &&
         !filterState.hiddenLocations.has(el.location_id) &&

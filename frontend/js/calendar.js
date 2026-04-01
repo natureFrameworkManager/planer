@@ -58,7 +58,7 @@ export function initCalendar() {
         navLinks: false, // Disable built-in navigation (we have our own controls)
         weekNumbers: false, // No week numbers
         nowIndicator: false, // No current time indicator
-        events: buildCalendarEvents(getEvents()), // Initial events based on current filters
+        events: [], // Events are populated by updateCalendar() after init
         eventContent: renderEventContent, // Custom render function for events
         eventClick: handleEventClick, // Handle event clicks to open popup
         height: "100%", // Make calendar take full height of container
@@ -66,6 +66,11 @@ export function initCalendar() {
         listDayFormat: { weekday: "long" }, // Format for list view day headers
         listDaySideFormat: false, // No side format for list view days
         noEventsContent: "Keine Veranstaltungen sichtbar", // Message when no events are visible
+        eventDidMount: ({ event, el }) => {
+            const color = event.extendedProps.color;
+            el.style.setProperty("--ev-background", color);
+            el.style.setProperty("--ev-color", getContrastTextColor(color));
+        },
     });
 
     calendarInstance?.render();
@@ -146,15 +151,6 @@ function renderEventContent(arg) {
     });
     el.appendChild(pinEl);
 
-    // Apply color to parent event element
-    requestAnimationFrame(() => {
-        const fcEl = /** @type {HTMLElement | null} */ (el.closest(".fc-event"));
-        if (fcEl) {
-            fcEl.style.setProperty("--ev-background", color);
-            fcEl.style.setProperty("--ev-color", getContrastTextColor(color));
-        }
-    });
-
     return { domNodes: [el] };
 }
 
@@ -203,6 +199,7 @@ function getFixedMonday() {
  */
 function buildCalendarEvents(events) {
     const fcEvents = [];
+    const moduleMap = new Map(fetchedData.modules.map(m => [m.id, m]));
 
     for (const ev of events) {
         const color = getEventColor(ev) || "#3B82F6";
@@ -212,7 +209,7 @@ function buildCalendarEvents(events) {
 
         // Get module names for display
         const moduleNames = ev.module_ids
-            .map((moduleId) => fetchedData.modules.find(el => el.id == moduleId)?.name)
+            .map((moduleId) => moduleMap.get(moduleId)?.name)
             .filter(Boolean);
 
         // Status color
