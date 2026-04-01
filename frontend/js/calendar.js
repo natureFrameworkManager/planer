@@ -66,7 +66,7 @@ export function initCalendar() {
         listDayFormat: { weekday: "long" }, // Format for list view day headers
         listDaySideFormat: false, // No side format for list view days
         noEventsContent: "Keine Veranstaltungen sichtbar", // Message when no events are visible
-        eventDidMount: ({ event, el }) => {
+        eventDidMount: (/** @type {{ event: any, el: HTMLElement }} */ { event, el }) => {
             const color = event.extendedProps.color;
             el.style.setProperty("--ev-background", color);
             el.style.setProperty("--ev-color", getContrastTextColor(color));
@@ -179,6 +179,7 @@ export function changeCalendarView(viewName) {
 }
 
 // TODO: handle day view day change
+// Use buttons inside
 
 
 /** 
