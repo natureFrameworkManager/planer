@@ -141,4 +141,58 @@ describe("api fetch wrappers", () => {
 
         await expect(fetchDegrees()).rejects.toThrow("Failed to fetch");
     });
+
+    test("fetchModules calls /modules?include_relationships=true", async () => {
+        global.fetch.mockResolvedValue({ ok: true, json: async () => [] });
+        await fetchModules();
+        expect(global.fetch).toHaveBeenCalledWith("http://127.0.0.1:8000/api/modules?include_relationships=true");
+    });
+
+    test("fetchEvents calls /events?include_relationships=true", async () => {
+        global.fetch.mockResolvedValue({ ok: true, json: async () => [] });
+        await fetchEvents();
+        expect(global.fetch).toHaveBeenCalledWith("http://127.0.0.1:8000/api/events?include_relationships=true");
+    });
+
+    test("fetchStaff calls /staff", async () => {
+        global.fetch.mockResolvedValue({ ok: true, json: async () => [] });
+        await fetchStaff();
+        expect(global.fetch).toHaveBeenCalledWith("http://127.0.0.1:8000/api/staff");
+    });
+
+    test("fetchLocations calls /locations", async () => {
+        global.fetch.mockResolvedValue({ ok: true, json: async () => [] });
+        await fetchLocations();
+        expect(global.fetch).toHaveBeenCalledWith("http://127.0.0.1:8000/api/locations");
+    });
+
+    test("fetchSemesters calls /semesters", async () => {
+        global.fetch.mockResolvedValue({ ok: true, json: async () => [] });
+        await fetchSemesters();
+        expect(global.fetch).toHaveBeenCalledWith("http://127.0.0.1:8000/api/semesters");
+    });
+
+    test("fetchAll returns results in correct order [degrees, modules, events, staff, locations, semesters]", async () => {
+        const mockDegrees = [{ id: 1, name: "D" }];
+        const mockModules = [{ id: 2, name: "M" }];
+        const mockEvents = [{ id: 3, title: "E" }];
+        const mockStaff = [{ id: 4, name: "S" }];
+        const mockLocations = [{ id: 5, name: "L" }];
+        const mockSemesters = [{ id: 6, name: "Sem" }];
+
+        const responses = [mockDegrees, mockModules, mockEvents, mockStaff, mockLocations, mockSemesters];
+        let callIdx = 0;
+        global.fetch.mockImplementation(() => {
+            const body = responses[callIdx++];
+            return Promise.resolve({ ok: true, json: async () => body });
+        });
+
+        const [degrees, modules, events, staff, locations, semesters] = await fetchAll();
+        expect(degrees).toEqual(mockDegrees);
+        expect(modules).toEqual(mockModules);
+        expect(events).toEqual(mockEvents);
+        expect(staff).toEqual(mockStaff);
+        expect(locations).toEqual(mockLocations);
+        expect(semesters).toEqual(mockSemesters);
+    });
 });

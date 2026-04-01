@@ -56,9 +56,9 @@ Paths: count=0 (empty loop), count=1 (t=0.5), count>1 (full loop), opts provided
 - [x] uses golden angle spacing – hue increases by ~137.508 per step (existing)
 - [x] respects custom hueOffset (existing)
 - [x] large palette (100+) returns correct length (existing)
-- [ ] negative count returns empty array (loop never executes)
-- [ ] count=2: t goes from 0 to 1, covers both ends of lightness/chroma sine curves
-- [ ] hue wraps around 360° for large index (e.g. hueOffset=350, i=1 → 350+137.508 mod 360)
+- [x] negative count returns empty array (loop never executes)
+- [x] count=2: t goes from 0 to 1, covers both ends of lightness/chroma sine curves
+- [x] hue wraps around 360° for large index (e.g. hueOffset=350, i=1 → 350+137.508 mod 360)
 
 #### getEventColor
 Paths per switch case: type / module / status / staff / custom / default fallback
@@ -70,37 +70,37 @@ Sub-paths: colorMap.get() returns a value vs undefined (event property not in ma
 - [x] returns fallback color for "custom" mode (existing)
 - [x] returns fallback color for unknown color mode (existing)
 - [x] different events get different colors in type mode when types differ (existing)
-- [ ] type mode: event.type not in fetchedData.events types → returns undefined (BUG: no fallback inside switch)
-- [ ] module mode: event.module_ids is empty → event.module_ids[0] is undefined → colorMap.get(undefined) → returns undefined (BUG)
-- [ ] staff mode: event.staff_ids is empty → event.staff_ids[0] is undefined → colorMap.get(undefined) → returns undefined (BUG)
-- [ ] module mode: event.module_ids[0] references an id in fetchedData.modules → returns valid color from palette
-- [ ] status mode: event.status is not in fetchedData.states keys → colorMap.get() returns undefined (BUG)
-- [ ] type mode: all events have the same type → palette has length 1 → all events get same color
-- [ ] staff mode: event with multiple staff_ids only uses staff_ids[0] for color lookup
-- [ ] returns undefined for staff mode when event has no staff_ids (BUG: staff_ids[0] undefined)
-- [ ] type mode with single unique type gives all events the same color
-- [ ] module mode returns undefined when event's module not in fetchedData.modules (BUG)
+- [x] type mode: event.type not in fetchedData.events types → returns undefined (BUG: no fallback inside switch)
+- [x] module mode: event.module_ids is empty → event.module_ids[0] is undefined → colorMap.get(undefined) → returns undefined (BUG)
+- [x] staff mode: event.staff_ids is empty → event.staff_ids[0] is undefined → colorMap.get(undefined) → returns undefined (BUG)
+- [x] module mode: event.module_ids[0] references an id in fetchedData.modules → returns valid color from palette
+- [x] status mode: event.status is not in fetchedData.states keys → colorMap.get() returns undefined (BUG)
+- [x] type mode: all events have the same type → palette has length 1 → all events get same color
+- [x] staff mode: event with multiple staff_ids only uses staff_ids[0] for color lookup
+- [x] returns undefined for staff mode when event has no staff_ids (BUG: staff_ids[0] undefined)
+- [x] type mode with single unique type gives all events the same color
+- [x] module mode returns undefined when event's module not in fetchedData.modules (BUG)
 
 #### getContrastTextColor
 Paths: ctx is null (return "#000000"), resolvedBg empty → fallback "#ffffff", high luminance → "#000000", low luminance → "#ffffff"
 - [x] returns "#000000" when canvas context is unavailable (existing)
-- [ ] returns "#ffffff" for very dark background color
-- [ ] returns "#000000" for very light background color
-- [ ] uses fallback "#ffffff" as bg when resolvedBg and bgColor are both empty
+- [x] returns "#ffffff" for very dark background color
+- [x] returns "#000000" for very light background color
+- [x] uses fallback "#ffffff" as bg when resolvedBg and bgColor are both empty
 
 #### setColorUpdateCallback
 - [x] stores the callback function (existing)
 
 #### initColorEvents (DOM-dependent)
 Paths: #colorDropBtn exists/missing, .color-menu-item click, #themeToggle click, updateColorCallback null/set
-- [ ] clicking colorDropBtn toggles "open" class on #colorDrop
-- [ ] clicking outside #colorDrop removes "open" class
-- [ ] clicking a color-menu-item updates colorMode.value and calls updateColorCallback
-- [ ] clicking a color-menu-item when updateColorCallback is null does not throw
-- [ ] clicking #themeToggle toggles darkMode.value and calls updateColorCallback
-- [ ] clicking #themeToggle when updateColorCallback is null does not throw
-- [ ] applyColorModeUI sets active class only on matching mode item
-- [ ] applyColorModeUI sets label text from COLOR_MODE_LABELS or falls back to mode string itself
+- [x] clicking colorDropBtn toggles "open" class on #colorDrop
+- [x] clicking outside #colorDrop removes "open" class
+- [x] clicking a color-menu-item updates colorMode.value and calls updateColorCallback
+- [x] clicking a color-menu-item when updateColorCallback is null does not throw
+- [x] clicking #themeToggle toggles darkMode.value and calls updateColorCallback
+- [x] clicking #themeToggle when updateColorCallback is null does not throw
+- [x] applyColorModeUI sets active class only on matching mode item
+- [x] applyColorModeUI sets label text from COLOR_MODE_LABELS or falls back to mode string itself
 
 ---
 
@@ -116,12 +116,12 @@ Paths: res.ok=true → json(), res.ok=false → throw, fetch rejects (network er
 - [x] fetchDegreeDetail throws on non-ok response (existing)
 - [x] fetchAll rejects if any single fetch fails (existing)
 - [x] fetch with network error (fetch rejects, not just non-ok) (existing)
-- [ ] fetchModules calls /modules?include_relationships=true
-- [ ] fetchEvents calls /events?include_relationships=true
-- [ ] fetchStaff calls /staff
-- [ ] fetchLocations calls /locations
-- [ ] fetchSemesters calls /semesters
-- [ ] fetchAll returns results in correct order [degrees, modules, events, staff, locations, semesters]
+- [x] fetchModules calls /modules?include_relationships=true
+- [x] fetchEvents calls /events?include_relationships=true
+- [x] fetchStaff calls /staff
+- [x] fetchLocations calls /locations
+- [x] fetchSemesters calls /semesters
+- [x] fetchAll returns results in correct order [degrees, modules, events, staff, locations, semesters]
 
 ---
 
@@ -158,24 +158,24 @@ Major branch tree:
 - [x] combined selected modules from degree + more modules (existing)
 - [x] hidden status excludes events with that status (existing)
 - [x] hidden types excludes events of that type (existing)
-- [ ] degree set + no semester + no selected modules → all degree modules pass through (branch: selectedDegreeModules.length === 0)
-- [ ] degree set + semester set + no modules match semester → events list is empty
-- [ ] degree set + selectedModules includes a degree module AND a non-degree module → both paths merge
-- [ ] all filter dimensions active simultaneously: degree + semester + selectedModule + hiddenModule + selectedType + hiddenType + selectedStatus + hiddenStatus + selectedStaff + hiddenStaff + selectedLocation + hiddenLocation
-- [ ] event with empty module_ids → el.module_ids.some(...) returns false → event excluded
-- [ ] all filter dimensions simultaneously: degree + semester + module + type + status + staff + location
-- [ ] hidden events from pinned are excluded even when they match all filters
-- [ ] getEvents with entirely empty fetchedData.events returns []
-- [ ] getEvents with empty fetchedData.modules returns []
-- [ ] event hidden by getHiddenEvents (pinned event) is excluded even though it passes all filters
-- [ ] selected staff with event having multiple staff_ids: passes if ANY staff matches (.some())
-- [ ] hidden staff with event having multiple staff_ids: excluded if ANY staff matches (.some())
-- [ ] degree filter uses in operator on degree_ids object — checks string key existence (potential type coercion BUG)
-- [ ] completely empty fetchedData.events → returns []
-- [ ] completely empty fetchedData.modules → returns [] (no module ids match anything)
-- [ ] selected modules that don't exist in fetchedData.modules still form the module list but no events match them
-- [ ] hiddenModules filters out modules even when selectedDegreeModules selected them
-- [ ] one status SELECTED + another status HIDDEN: only selected status events shown, hidden ones also excluded
+- [x] degree set + no semester + no selected modules → all degree modules pass through (branch: selectedDegreeModules.length === 0)
+- [x] degree set + semester set + no modules match semester → events list is empty
+- [x] degree set + selectedModules includes a degree module AND a non-degree module → both paths merge
+- [x] all filter dimensions active simultaneously: degree + semester + selectedModule + hiddenModule + selectedType + hiddenType + selectedStatus + hiddenStatus + selectedStaff + hiddenStaff + selectedLocation + hiddenLocation
+- [x] event with empty module_ids → el.module_ids.some(...) returns false → event excluded
+- [x] all filter dimensions simultaneously: degree + semester + module + type + status + staff + location
+- [x] hidden events from pinned are excluded even when they match all filters
+- [x] getEvents with entirely empty fetchedData.events returns []
+- [x] getEvents with empty fetchedData.modules returns []
+- [x] event hidden by getHiddenEvents (pinned event) is excluded even though it passes all filters
+- [x] selected staff with event having multiple staff_ids: passes if ANY staff matches (.some())
+- [x] hidden staff with event having multiple staff_ids: excluded if ANY staff matches (.some())
+- [x] degree filter uses in operator on degree_ids object — checks string key existence (potential type coercion BUG)
+- [x] completely empty fetchedData.events → returns []
+- [x] completely empty fetchedData.modules → returns [] (no module ids match anything)
+- [x] selected modules that don't exist in fetchedData.modules still form the module list but no events match them
+- [x] hiddenModules filters out modules even when selectedDegreeModules selected them
+- [x] one status SELECTED + another status HIDDEN: only selected status events shown, hidden ones also excluded
 
 #### getHiddenEvents
 Paths: no pinned events, pinned event not found, pinned found + similar events exist, multiple pins
@@ -185,10 +185,10 @@ Paths: no pinned events, pinned event not found, pinned found + similar events e
 - [x] does not hide events with different type even if same module (existing)
 - [x] handles pinned event ID not found in events gracefully (existing)
 - [x] multiple pinned events accumulate hidden events (existing)
-- [ ] pinning two events of same module+type: both stay visible, hidden accumulates non-pinned events of that type+module
-- [ ] hidden list may contain duplicates when two pinned events overlap on hidden targets (BUG: no dedup in hidden.concat)
-- [ ] event with multiple module_ids: pinning it hides events sharing ANY module_id with same type (.some() path)
-- [ ] pinned event whose module_ids is empty: pinnedEvent.module_ids.includes(id) never true → no events hidden
+- [x] pinning two events of same module+type: each pin only excludes itself, not other pins (BUG: cross-pin hiding)
+- [x] hidden list may contain duplicates when two pinned events overlap on hidden targets (BUG: no dedup in hidden.concat)
+- [x] event with multiple module_ids: pinning it hides events sharing ANY module_id with same type (.some() path)
+- [x] pinned event whose module_ids is empty: pinnedEvent.module_ids.includes(id) never true → no events hidden
 
 #### clearFilters
 Paths: updateCallback is null vs set
@@ -197,7 +197,7 @@ Paths: updateCallback is null vs set
 - [x] resets all status values to null (existing)
 - [x] clears pinnedEvents (existing)
 - [x] calls update callback if set (existing)
-- [ ] does not throw if updateCallback is null
+- [x] does not throw if updateCallback is null
 
 #### createFilterRow (internal, tested via updateFilters DOM)
 - [ ] creates row with correct data-key attribute
@@ -294,18 +294,18 @@ Paths in applyState: o is null/non-object (early return), each field present vs 
 - [x] saveState writes serialized state to localStorage (existing)
 - [x] restoreState reads and applies state from localStorage (existing)
 - [x] returns true on successful save (existing)
-- [ ] saveState returns false if localStorage throws (e.g. quota exceeded)
-- [ ] applyState with null input: does nothing (early return path)
-- [ ] applyState with non-object input (e.g. string): does nothing
-- [ ] applyState with partial object: only applies present fields, leaves others unchanged
-- [ ] applyState with o.d as string (not number): degree stays unchanged (typeof check fails)
-- [ ] applyState with o.d as null: sets degree to null explicitly
-- [ ] applyState with o.s as string: semester stays unchanged
-- [ ] applyState with invalid status value (not null, not in VALID_TRI): sets to null
-- [ ] applyState with valid status values (null, neutral, selected, hidden): applies correctly
-- [ ] applyState with o.pin as non-array: pinnedEvents stays unchanged
-- [ ] applyState with o.v as non-string: view stays unchanged
-- [ ] applyState with o.dm as non-boolean: darkMode stays unchanged
+- [x] saveState returns false if localStorage throws (e.g. quota exceeded)
+- [x] applyState with null input: does nothing (early return path)
+- [x] applyState with non-object input (e.g. string): does nothing
+- [x] applyState with partial object: only applies present fields, leaves others unchanged
+- [x] applyState with o.d as string (not number): degree stays unchanged (typeof check fails)
+- [x] applyState with o.d as null: sets degree to null explicitly
+- [x] applyState with o.s as string: semester stays unchanged
+- [x] applyState with invalid status value (not null, not in VALID_TRI): sets to null
+- [x] applyState with valid status values (null, neutral, selected, hidden): applies correctly
+- [x] applyState with o.pin as non-array: pinnedEvents stays unchanged
+- [x] applyState with o.v as non-string: view stays unchanged
+- [x] applyState with o.dm as non-boolean: darkMode stays unchanged
 
 #### setParam (internal helper)
 Paths: value is null/undefined/"" → skip, value is array with length 0 → skip, array with items → join, scalar → set
@@ -326,11 +326,11 @@ Paths: value is null/undefined/"" → skip, value is array with length 0 → ski
 - [x] encodes status params with status_ prefix (existing)
 - [x] does not include null degree (existing)
 - [x] includes customMap entries when present (existing)
-- [ ] does not include empty Sets in URL (sm/hm/st/ht/ss/hs/sl/hl omitted when empty)
-- [ ] customMap with size 0: no cmap param in URL
-- [ ] status entries with null value: no status_ param for that key
-- [ ] all params present simultaneously: URL contains all expected keys
-- [ ] special characters in type strings are properly encoded
+- [x] does not include empty Sets in URL (sm/hm/st/ht/ss/hs/sl/hl omitted when empty)
+- [x] customMap with size 0: no cmap param in URL
+- [x] status entries with null value: no status_ param for that key
+- [x] all params present simultaneously: URL contains all expected keys
+- [x] special characters in type strings are properly encoded
 
 #### clearStateStorage
 - [x] removes the storage key from localStorage (existing)
@@ -340,28 +340,28 @@ Paths: URL has state params → applyParams, URL has status_ params → recogniz
 - [x] URL params take precedence over localStorage (existing)
 - [x] falls back to localStorage if no URL params (existing)
 - [x] restoreState does nothing when localStorage is empty and no URL params (existing)
-- [ ] URL has only a status_ param (no standard keys): still detected as hasUrlState → applyParams path taken
-- [ ] malformed JSON in localStorage: caught silently, state unchanged
-- [ ] ignores unknown status values in URL params
-- [ ] URL has d param with non-numeric value: filterState.degree set to null (parseInt → NaN → null)
-- [ ] URL has s param with non-numeric value: filterState.semester set to null
-- [ ] URL dm param with value false: darkMode.value set to false
-- [ ] URL dm param with value true: darkMode.value set to true
-- [ ] URL dm param with any other value: darkMode.value set to false (not === true)
+- [x] URL has only a status_ param (no standard keys): still detected as hasUrlState → applyParams path taken
+- [x] malformed JSON in localStorage: caught silently, state unchanged
+- [x] ignores unknown status values in URL params
+- [x] URL has d param with non-numeric value: filterState.degree set to null (parseInt → NaN → null)
+- [x] URL has s param with non-numeric value: filterState.semester set to null
+- [x] URL dm param with value false: darkMode.value set to false
+- [x] URL dm param with value true: darkMode.value set to true
+- [x] URL dm param with any other value: darkMode.value set to false (not === true)
 
 #### applyParams (internal)
 Paths per param: param present → parse and apply, param absent → skip. cmap parsing: entry with idx<1 skipped, k is NaN skipped, v is empty skipped
-- [ ] sm with comma-separated numeric values: selectedModules populated correctly
-- [ ] sm with non-numeric values: filtered out by !isNaN check
-- [ ] st with comma-separated strings: selectedTypes populated correctly
-- [ ] cmap with valid entries: customMap populated
-- [ ] cmap entry with no colon (idx<1): entry skipped
-- [ ] cmap entry with NaN key: entry skipped
-- [ ] cmap entry with empty value after colon: entry skipped
-- [ ] v param present: view.value updated, decoded
-- [ ] cm param present: colorMode.value updated, decoded
-- [ ] status_ok param with invalid value (not in VALID_TRI): ignored (VALID_TRI.has check)
-- [ ] status_ok param with valid value (selected): applied
+- [x] sm with comma-separated numeric values: selectedModules populated correctly
+- [x] sm with non-numeric values: filtered out by !isNaN check
+- [x] st with comma-separated strings: selectedTypes populated correctly
+- [x] cmap with valid entries: customMap populated
+- [x] cmap entry with no colon (idx<1): entry skipped
+- [x] cmap entry with NaN key: entry skipped
+- [x] cmap entry with empty value after colon: entry skipped
+- [x] v param present: view.value updated, decoded
+- [x] cm param present: colorMode.value updated, decoded
+- [x] status_ok param with invalid value (not in VALID_TRI): ignored (VALID_TRI.has check)
+- [x] status_ok param with valid value (selected): applied
 
 #### getNumArray / getStrArray (internal helpers)
 Paths: param missing → [], param empty string → [], param with valid values → parsed array, non-numeric entries filtered
@@ -380,12 +380,12 @@ Paths: indexedDB available → openDB → put, indexedDB open fails → fallback
 - [ ] loadFetchedDataAsync with IDB returning data: returns IDB data (not localStorage)
 - [ ] loadFetchedDataAsync with IDB empty: falls through to localStorage
 - [ ] loadFetchedDataAsync with IDB throwing: falls through to localStorage
-- [ ] loadFetchedData (localStorage) with malformed JSON: returns null (catch path)
+- [x] loadFetchedData (localStorage) with malformed JSON: returns null (catch path)
 
 #### showShareLinkSuccessMsg
 Paths: #shareLinkSuccessMSg element exists vs missing
-- [ ] sets textContent on #shareLinkSuccessMSg when element exists
-- [ ] does nothing when element is missing (early return)
+- [x] sets textContent on #shareLinkSuccessMSg when element exists
+- [x] does nothing when element is missing (early return)
 
 ---
 
@@ -409,57 +409,57 @@ Paths: event not found → return, popupEl missing → return, event found → a
 - [x] sets pin button state based on pinnedEvents — pinned (existing)
 - [x] adds show class to popup element (existing)
 - [x] does nothing for non-existent event (existing)
-- [ ] shows single credit value with "LP" when all modules have same credits
-- [ ] deduplicates staff names
-- [ ] deduplicates degree names
-- [ ] popup with event weekday 0 or >7 shows empty weekday label (BUG: WEEKDAY_LABELS undefined)
-- [ ] re-opening popup for different event replaces old data
-- [ ] pin button accumulates event listeners on repeated openPopup calls (BUG: no removeEventListener)
-- [ ] event not in fetchedData.events: no popup shown (return path)
-- [ ] popup element missing from DOM: no error (return path)
-- [ ] event.weekday outside 1-7 (e.g. 0 or 8): WEEKDAY_LABELS[weekday] is undefined → displays empty string via || "" (BUG)
-- [ ] credits: single module → credits.length == 1 path → shows X LP
-- [ ] credits: two modules with same credits → deduplicated by Set → credits.length == 1 path
-- [ ] credits: module with credits=undefined → filtered out by x !== undefined → may reduce to 0
-- [ ] staff names deduplicated by new Set(...) — duplicate staff_ids produce single name
-- [ ] degree names deduplicated by new Set(degreeTexts) — no duplicates in display
-- [ ] module not found in fetchedData.modules: .find() returns undefined → degree_ids loop skips it via if (!module) continue
-- [ ] pin button listener: repeated openPopup calls accumulate addEventListener listeners (BUG: no removeEventListener before adding)
-- [ ] statusState not found in fetchedData.states: shows empty string via ?? ""
-- [ ] re-opening popup for different event: old data replaced by new data
+- [x] shows single credit value with "LP" when all modules have same credits
+- [x] deduplicates staff names
+- [x] deduplicates degree names
+- [x] popup with event weekday 0 or >7 shows empty weekday label (BUG: WEEKDAY_LABELS undefined)
+- [x] re-opening popup for different event replaces old data
+- [x] pin button does NOT accumulate event listeners despite no removeEventListener (DOM deduplicates same function ref)
+- [x] event not in fetchedData.events: no popup shown (return path)
+- [x] popup element missing from DOM: no error (return path)
+- [x] event.weekday outside 1-7 (e.g. 0 or 8): WEEKDAY_LABELS[weekday] is undefined → displays empty string via || "" (BUG)
+- [x] credits: single module → credits.length == 1 path → shows X LP
+- [x] credits: two modules with same credits → deduplicated by Set → credits.length == 1 path
+- [x] credits: module with credits=undefined → filtered out by x !== undefined → may reduce to 0
+- [x] staff names deduplicated by new Set(...) — duplicate staff_ids produce single name
+- [x] degree names deduplicated by new Set(degreeTexts) — no duplicates in display
+- [x] module not found in fetchedData.modules: .find() returns undefined → degree_ids loop skips it via if (!module) continue
+- [x] pin button listener: pin button does NOT accumulate addEventListener listeners (DOM deduplicates same function ref)
+- [x] statusState not found in fetchedData.states: shows empty string via ?? ""
+- [x] re-opening popup for different event: old data replaced by new data
 
 #### initPopup
 Paths: closeBtn missing, popup missing, click inside vs outside .popup-box
 - [x] close button removes show class (existing)
 - [x] clicking outside popup box removes show class (existing)
 - [x] clicking inside popup box does NOT remove show class (existing)
-- [ ] closeBtn missing from DOM: no event listener attached, no error
-- [ ] popup element missing from DOM: no event listener attached, no error
+- [x] closeBtn missing from DOM: no event listener attached, no error
+- [x] popup element missing from DOM: no event listener attached, no error
 
 #### handleEventPin (internal, via pin button click)
 Paths: eventId is NaN → return, pinnedEvents.has(eventId) → delete, !has → add, updatePopupCallback null vs set, then openPopup re-called
 - [x] toggles pin state for event (existing)
 - [x] calls updatePopupCallback after toggle (existing)
-- [ ] does nothing when eventId is NaN
-- [ ] eventId is NaN (btn.dataset.eventId is non-numeric or empty): early return, no state change
-- [ ] updatePopupCallback is null: does not throw after toggle
-- [ ] after toggle, openPopup(eventId) is called to refresh pin button UI
+- [x] does nothing when eventId is NaN
+- [x] eventId is NaN (btn.dataset.eventId is non-numeric or empty): early return, no state change
+- [x] updatePopupCallback is null: does not throw after toggle
+- [x] after toggle, openPopup(eventId) is called to refresh pin button UI
 
 ---
 
 ### 1.7 calendar.js
 
 #### setCalendarUpdateCallback / setOpenPopupCallback / getCalendar
-- [ ] setCalendarUpdateCallback stores callback without error
-- [ ] setOpenPopupCallback stores callback without error
-- [ ] getCalendar returns null when initCalendar has not been called
+- [x] setCalendarUpdateCallback stores callback without error
+- [x] setOpenPopupCallback stores callback without error
+- [x] getCalendar returns null when initCalendar has not been called
 
 #### initCalendar
 Paths: #calendar element missing → return, element present → create FullCalendar, .vbtn click handlers, viewType week/day/list/other
 - [ ] creates FullCalendar instance and renders
-- [ ] does nothing if #calendar element is missing
+- [x] does nothing if #calendar element is missing
 - [ ] sets up view toggle buttons (.vbtn)
-- [ ] #calendar element missing: returns without creating instance
+- [x] #calendar element missing: returns without creating instance
 - [ ] #calendar element present: creates FullCalendar instance (calendarInstance not null)
 - [ ] .vbtn with data-view=week: calls changeCalendarView(timeGridWeek)
 - [ ] .vbtn with data-view=day: calls changeCalendarView(timeGridDay)
@@ -469,10 +469,10 @@ Paths: #calendar element missing → return, element present → create FullCale
 
 #### changeCalendarView
 Paths: calendarInstance is null → return, calendarInstance exists → changeView + update view.value
-- [ ] calendarInstance is null: returns without error
+- [x] calendarInstance is null: returns without error
 - [ ] calendarInstance exists: calls changeView and updates view.value
-- [ ] updates view.value state
-- [ ] does nothing if calendarInstance is null
+- [x] updates view.value state
+- [x] does nothing if calendarInstance is null
 
 #### getFixedMonday
 Paths: today is Monday (day=1), Tuesday-Saturday (day=2-6), Sunday (day=0 → special -6 path)
@@ -530,11 +530,11 @@ Paths: openEventPopupCallback is null vs set
 - [ ] preventDefault is called on jsEvent
 
 #### setCalendarUpdateCallback / setOpenPopupCallback
-- [ ] stores callback without error
+- [x] stores callback without error
 
 #### updateCalendar
 Paths: calendarInstance is null → return early, calendarInstance exists → removeAllEvents + addEventSource
-- [ ] calendarInstance is null: no error, returns early
+- [x] calendarInstance is null: no error, returns early
 - [ ] calendarInstance exists: removes old events and adds new source from getEvents + buildCalendarEvents
 
 #### onPinToggle (internal)
@@ -561,11 +561,11 @@ Paths: semesterBadge exists vs null, semesters[0].name truthy vs nullish
 - [ ] falls back to "Semester" when name is nullish
 - [ ] semesterBadge element exists + semesters[0].name is truthy: sets textContent to name
 - [ ] semesterBadge element exists + semesters[0].name is null: falls back to Semester
-- [ ] semesterBadge element missing: no error (null check)
+- [x] semesterBadge element missing: no error (null check)
 - [ ] calls updateFilters, initCalendar, updateCalendar, initColorEvents, initPopup in order
 - [ ] sets filter/calendar/color/popup callbacks via setter functions
-- [ ] hides loadingOverlay by adding hidden class
-- [ ] loadingOverlay missing: no error (optional chaining)
+- [x] hides loadingOverlay by adding hidden class
+- [x] loadingOverlay missing: no error (optional chaining)
 - [ ] calls globalEventListeners at the end
 
 #### update (internal)
@@ -575,32 +575,32 @@ Paths: semesterBadge exists vs null, semesters[0].name truthy vs nullish
 Paths per button: element exists vs missing (optional chaining)
 
 ##### resetAllBtn
-- [ ] #resetAllBtn click calls clearStateStorage and clearFilters
-- [ ] #resetAllBtn missing: no error
+- [x] #resetAllBtn click calls clearStateStorage and clearFilters
+- [x] #resetAllBtn missing: no error
 
 ##### shareLinkBtn click
 Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs missing, #shareLink exists vs missing, #share-link-popup exists vs missing
-- [ ] click: generates share link, writes to clipboard
-- [ ] clipboard success: shows Link wurde kopiert! message
-- [ ] clipboard failure: shows Link konnte nicht kopiert werden! message
-- [ ] #shareLinkSuccessMSg missing: no error on success/failure path
-- [ ] #shareLink element: shows generated link text
-- [ ] #share-link-popup: adds show class
-- [ ] shareLinkCloseBtn closes share link popup
-- [ ] clicking outside share link popup box closes it
-- [ ] weitereToggle toggles "open" class on #weitereExp
+- [x] click: generates share link, writes to clipboard
+- [x] clipboard success: shows Link wurde kopiert! message
+- [x] clipboard failure: shows Link konnte nicht kopiert werden! message
+- [x] #shareLinkSuccessMSg missing: no error on success/failure path
+- [x] #shareLink element: shows generated link text
+- [x] #share-link-popup: adds show class
+- [x] shareLinkCloseBtn closes share link popup
+- [x] clicking outside share link popup box closes it
+- [x] weitereToggle toggles "open" class on #weitereExp
 
 ##### shareLinkCloseBtn / shareLinkPopup
-- [ ] #shareLinkCloseBtn click: removes show from #share-link-popup
-- [ ] #share-link-popup click outside .popup-box: removes show
-- [ ] #share-link-popup click inside .popup-box: does not remove show
-- [ ] #shareLinkCloseBtn missing: no event listener, no error
-- [ ] #share-link-popup missing: no event listener, no error
+- [x] #shareLinkCloseBtn click: removes show from #share-link-popup
+- [x] #share-link-popup click outside .popup-box: removes show
+- [x] #share-link-popup click inside .popup-box: does not remove show
+- [x] #shareLinkCloseBtn missing: no event listener, no error
+- [x] #share-link-popup missing: no event listener, no error
 
 ##### weitereToggle
-- [ ] #weitereToggle click: toggles open class on #weitereExp
-- [ ] #weitereToggle missing: no error
-- [ ] #weitereExp missing: no error (optional chaining)
+- [x] #weitereToggle click: toggles open class on #weitereExp
+- [x] #weitereToggle missing: no error
+- [x] #weitereExp missing: no error (optional chaining)
 
 ---
 
@@ -654,25 +654,25 @@ Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs mis
 ## 5.1 app.js
 
 ### initApp
-- [ ] semesterBadge: handles missing #semesterBadge element gracefully
-- [ ] semesterBadge: handles empty fetchedData.semesters array (no error, fallback to "Semester")
-- [ ] semesterBadge: handles missing .name property on semester (fallback to "Semester")
+- [x] semesterBadge: handles missing #semesterBadge element gracefully
+- [x] semesterBadge: handles empty fetchedData.semesters array (no error, fallback to "Semester")
+- [x] semesterBadge: handles missing .name property on semester (fallback to "Semester")
 - [ ] calls all init/update functions even if some DOM elements are missing
 - [ ] does not throw if set*Callback functions are undefined
-- [ ] loading overlay: handles missing #loadingOverlay element
+- [x] loading overlay: handles missing #loadingOverlay element
 
 ### globalEventListeners
-- [ ] resetAllBtn: does nothing if button missing
-- [ ] shareLinkBtn: does nothing if button missing
-- [ ] shareLinkBtn: handles clipboard writeText rejection (shows error message)
-- [ ] shareLinkBtn: handles missing #shareLinkSuccessMSg element
+- [x] resetAllBtn: does nothing if button missing
+- [x] shareLinkBtn: does nothing if button missing
+- [x] shareLinkBtn: handles clipboard writeText rejection (shows error message)
+- [x] shareLinkBtn: handles missing #shareLinkSuccessMSg element
 - [ ] shareLinkBtn: handles missing #shareLink element
-- [ ] shareLinkBtn: handles missing #share-link-popup element
-- [ ] shareLinkCloseBtn: does nothing if button missing
-- [ ] shareLinkPopup: does nothing if popup missing
+- [x] shareLinkBtn: handles missing #share-link-popup element
+- [x] shareLinkCloseBtn: does nothing if button missing
+- [x] shareLinkPopup: does nothing if popup missing
 - [ ] shareLinkPopup: clicking outside popup box with no .popup-box element does not throw
-- [ ] weitereToggle: does nothing if button missing
-- [ ] weitereExp: does nothing if #weitereExp missing
+- [x] weitereToggle: does nothing if button missing
+- [x] weitereExp: does nothing if #weitereExp missing
 
 ### update
 - [ ] calls updateFilters, updateCalendar, and saveState in order
@@ -680,11 +680,11 @@ Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs mis
 ## 5.2 calendar.js
 
 ### initCalendar
-- [ ] does nothing if #calendar element is missing
+- [x] does nothing if #calendar element is missing
 - [ ] creates calendarInstance with correct initial view from view.value
 - [ ] sets up .vbtn click handlers for all present buttons
 - [ ] handles missing .vbtn elements gracefully
-- [ ] does not throw if FullCalendar is undefined (simulate missing import)
+- [x] does not throw if FullCalendar is undefined (simulate missing import)
 
 ### buildCalendarEvents
 - [ ] returns empty array if input events is empty
@@ -702,11 +702,11 @@ Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs mis
 - [ ] edge case: when today is Sunday (getDay()===0), returns previous Monday
 
 ### changeCalendarView
-- [ ] does nothing if calendarInstance is null
-- [ ] updates view.value to new viewName
+- [x] does nothing if calendarInstance is null
+- [x] updates view.value to new viewName
 
 ### updateCalendar
-- [ ] exits early if calendarInstance is null
+- [x] exits early if calendarInstance is null
 - [ ] removes all events before adding new ones
 - [ ] adds correct number of events from buildCalendarEvents
 
@@ -720,31 +720,31 @@ Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs mis
 ## 5.3 filters.js
 
 ### getEvents
-- [ ] returns [] if fetchedData.events is empty
-- [ ] returns [] if fetchedData.modules is empty
-- [ ] returns only events matching selectedModules, hiddenModules, selectedTypes, hiddenTypes, selectedStaff, hiddenStaff, selectedLocations, hiddenLocations, and status filters
-- [ ] returns [] if all modules are hidden
-- [ ] returns [] if event.module_ids is empty
-- [ ] returns [] if event's module_ids do not match any selected or degree modules
-- [ ] returns [] if event is hidden by getHiddenEvents
-- [ ] returns all events if no filters are set and nothing is hidden
-- [ ] supports selecting modules outside current degree ("more modules")
-- [ ] supports combining hidden and selected on same dimension (e.g. selected + hidden types)
-- [ ] supports all filter dimensions simultaneously
+- [x] returns [] if fetchedData.events is empty
+- [x] returns [] if fetchedData.modules is empty
+- [x] returns only events matching selectedModules, hiddenModules, selectedTypes, hiddenTypes, selectedStaff, hiddenStaff, selectedLocations, hiddenLocations, and status filters
+- [x] returns [] if all modules are hidden
+- [x] returns [] if event.module_ids is empty
+- [x] returns [] if event's module_ids do not match any selected or degree modules
+- [x] returns [] if event is hidden by getHiddenEvents
+- [x] returns all events if no filters are set and nothing is hidden
+- [x] supports selecting modules outside current degree ("more modules")
+- [x] supports combining hidden and selected on same dimension (e.g. selected + hidden types)
+- [x] supports all filter dimensions simultaneously
 
 ### getHiddenEvents
-- [ ] returns [] if no events are pinned
-- [ ] does not hide the pinned event itself
-- [ ] hides events sharing ANY module with same type as pinned event
-- [ ] handles multiple pinned events (accumulates hidden events)
-- [ ] does not deduplicate hidden events (BUG: duplicates possible)
-- [ ] handles pinned event ID not found in events gracefully
+- [x] returns [] if no events are pinned
+- [x] does not hide the pinned event itself
+- [x] hides events sharing ANY module with same type as pinned event
+- [x] handles multiple pinned events (accumulates hidden events)
+- [x] does not deduplicate hidden events (BUG: duplicates possible)
+- [x] handles pinned event ID not found in events gracefully
 
 ### clearFilters
-- [ ] resets all filterState properties to default
-- [ ] clears pinnedEvents
-- [ ] calls updateCallback if set
-- [ ] does not throw if updateCallback is null
+- [x] resets all filterState properties to default
+- [x] clears pinnedEvents
+- [x] calls updateCallback if set
+- [x] does not throw if updateCallback is null
 
 ### createFilterRow
 - [ ] creates row with correct data-key and data-state attributes

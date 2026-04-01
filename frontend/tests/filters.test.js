@@ -202,6 +202,135 @@ describe("getEvents", () => {
         expect(result).not.toContain(101);
         expect(result).not.toContain(104);
     });
+
+    test("degree set + no semester + no selected modules → all degree modules pass through", () => {
+        filterState.degree = 10;
+        // No semester, no selectedModules → selectedDegreeModules.length === 0, so all degree modules used
+        const result = getEvents().map((ev) => ev.id).sort();
+        // degree 10 modules: 1, 2, 4 → events 101, 102, 104, 105
+        expect(result).toEqual([101, 102, 104, 105]);
+    });
+
+    test("degree set + semester set + no modules match semester → events list is empty", () => {
+        filterState.degree = 10;
+        filterState.semester = 99; // non-existent semester
+        const result = getEvents();
+        expect(result).toEqual([]);
+    });
+
+    test("degree set + selectedModules includes a degree module AND a non-degree module → both paths merge", () => {
+        filterState.degree = 10;
+        filterState.selectedModules.add(1); // degree module
+        filterState.selectedModules.add(3); // non-degree module (BWL)
+        const result = getEvents().map((ev) => ev.id).sort();
+        expect(result).toContain(101); // module 1
+        expect(result).toContain(103); // module 3
+    });
+
+    test("all filter dimensions active simultaneously", () => {
+        filterState.degree = 10;
+        filterState.semester = 1;
+        filterState.selectedModules.add(1);
+        filterState.hiddenModules.add(2);
+        filterState.selectedTypes.add("Vorlesung");
+        filterState.hiddenTypes.add("Seminar");
+        filterState.status.ok = TRI.SELECTED;
+        filterState.hiddenStaff.add(8);
+        filterState.selectedStaff.add(7);
+        filterState.selectedLocations.add(100);
+        filterState.hiddenLocations.add(101);
+
+        const result = getEvents().map((ev) => ev.id).sort();
+        // Module 1 selected, type Vorlesung, status ok, staff 7, location 100
+        // Event 101: module 1, Vorlesung, ok, staff [7], location 100 → matches all
+        expect(result).toContain(101);
+    });
+
+    test("event with empty module_ids → el.module_ids.some(...) returns false → event excluded", () => {
+        fetchedData.events.push(
+            { id: 200, module_ids: [], status: "ok", staff_ids: [7], location_id: 100, type: "Vorlesung", title: "NoMod", weekday: 1, start_time: "08:00", end_time: "10:00" }
+        );
+        const result = getEvents().map((ev) => ev.id);
+        expect(result).not.toContain(200);
+    });
+
+    test("hidden events from pinned are excluded even when they match all filters", () => {
+        // Add duplicate event for same module+type
+        fetchedData.events.push(
+            { id: 200, module_ids: [1], status: "ok", staff_ids: [7], location_id: 100, type: "Vorlesung", title: "V1-dup", weekday: 2, start_time: "08:00", end_time: "10:00" }
+        );
+        pinnedEvents.add(101); // pin Vorlesung module 1 → hides 200
+        const result = getEvents().map((ev) => ev.id);
+        expect(result).toContain(101);
+        expect(result).not.toContain(200);
+    });
+
+    test("getEvents with entirely empty fetchedData.events returns []", () => {
+        fetchedData.events = [];
+        const result = getEvents();
+        expect(result).toEqual([]);
+    });
+
+    test("getEvents with empty fetchedData.modules returns []", () => {
+        fetchedData.modules = [];
+        const result = getEvents();
+        // No modules means no module IDs, so no event can match
+        expect(result).toEqual([]);
+    });
+
+    test("selected staff with event having multiple staff_ids: passes if ANY staff matches (.some())", () => {
+        filterState.selectedStaff.add(8); // Prof B
+        // Event 104 has staff_ids [7, 8] → should match because 8 is in selectedStaff
+        const result = getEvents().map((ev) => ev.id);
+        expect(result).toContain(104);
+    });
+
+    test("hidden staff with event having multiple staff_ids: excluded if ANY staff matches (.some())", () => {
+        filterState.hiddenStaff.add(8);
+        // Event 104 has staff_ids [7, 8] → excluded because 8 is hidden
+        const result = getEvents().map((ev) => ev.id);
+        expect(result).not.toContain(104);
+    });
+
+    test("degree filter uses in operator on degree_ids object — checks string key existence", () => {
+        // The code does: `filterState.degree in el.degree_ids`
+        // Since `in` converts to string, numeric degree 10 checks for string "10" key in degree_ids object
+        filterState.degree = 10;
+        const result = getEvents().map((ev) => ev.id).sort();
+        // Should work correctly as `in` coerces to string
+        expect(result.length).toBeGreaterThan(0);
+    });
+
+    test("selected modules that don't exist in fetchedData.modules still form the module list but no events match them", () => {
+        filterState.selectedModules.add(999); // non-existent module
+        // Without a degree set, all modules are used as degreeModules.
+        // selectedModules.add(999) puts 999 into selectedDegreeModules (since degreeModulesIds = all module ids, 999 is not in there).
+        // So 999 goes into moreSelectedModules. modules = [] (no selectedDegreeModules match) + [999].
+        // But since no degree is set, degreeModulesIds = all module ids, and selectedDegreeModules = intersection with selectedModules = empty.
+        // So modules = degreeModulesIds (all) + moreSelectedModules(999 since not in degreeModulesIds) → all modules + 999.
+        // Events with real module_ids still match. Only the 999 part produces no matches.
+        const result = getEvents();
+        // All events still returned because degreeModulesIds contains all module ids when no degree is set
+        expect(result.length).toBe(fetchedData.events.length);
+    });
+
+    test("hiddenModules filters out modules even when selectedDegreeModules selected them", () => {
+        filterState.degree = 10;
+        filterState.selectedModules.add(1);
+        filterState.hiddenModules.add(1); // hide the same module
+        const result = getEvents().map((ev) => ev.id);
+        expect(result).not.toContain(101); // module 1's event should be excluded
+    });
+
+    test("one status SELECTED + another status HIDDEN: only selected status events shown, hidden ones also excluded", () => {
+        filterState.status.ok = TRI.SELECTED;
+        filterState.status.tok = TRI.HIDDEN;
+        const result = getEvents().map((ev) => ev.id).sort();
+        // ok-status events: 101 (ok), 103 (ok), 105 (ok). 102 is tok → hidden. 104 is pok → not selected (only ok is SELECTED).
+        expect(result).toEqual([101, 103, 105]);
+        expect(result).not.toContain(102); // tok is hidden
+        expect(result).not.toContain(104); // pok not selected
+    });
 });
 
 describe("getHiddenEvents", () => {
@@ -260,6 +389,62 @@ describe("getHiddenEvents", () => {
         const hidden = getHiddenEvents().map(e => e.id).sort();
         expect(hidden).toContain(106);
         expect(hidden).toContain(107);
+    });
+
+    test("pinning two events of same module+type: each pin only excludes itself, not other pins (BUG: cross-pin hiding)", () => {
+        fetchedData.events.push(
+            { id: 106, module_ids: [1], status: "ok", staff_ids: [7], location_id: 100, type: "Vorlesung", title: "V1-B", weekday: 2, start_time: "08:00", end_time: "10:00" },
+            { id: 107, module_ids: [1], status: "ok", staff_ids: [7], location_id: 100, type: "Vorlesung", title: "V1-C", weekday: 3, start_time: "08:00", end_time: "10:00" },
+        );
+        pinnedEvents.add(101); // Vorlesung module 1
+        pinnedEvents.add(106); // Vorlesung module 1
+
+        const hidden = getHiddenEvents().map(e => e.id);
+        // BUG: Each pin iteration only excludes el.id !== pinnedId (its own id).
+        // Pin 101 → finds similar events where id !== 101: includes 106 and 107.
+        // Pin 106 → finds similar events where id !== 106: includes 101 and 107.
+        // Result: hidden = [106, 107, 101, 107]. Both pinned events hide each other!
+        // This is a BUG: pinned event 101 is hidden by pin 106's iteration and vice versa.
+        expect(hidden).toContain(101); // BUG: pinned event is in hidden list from the other pin's iteration
+        expect(hidden).toContain(106); // BUG: same issue
+        expect(hidden).toContain(107);
+    });
+
+    test("hidden list may contain duplicates when two pinned events overlap on hidden targets (BUG: no dedup in hidden.concat)", () => {
+        fetchedData.events.push(
+            { id: 106, module_ids: [1], status: "ok", staff_ids: [7], location_id: 100, type: "Vorlesung", title: "V1-B", weekday: 2, start_time: "08:00", end_time: "10:00" },
+            { id: 107, module_ids: [1], status: "ok", staff_ids: [7], location_id: 100, type: "Vorlesung", title: "V1-C", weekday: 3, start_time: "08:00", end_time: "10:00" },
+        );
+        pinnedEvents.add(101);
+        pinnedEvents.add(106);
+        // Both pins will find 107 as "similar" → hidden.concat adds 107 twice
+        const hidden = getHiddenEvents();
+        const ids107 = hidden.filter(e => e.id === 107);
+        // BUG: no dedup, so 107 appears twice
+        expect(ids107.length).toBe(2);
+    });
+
+    test("event with multiple module_ids: pinning it hides events sharing ANY module_id with same type (.some() path)", () => {
+        // Add event with multiple module_ids
+        fetchedData.events.push(
+            { id: 200, module_ids: [1, 3], status: "ok", staff_ids: [7], location_id: 100, type: "Vorlesung", title: "Multi", weekday: 1, start_time: "08:00", end_time: "10:00" },
+        );
+        pinnedEvents.add(200);
+        const hidden = getHiddenEvents().map(e => e.id);
+        // Event 101 is Vorlesung module 1 → shares module 1 with pinned event → hidden
+        expect(hidden).toContain(101);
+        // Event 104 is Vorlesung module 4 → no overlap → not hidden
+        expect(hidden).not.toContain(104);
+    });
+
+    test("pinned event whose module_ids is empty: pinnedEvent.module_ids.includes(id) never true → no events hidden", () => {
+        fetchedData.events.push(
+            { id: 200, module_ids: [], status: "ok", staff_ids: [7], location_id: 100, type: "Vorlesung", title: "NoMod", weekday: 1, start_time: "08:00", end_time: "10:00" },
+        );
+        pinnedEvents.add(200);
+        const hidden = getHiddenEvents();
+        // No events share module_ids with an empty array, so nothing hidden
+        expect(hidden).toEqual([]);
     });
 });
 
@@ -331,5 +516,10 @@ describe("clearFilters", () => {
 
         // Clean up callback
         setFilterUpdateCallback(() => {});
+    });
+
+    test("does not throw if updateCallback is null", () => {
+        setFilterUpdateCallback(null);
+        expect(() => clearFilters()).not.toThrow();
     });
 });

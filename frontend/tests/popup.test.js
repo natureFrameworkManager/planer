@@ -226,4 +226,146 @@ describe("handleEventPin via popup", () => {
 
         expect(cb).toHaveBeenCalled();
     });
+
+    test("does nothing when eventId is NaN", () => {
+        openPopup(1);
+        const pinBtn = document.querySelector("#popupPinBtn");
+        pinBtn.dataset.eventId = "notanumber";
+        pinBtn.click();
+        // pinnedEvents should remain unchanged
+        expect(pinnedEvents.size).toBe(0);
+    });
+
+    test("updatePopupCallback is null: does not throw after toggle", () => {
+        setPopupUpdateCallback(null);
+        openPopup(1);
+        expect(() => document.querySelector("#popupPinBtn").click()).not.toThrow();
+    });
+
+    test("after toggle, openPopup(eventId) is called to refresh pin button UI", () => {
+        openPopup(1);
+        document.querySelector("#popupPinBtn").click();
+        // After toggling, the popup should re-render with updated pin state
+        expect(pinnedEvents.has(1)).toBe(true);
+        const pinLabel = document.querySelector("#popupPinBtn .pin-label");
+        expect(pinLabel.innerText).toBe("Angeheftet");
+    });
+});
+
+describe("openPopup edge cases", () => {
+    beforeEach(() => {
+        setupPopupDOM();
+        setupTestData();
+        pinnedEvents.clear();
+    });
+
+    test("shows single credit value with 'LP' when all modules have same credits", () => {
+        // Modify both modules to have same credits
+        fetchedData.modules[0].credits = 5;
+        fetchedData.modules[1].credits = 5;
+        openPopup(1); // event has module_ids [10, 11]
+        const credits = document.querySelector("#popupCredits").innerText;
+        expect(credits).toBe("5 LP");
+    });
+
+    test("deduplicates staff names", () => {
+        // Add duplicate staff id
+        fetchedData.events[0].staff_ids = [200, 200];
+        openPopup(1);
+        const staff = document.querySelector("#popupStaff").innerText;
+        // Should not contain duplicate names
+        const names = staff.split(", ");
+        const unique = new Set(names);
+        expect(unique.size).toBe(names.length);
+    });
+
+    test("deduplicates degree names", () => {
+        // Both modules point to degree 1 (Informatik) — should appear once
+        openPopup(1);
+        const degrees = document.querySelector("#popupDegrees").innerText;
+        const names = degrees.split(", ");
+        const unique = new Set(names);
+        expect(unique.size).toBe(names.length);
+    });
+
+    test("event.weekday outside 1-7 (e.g. 0): WEEKDAY_LABELS[weekday] is undefined → displays empty string via || ''", () => {
+        fetchedData.events.push(
+            { id: 99, title: "BadDay", type: "Vorlesung", weekday: 0, start_time: "08:00:00", end_time: "10:00:00", location_id: 100, status: "ok", module_ids: [10], staff_ids: [200] }
+        );
+        openPopup(99);
+        const time = document.querySelector("#popupTime").innerText;
+        // WEEKDAY_LABELS[0] is undefined, so || "" produces empty string before comma
+        expect(time).toContain("08:00");
+        expect(time).not.toContain("Montag");
+    });
+
+    test("re-opening popup for different event replaces old data", () => {
+        openPopup(1);
+        expect(document.querySelector("#popupTitle").innerText).toBe("Datenbanken");
+        openPopup(2);
+        expect(document.querySelector("#popupTitle").innerText).toBe("Algorithmen");
+    });
+
+    test("pin button does NOT accumulate event listeners despite no removeEventListener (DOM deduplicates same function ref)", () => {
+        const cb = jest.fn();
+        setPopupUpdateCallback(cb);
+        // Open popup multiple times – each call does pinBtn.addEventListener("click", handleEventPin)
+        openPopup(1);
+        openPopup(1);
+        openPopup(1);
+        // DOM spec: adding the same function reference as listener multiple times is a no-op.
+        // handleEventPin is always the same function, so only one listener is active.
+        document.querySelector("#popupPinBtn").click();
+        expect(cb.mock.calls.length).toBe(1);
+    });
+
+    test("event not in fetchedData.events: no popup shown (return path)", () => {
+        openPopup(9999);
+        expect(document.querySelector("#popup").classList.contains("show")).toBe(false);
+    });
+
+    test("popup element missing from DOM: no error (return path)", () => {
+        document.body.innerHTML = ''; // Remove all DOM
+        expect(() => openPopup(1)).not.toThrow();
+    });
+
+    test("credits: module with credits=undefined → filtered out by x !== undefined → may reduce to 0", () => {
+        fetchedData.modules.push(
+            { id: 99, name: "NoCred", credits: undefined, degree_ids: {} }
+        );
+        fetchedData.events.push(
+            { id: 99, title: "NoCredEvent", type: "Vorlesung", weekday: 1, start_time: "08:00:00", end_time: "10:00:00", location_id: 100, status: "ok", module_ids: [99], staff_ids: [200] }
+        );
+        openPopup(99);
+        expect(document.querySelector("#popupCredits").innerText).toBe("-");
+    });
+
+    test("module not found in fetchedData.modules: .find() returns undefined → degree_ids loop skips it via if (!module) continue", () => {
+        fetchedData.events.push(
+            { id: 99, title: "NoMod", type: "Vorlesung", weekday: 1, start_time: "08:00:00", end_time: "10:00:00", location_id: 100, status: "ok", module_ids: [999], staff_ids: [200] }
+        );
+        openPopup(99);
+        // Should not crash, degrees area should be empty (hidden)
+        expect(document.querySelector("#popupDegrees").parentElement.style.display).toBe("none");
+    });
+
+    test("statusState not found in fetchedData.states: shows empty string via ?? ''", () => {
+        fetchedData.events.push(
+            { id: 99, title: "UnknownStatus", type: "Vorlesung", weekday: 1, start_time: "08:00:00", end_time: "10:00:00", location_id: 100, status: "unknown_status", module_ids: [10], staff_ids: [200] }
+        );
+        openPopup(99);
+        expect(document.querySelector("#popupStatusLabel").innerText).toBe("");
+    });
+});
+
+describe("initPopup edge cases", () => {
+    test("closeBtn missing from DOM: no event listener attached, no error", () => {
+        document.body.innerHTML = '<div id="popup"><div class="popup-box"></div></div>';
+        expect(() => initPopup()).not.toThrow();
+    });
+
+    test("popup element missing from DOM: no event listener attached, no error", () => {
+        document.body.innerHTML = '<button id="popupCloseBtn"></button>';
+        expect(() => initPopup()).not.toThrow();
+    });
 });
