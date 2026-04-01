@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.venv/
+
+# Python bytecode
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+
+# Test artifacts
+backend/tests/
+frontend/tests/
+.coverage
+.coveragerc
+coverage/
+jest-stare/
+.pytest_cache/
+
+# Dev/mock files
+frontend/mock/
+
+# Database (rebuilt at runtime)
+database.db
+
+# Secrets
+.env
+
+# VCS
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+.prettierrc
+
+# Node build files
+package.json
+package-lock.json
+tsconfig.json
+jest.config.cjs
+
+# Python dev
+requirements-dev.txt
+pytest.ini
+
+# Docs
+README.md
+LICENSE.txt

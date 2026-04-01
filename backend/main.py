@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, FastAPI
@@ -50,17 +51,19 @@ app.include_router(api_router)
 
 # --- Frontend static files ---
 
-frontend_dir = Path(__file__).parent.parent / "frontend"
+SERVE_FRONTEND = os.getenv("SERVE_FRONTEND", "true").lower() == "true"
 
-app.mount("/assets", StaticFiles(directory=frontend_dir / "assets"), name="assets")
-app.mount("/css", StaticFiles(directory=frontend_dir / "css"), name="css")
-app.mount("/js", StaticFiles(directory=frontend_dir / "js"), name="js")
+if SERVE_FRONTEND:
+    frontend_dir = Path(__file__).parent.parent / "frontend"
 
+    app.mount("/assets", StaticFiles(directory=frontend_dir / "assets"), name="assets")
+    app.mount("/css", StaticFiles(directory=frontend_dir / "css"), name="css")
+    app.mount("/js", StaticFiles(directory=frontend_dir / "js"), name="js")
 
-@app.get("/{full_path:path}", include_in_schema=False)
-async def serve_spa(full_path: str):
-    """Serve frontend files; fall back to index.html for SPA routing."""
-    file_path = frontend_dir / full_path
-    if file_path.is_file():
-        return FileResponse(file_path)
-    return FileResponse(frontend_dir / "index.html")
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa(full_path: str):
+        """Serve frontend files; fall back to index.html for SPA routing."""
+        file_path = frontend_dir / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(frontend_dir / "index.html")
