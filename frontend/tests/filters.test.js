@@ -1,4 +1,4 @@
-import { getEvents, getHiddenEvents, clearFilters, setFilterUpdateCallback } from "../js/filters.js";
+import { getEvents, getHiddenEvents, clearFilters, setFilterUpdateCallback, createFilterRow } from "../js/filters.js";
 import { fetchedData, filterState, TRI, pinnedEvents } from "../js/state.js";
 import { jest } from "@jest/globals";
 
@@ -18,6 +18,427 @@ function resetFilterState() {
     });
     pinnedEvents.clear();
 }
+
+
+// --- createFilterRow (internal, tested via updateFilters DOM) ---
+
+describe("createFilterRow", () => {
+    test("creates row with correct data-key attribute", () => {
+        const row = createFilterRow(42, "Test", "neutral", 3, () => {});
+        expect(row.dataset.key).toBe("42");
+    });
+    test("creates row with correct data-state attribute", () => {
+        const row = createFilterRow(1, "Test", "selected", 2, () => {});
+        expect(row.querySelector("span.tri").dataset.state).toBe("selected");
+    });
+    test("click toggles tri-state via nextTriState", () => {
+        // This test assumes nextTriState cycles neutral→selected→hidden→neutral
+        const handler = jest.fn();
+        const row = createFilterRow(1, "Test", "neutral", 1, handler);
+        row.querySelector("span.tri").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        expect(handler).toHaveBeenCalled();
+    });
+    test("disabled row has 'dimmed' class", () => {
+        const row = createFilterRow(1, "Test", "neutral", 0, () => {}, true);
+        expect(row.classList.contains("dimmed")).toBe(true);
+        expect(row.querySelector("span.tri").classList.contains("dimmed")).toBe(true);
+    });
+    test("always attaches click handler even when disabled (dead branch)", () => {
+        const handler = jest.fn();
+        const row = createFilterRow(1, "Test", "neutral", 0, handler, true);
+        row.querySelector("span.tri").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        expect(handler).toHaveBeenCalled();
+    });
+    test("count label reflects event count", () => {
+        const row = createFilterRow(1, "Test", "neutral", 7, () => {});
+        expect(row.querySelector("span.count").textContent).toBe("7");
+    });
+});
+
+// --- updateFilters (DOM-dependent) ---
+import { updateFilters } from "../js/filters.js";
+describe("updateFilters", () => {
+    filterState.degree = null;
+    beforeEach(() => {
+        document.body.innerHTML = "";
+    });
+    test("with no DOM elements: returns without error (all querySelector return null)", () => {
+        expect(() => updateFilters()).not.toThrow();
+    });
+    test("with DOM: fills degree dropdown with sorted degree names", () => {
+        document.body.innerHTML = '<select id="degreeSelect"></select><select id="semesterSelect"></select>';
+        fetchedData.degrees = [
+            { id: 2, name: "BWL", semesters: [1], module_ids: [] },
+            { id: 1, name: "Informatik", semesters: [1], module_ids: [] }
+        ];
+        updateFilters();
+        const degreeEl = document.querySelector("#degreeSelect");
+        expect(degreeEl.innerHTML).toContain(">Informatik<");
+        expect(degreeEl.innerHTML).toContain(">BWL<");
+        // Sorted order: Informatik before BWL
+        expect(degreeEl.innerHTML.indexOf("Informatik")).toBeLessThan(degreeEl.innerHTML.indexOf("BWL"));
+    });
+    test("degree selected: shows semester filter section, fills semester options", () => {
+        document.body.innerHTML = '<select id="degreeSelect"></select><select id="semesterSelect"></select><div id="semester-filter-section"></div>';
+        fetchedData.degrees = [
+            { id: 1, name: "Informatik", semesters: [1,2], module_ids: [] }
+        ];
+        filterState.degree = 1;
+        updateFilters();
+        const semSec = document.querySelector("#semester-filter-section");
+        expect(semSec.style.display).toBe("");
+        const semesterEl = document.querySelector("#semesterSelect");
+        expect(semesterEl.innerHTML).toContain(">1<");
+        expect(semesterEl.innerHTML).toContain(">2<");
+    });
+    test("degree not selected: hides semester filter section", () => {
+        document.body.innerHTML = '<select id="degreeSelect"></select><select id="semesterSelect"></select><div id="semester-filter-section"></div>';
+        filterState.degree = null;
+        updateFilters();
+        const semSec = document.querySelector("#semester-filter-section");
+        expect(semSec.style.display).toBe("none");
+    });
+});
+
+// --- handleDegreeSelect (internal, tested via DOM event) ---
+import { handleDegreeSelect } from "../js/filters.js";
+describe("handleDegreeSelect", () => {
+    filterState.semester = null;
+    beforeEach(() => { filterState.degree = 99; filterState.semester = 99; });
+    test("selecting a degree option sets filterState.degree to the parsed integer", () => {
+        const select = document.createElement("select");
+        select.innerHTML = '<option value="1" selected>Informatik</option>';
+        const event = { target: select };
+        handleDegreeSelect(event);
+        expect(filterState.degree).toBe(1);
+    });
+    test("selecting 'Alle' (empty value) sets filterState.degree to null", () => {
+        const select = document.createElement("select");
+        select.innerHTML = '<option value="" selected>Alle</option>';
+        const event = { target: select };
+        handleDegreeSelect(event);
+        expect(filterState.degree).toBeNull();
+    });
+    test("always resets filterState.semester to null", () => {
+        const select = document.createElement("select");
+        select.innerHTML = '<option value="1" selected>Informatik</option>';
+        filterState.semester = 2;
+        const event = { target: select };
+        handleDegreeSelect(event);
+        expect(filterState.semester).toBeNull();
+    });
+    test("calls updateCallback when set", () => {
+        const cb = jest.fn();
+        setFilterUpdateCallback(cb);
+        const select = document.createElement("select");
+        select.innerHTML = '<option value="1" selected>Informatik</option>';
+        const event = { target: select };
+        handleDegreeSelect(event);
+        expect(cb).toHaveBeenCalled();
+        setFilterUpdateCallback(null);
+    });
+    test("does not throw when updateCallback is null", () => {
+        setFilterUpdateCallback(null);
+        const select = document.createElement("select");
+        select.innerHTML = '<option value="1" selected>Informatik</option>';
+        const event = { target: select };
+        expect(() => handleDegreeSelect(event)).not.toThrow();
+    });
+});
+
+// --- handleSemesterSelect (internal, tested via DOM event) ---
+import { handleSemesterSelect } from "../js/filters.js";
+describe("handleSemesterSelect", () => {
+    filterState.selectedModules.clear();
+    beforeEach(() => { filterState.semester = 99; });
+    test("selecting a semester option sets filterState.semester to the parsed integer", () => {
+        const select = document.createElement("select");
+        select.innerHTML = '<option value="2" selected>2</option>';
+        const event = { target: select };
+        handleSemesterSelect(event);
+        expect(filterState.semester).toBe(2);
+    });
+    test("selecting 'Alle' (empty value) sets filterState.semester to null", () => {
+        const select = document.createElement("select");
+        select.innerHTML = '<option value="" selected>Alle</option>';
+        const event = { target: select };
+        handleSemesterSelect(event);
+        expect(filterState.semester).toBeNull();
+    });
+    test("calls updateCallback when set", () => {
+        const cb = jest.fn();
+        setFilterUpdateCallback(cb);
+        const select = document.createElement("select");
+        select.innerHTML = '<option value="2" selected>2</option>';
+        const event = { target: select };
+        handleSemesterSelect(event);
+        expect(cb).toHaveBeenCalled();
+        setFilterUpdateCallback(null);
+    });
+});
+
+// --- handleModuleSelect (internal, tested via DOM event) ---
+import { handleModuleSelect } from "../js/filters.js";
+describe("handleModuleSelect", () => {
+    filterState.hiddenModules.clear();
+    beforeEach(() => { filterState.selectedModules.clear(); filterState.hiddenModules.clear(); });
+    function makeRow(state, key) {
+        const row = document.createElement("div");
+        row.className = "frow";
+        row.dataset.key = key;
+        const tri = document.createElement("span");
+        tri.className = "tri";
+        tri.dataset.state = state;
+        row.appendChild(tri);
+        return row;
+    }
+    test("SELECTED: adds to selectedModules, removes from hiddenModules", () => {
+        const row = makeRow("selected", "5");
+        const event = { target: row };
+        handleModuleSelect(event);
+        expect(filterState.selectedModules.has(5)).toBe(true);
+        expect(filterState.hiddenModules.has(5)).toBe(false);
+    });
+    test("HIDDEN: adds to hiddenModules, removes from selectedModules", () => {
+        const row = makeRow("hidden", "6");
+        const event = { target: row };
+        handleModuleSelect(event);
+        expect(filterState.hiddenModules.has(6)).toBe(true);
+        expect(filterState.selectedModules.has(6)).toBe(false);
+    });
+    test("NEUTRAL: removes from both sets", () => {
+        filterState.selectedModules.add(7);
+        filterState.hiddenModules.add(7);
+        const row = makeRow("neutral", "7");
+        const event = { target: row };
+        handleModuleSelect(event);
+        expect(filterState.selectedModules.has(7)).toBe(false);
+        expect(filterState.hiddenModules.has(7)).toBe(false);
+    });
+    test("NaN moduleId: does not modify any sets, still calls updateCallback", () => {
+        const cb = jest.fn();
+        setFilterUpdateCallback(cb);
+        const row = makeRow("selected", "notanumber");
+        const event = { target: row };
+        handleModuleSelect(event);
+        expect(cb).toHaveBeenCalled();
+        setFilterUpdateCallback(null);
+    });
+    test("calls updateCallback when set", () => {
+        const cb = jest.fn();
+        setFilterUpdateCallback(cb);
+        const row = makeRow("selected", "8");
+        const event = { target: row };
+        handleModuleSelect(event);
+        expect(cb).toHaveBeenCalled();
+        setFilterUpdateCallback(null);
+    });
+});
+
+// --- handleTypeSelect (internal, tested via DOM event) ---
+import { handleTypeSelect } from "../js/filters.js";
+describe("handleTypeSelect", () => {
+    filterState.selectedTypes.clear();
+    beforeEach(() => { filterState.selectedTypes.clear(); filterState.hiddenTypes.clear(); });
+    function makeRow(state, key) {
+        const row = document.createElement("div");
+        row.className = "frow";
+        row.dataset.key = key;
+        const tri = document.createElement("span");
+        tri.className = "tri";
+        tri.dataset.state = state;
+        row.appendChild(tri);
+        return row;
+    }
+    test("SELECTED: adds to selectedTypes, removes from hiddenTypes", () => {
+        const row = makeRow("selected", "foo");
+        const event = { target: row };
+        handleTypeSelect(event);
+        expect(filterState.selectedTypes.has("foo")).toBe(true);
+        expect(filterState.hiddenTypes.has("foo")).toBe(false);
+    });
+    test("HIDDEN: adds to hiddenTypes, removes from selectedTypes", () => {
+        const row = makeRow("hidden", "bar");
+        const event = { target: row };
+        handleTypeSelect(event);
+        expect(filterState.hiddenTypes.has("bar")).toBe(true);
+        expect(filterState.selectedTypes.has("bar")).toBe(false);
+    });
+    test("NEUTRAL: removes from both sets", () => {
+        filterState.selectedTypes.add("baz");
+        filterState.hiddenTypes.add("baz");
+        const row = makeRow("neutral", "baz");
+        const event = { target: row };
+        handleTypeSelect(event);
+        expect(filterState.selectedTypes.has("baz")).toBe(false);
+        expect(filterState.hiddenTypes.has("baz")).toBe(false);
+    });
+    test("calls updateCallback when set", () => {
+        const cb = jest.fn();
+        setFilterUpdateCallback(cb);
+        const row = makeRow("selected", "foo");
+        const event = { target: row };
+        handleTypeSelect(event);
+        expect(cb).toHaveBeenCalled();
+        setFilterUpdateCallback(null);
+    });
+});
+
+// --- handleStateSelect (internal, tested via DOM event) ---
+import { handleStateSelect } from "../js/filters.js";
+
+describe("handleStateSelect", () => {
+
+    filterState.hiddenTypes.clear();
+    beforeEach(() => { Object.keys(filterState.status).forEach(k => filterState.status[k] = null); });
+    function makeRow(state, key) {
+        const row = document.createElement("div");
+        row.className = "frow";
+        row.dataset.key = key;
+        const tri = document.createElement("span");
+        tri.className = "tri";
+        tri.dataset.state = state;
+        row.appendChild(tri);
+        return row;
+    }
+    test("sets filterState.status[stateKey] to the provided newState", () => {
+        const row = makeRow("selected", "ok");
+        const event = { target: row };
+        handleStateSelect(event);
+        expect(filterState.status["ok"]).toBe("selected");
+    });
+    test("calls updateCallback when set", () => {
+        const cb = jest.fn();
+        setFilterUpdateCallback(cb);
+        const row = makeRow("hidden", "tok");
+        const event = { target: row };
+        handleStateSelect(event);
+        expect(cb).toHaveBeenCalled();
+        setFilterUpdateCallback(null);
+    });
+    test("stateKey that is not a valid StatusKey: sets arbitrary key on status object (BUG: no validation)", () => {
+        const row = makeRow("selected", "notAKey");
+        const event = { target: row };
+        handleStateSelect(event);
+        expect(filterState.status["notAKey"]).toBe("selected");
+    });
+});
+
+// --- handleStaffSelect (internal, tested via DOM event) ---
+import { handleStaffSelect } from "../js/filters.js";
+describe("handleStaffSelect", () => {
+    filterState.selectedStaff.clear();
+    beforeEach(() => { filterState.selectedStaff.clear(); filterState.hiddenStaff.clear(); });
+    function makeRow(state, key) {
+        const row = document.createElement("div");
+        row.className = "frow";
+        row.dataset.key = key;
+        const tri = document.createElement("span");
+        tri.className = "tri";
+        tri.dataset.state = state;
+        row.appendChild(tri);
+        return row;
+    }
+    test("SELECTED: adds to selectedStaff, removes from hiddenStaff", () => {
+        const row = makeRow("selected", "5");
+        const event = { target: row };
+        handleStaffSelect(event);
+        expect(filterState.selectedStaff.has(5)).toBe(true);
+        expect(filterState.hiddenStaff.has(5)).toBe(false);
+    });
+    test("HIDDEN: adds to hiddenStaff, removes from selectedStaff", () => {
+        const row = makeRow("hidden", "6");
+        const event = { target: row };
+        handleStaffSelect(event);
+        expect(filterState.hiddenStaff.has(6)).toBe(true);
+        expect(filterState.selectedStaff.has(6)).toBe(false);
+    });
+    test("NEUTRAL: removes from both sets", () => {
+        filterState.selectedStaff.add(7);
+        filterState.hiddenStaff.add(7);
+        const row = makeRow("neutral", "7");
+        const event = { target: row };
+        handleStaffSelect(event);
+        expect(filterState.selectedStaff.has(7)).toBe(false);
+        expect(filterState.hiddenStaff.has(7)).toBe(false);
+    });
+    test("NaN staffId: does not modify any sets AND does not call updateCallback (callback is inside the if block)", () => {
+        const cb = jest.fn();
+        setFilterUpdateCallback(cb);
+        const row = makeRow("selected", "notanumber");
+        const event = { target: row };
+        handleStaffSelect(event);
+        expect(cb).not.toHaveBeenCalled();
+        setFilterUpdateCallback(null);
+    });
+    test("calls updateCallback only when staffId is valid", () => {
+        const cb = jest.fn();
+        setFilterUpdateCallback(cb);
+        const row = makeRow("selected", "8");
+        const event = { target: row };
+        handleStaffSelect(event);
+        expect(cb).toHaveBeenCalled();
+        setFilterUpdateCallback(null);
+    });
+});
+
+// --- handleLocationSelect (internal, tested via DOM event) ---
+import { handleLocationSelect } from "../js/filters.js";
+describe("handleLocationSelect", () => {
+    filterState.hiddenStaff.clear();
+    beforeEach(() => { filterState.selectedLocations.clear(); filterState.hiddenLocations.clear(); });
+    function makeRow(state, key) {
+        const row = document.createElement("div");
+        row.className = "frow";
+        row.dataset.key = key;
+        const tri = document.createElement("span");
+        tri.className = "tri";
+        tri.dataset.state = state;
+        row.appendChild(tri);
+        return row;
+    }
+    test("SELECTED: adds to selectedLocations, removes from hiddenLocations", () => {
+        const row = makeRow("selected", "5");
+        const event = { target: row };
+        handleLocationSelect(event);
+        expect(filterState.selectedLocations.has(5)).toBe(true);
+        expect(filterState.hiddenLocations.has(5)).toBe(false);
+    });
+    test("HIDDEN: adds to hiddenLocations, removes from selectedLocations", () => {
+        const row = makeRow("hidden", "6");
+        const event = { target: row };
+        handleLocationSelect(event);
+        expect(filterState.hiddenLocations.has(6)).toBe(true);
+        expect(filterState.selectedLocations.has(6)).toBe(false);
+    });
+    test("NEUTRAL: removes from both sets", () => {
+        filterState.selectedLocations.add(7);
+        filterState.hiddenLocations.add(7);
+        const row = makeRow("neutral", "7");
+        const event = { target: row };
+        handleLocationSelect(event);
+        expect(filterState.selectedLocations.has(7)).toBe(false);
+        expect(filterState.hiddenLocations.has(7)).toBe(false);
+    });
+    test("NaN locationId: does not modify any sets AND does not call updateCallback", () => {
+        const cb = jest.fn();
+        setFilterUpdateCallback(cb);
+        const row = makeRow("selected", "notanumber");
+        const event = { target: row };
+        handleLocationSelect(event);
+        expect(cb).not.toHaveBeenCalled();
+        setFilterUpdateCallback(null);
+    });
+    test("calls updateCallback only when locationId is valid", () => {
+        const cb = jest.fn();
+        setFilterUpdateCallback(cb);
+        const row = makeRow("selected", "8");
+        const event = { target: row };
+        handleLocationSelect(event);
+        expect(cb).toHaveBeenCalled();
+        setFilterUpdateCallback(null);
+    });
+});
 
 function setupTestData() {
     fetchedData.modules = [

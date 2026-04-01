@@ -41,7 +41,7 @@ export function updateFilters() {
 /**
  * Fill the degree and semester filter sections with degrees and semesters from fetched data. Show semesters based on selected degree. If no degree is selected, hide semester filter.
  */
-function fillDegreesSemesters() {
+export function fillDegreesSemesters() {
     var degrees = fetchedData.degrees.sort((a, b) => a.name.localeCompare(b.name));
 
     var degreeEl = /** @type {HTMLSelectElement | null} */ (document.querySelector("#degreeSelect"));
@@ -75,7 +75,7 @@ function fillDegreesSemesters() {
  * Fill the module filter section with modules from fetched data based on selected degree and semester. Show event count for each module and disable modules with no events.
  * Also separate modules of selected degree and semester from other modules and show them in different sections. If no degree is selected, show all modules in the first section.
  */
-function fillModules() {
+export function fillModules() {
     var currentDegree = /** @type {HTMLOptionElement | null} */ (document.querySelector("#degreeSelect option:checked"))?.value ?? "";
     if (!isNaN(parseInt(currentDegree))) {
         var degreeId = parseInt(currentDegree);
@@ -138,7 +138,7 @@ function fillModules() {
 /**
  * Fill the type filter section with types from fetched data. Show event count for each type and disable types with no events.
  */
-function fillTypes() {
+export function fillTypes() {
     var types = new Set(fetchedData.events.map(el => el.type));
 
     var typeCon = /** @type {HTMLElement | null} */ (document.querySelector("#typeList"));
@@ -167,7 +167,7 @@ function fillTypes() {
 /**
  * Fill the state filter section with states from fetched data. Show event count for each state and disable states with no events.
  */
-function fillStates() {
+export function fillStates() {
     var states = fetchedData.states;
 
     var stateCon = /** @type {HTMLElement | null} */ (document.querySelector("#statusList"));
@@ -189,7 +189,7 @@ function fillStates() {
 /**
  * Fill the staff filter section with staff from fetched data. Show event count for each staff and disable staff with no events. Hide staff with no events if they are not selected.
  */
-function fillStaff() {
+export function fillStaff() {
     var staff = fetchedData.staff;
 
     var staffCon = /** @type {HTMLElement | null} */ (document.querySelector("#staffList"));
@@ -222,7 +222,7 @@ function fillStaff() {
 /**
  * Fill the location filter section with locations from fetched data. Show event count for each location and disable locations with no events. Hide locations with no events if they are not selected.
  */
-function fillLocations() {
+export function fillLocations() {
     var locations = fetchedData.locations;
 
     var locationCon = /** @type {HTMLElement | null} */ (document.querySelector("#locationList"));
@@ -257,7 +257,7 @@ function fillLocations() {
  * Handle module search input, filter modules based on search query and update module filter sections.
  * @param {Event} ev 
  */
-function handleModuleSearch(ev) {
+export function handleModuleSearch(ev) {
     const filterList = document.querySelector("#moduleList");
     if (!filterList) return;
     const searchTerm = /** @type {HTMLInputElement} */ (ev.target).value.toLowerCase();
@@ -283,7 +283,7 @@ function handleModuleSearch(ev) {
  * Handle more module search input, filter more modules based on search query and update more module filter section.
  * @param {Event} ev 
  */
-function handleMoreModuleSearch(ev) {
+export function handleMoreModuleSearch(ev) {
     const filterList = document.querySelector("#weitereModuleList");
     if (!filterList) return;
     const searchTerm = /** @type {HTMLInputElement} */ (ev.target).value.toLowerCase();
@@ -311,7 +311,7 @@ function handleMoreModuleSearch(ev) {
  * Then fill the staff filter section newly based on the search query only, not based on the selected degree and semester, to also show staff that are not in the selected degree and semester but match the search query.
  * @param {Event} ev 
  */
-function handleStaffSearch(ev) {
+export function handleStaffSearch(ev) {
     const staffCon = /** @type {HTMLElement | null} */ (document.querySelector("#staffList"));
     if (!staffCon) return;
     const searchTerm = /** @type {HTMLInputElement} */ (ev.target).value.toLowerCase();
@@ -342,7 +342,7 @@ function handleStaffSearch(ev) {
  * Then fill the location filter section newly based on the search query only, not based on the selected degree and semester, to also show locations that are not in the selected degree and semester but match the search query.
  * @param {Event} ev
  */
-function handleLocationSearch(ev) {
+export function handleLocationSearch(ev) {
     const locationCon = /** @type {HTMLElement | null} */ (document.querySelector("#locationList"));
     if (!locationCon) return;
     const searchTerm = /** @type {HTMLInputElement} */ (ev.target).value.toLowerCase();
@@ -371,7 +371,7 @@ function handleLocationSearch(ev) {
  * Handle degree select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
-function handleDegreeSelect(ev) {
+export function handleDegreeSelect(ev) {
     var selected = /** @type {HTMLOptionElement | null} */ (/** @type {HTMLSelectElement} */ (ev.target).querySelector("option:checked"))?.value ?? "";
     if (!isNaN(parseInt(selected))) {
         filterState.degree = parseInt(selected);
@@ -388,7 +388,7 @@ function handleDegreeSelect(ev) {
  * Handle semester select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
-function handleSemesterSelect(ev) {
+export function handleSemesterSelect(ev) {
     var selected = /** @type {HTMLOptionElement | null} */ (/** @type {HTMLSelectElement} */ (ev.target).querySelector("option:checked"))?.value ?? "";
     if (!isNaN(parseInt(selected))) {
         filterState.semester = parseInt(selected);
@@ -404,7 +404,7 @@ function handleSemesterSelect(ev) {
  * Handle module select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
-function handleModuleSelect(ev) {
+export function handleModuleSelect(ev) {
     var filterRowEl = /** @type {HTMLElement | null} */ (/** @type {Element} */ (ev.target).closest("div.frow"));
     var triStateEl = /** @type {HTMLElement | null} */ (filterRowEl?.querySelector("span.tri"));
     var newState = triStateEl?.dataset['state'];
@@ -434,7 +434,7 @@ function handleModuleSelect(ev) {
  * Handle type select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
-function handleTypeSelect(ev) {
+export function handleTypeSelect(ev) {
     var filterRowEl = /** @type {HTMLElement | null} */ (/** @type {Element} */ (ev.target).closest("div.frow"));
     var triStateEl = /** @type {HTMLElement | null} */ (filterRowEl?.querySelector("span.tri"));
     var newState = triStateEl?.dataset['state'];
@@ -462,7 +462,7 @@ function handleTypeSelect(ev) {
  * Handle state select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
-function handleStateSelect(ev) {
+export function handleStateSelect(ev) {
     var filterRowEl = /** @type {HTMLElement | null} */ (/** @type {Element} */ (ev.target).closest("div.frow"));
     var triStateEl = /** @type {HTMLElement | null} */ (filterRowEl?.querySelector("span.tri"));
     var newState = triStateEl?.dataset['state'];
@@ -477,7 +477,7 @@ function handleStateSelect(ev) {
  * Handle staff select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
-function handleStaffSelect(ev) {
+export function handleStaffSelect(ev) {
     var filterRowEl = /** @type {HTMLElement | null} */ (/** @type {Element} */ (ev.target).closest("div.frow"));
     var triStateEl = /** @type {HTMLElement | null} */ (filterRowEl?.querySelector("span.tri"));
     var newState = triStateEl?.dataset['state'];
@@ -506,7 +506,7 @@ function handleStaffSelect(ev) {
  * Handle location select change, update filter state and trigger update callback.
  * @param {Event} ev 
  */
-function handleLocationSelect(ev) {
+export function handleLocationSelect(ev) {
     var filterRowEl = /** @type {HTMLElement | null} */ (/** @type {Element} */ (ev.target).closest("div.frow"));
     var triStateEl = /** @type {HTMLElement | null} */ (filterRowEl?.querySelector("span.tri"));
     var newState = triStateEl?.dataset['state'];
@@ -682,7 +682,7 @@ export function clearFilters() {
  * @param {boolean} disabled mark row as disabled 
  * @returns {HTMLDivElement}
  */
-function createFilterRow(
+export function createFilterRow(
     key,
     content,
     state,

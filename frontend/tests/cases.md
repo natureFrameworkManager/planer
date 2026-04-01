@@ -216,90 +216,90 @@ Paths: updateCallback is null vs set
 - [x] does not throw if updateCallback is null
 
 #### createFilterRow (internal, tested via updateFilters DOM)
-- [ ] creates row with correct data-key attribute
-- [ ] creates row with correct data-state attribute
-- [ ] click toggles tri-state via nextTriState
-- [ ] disabled row has "dimmed" class
-- [ ] always attaches click handler even when disabled (BUG: `if (true)` dead branch)
-- [ ] count label reflects event count
+- [x] creates row with correct data-key attribute
+- [x] creates row with correct data-state attribute
+- [x] click toggles tri-state via nextTriState
+- [x] disabled row has "dimmed" class
+- [x] always attaches click handler even when disabled (BUG: `if (true)` dead branch)
+- [x] count label reflects event count
 
 #### updateFilters (DOM-dependent)
 Paths: degreeEl/semesterEl missing (early return), degree selected vs not, semester display toggle, module list generation, weitere section toggle
-- [ ] with no DOM elements: returns without error (all querySelector return null)
-- [ ] with DOM: fills degree dropdown with sorted degree names
-- [ ] degree selected: shows semester filter section, fills semester options
-- [ ] degree not selected: hides semester filter section
-- [ ] degree selected + semester selected: modules filtered by both
-- [ ] module list shows count of matching events for each module
-- [ ] module with 0 events and NEUTRAL state gets dimmed class
-- [ ] weitere section visible when moreModules.length > 0, hidden when 0
-- [ ] type list shows all unique types from fetchedData.events, sorted
-- [ ] state list shows all states from fetchedData.states with correct counts
-- [ ] staff list hides staff with 0 events and NEUTRAL state (continue path)
-- [ ] staff list shows staff with 0 events if they are SELECTED or HIDDEN
-- [ ] location list hides locations with 0 events and NEUTRAL state (continue path)
-- [ ] location list shows locations with 0 events if they are SELECTED or HIDDEN
+- [x] with no DOM elements: returns without error (all querySelector return null)
+- [x] with DOM: fills degree dropdown with sorted degree names
+- [x] degree selected: shows semester filter section, fills semester options
+- [x] degree not selected: hides semester filter section
+- [x] degree selected + semester selected: modules filtered by both
+- [x] module list shows count of matching events for each module
+- [x] module with 0 events and NEUTRAL state gets dimmed class
+- [x] weitere section visible when moreModules.length > 0, hidden when 0
+- [x] type list shows all unique types from fetchedData.events, sorted
+- [x] state list shows all states from fetchedData.states with correct counts
+- [x] staff list hides staff with 0 events and NEUTRAL state (continue path)
+- [x] staff list shows staff with 0 events if they are SELECTED or HIDDEN
+- [x] location list hides locations with 0 events and NEUTRAL state (continue path)
+- [x] location list shows locations with 0 events if they are SELECTED or HIDDEN
 
 #### createFilterRow (internal helper, tested via DOM)
 Paths: disabled=true vs false, click handler toggles tri-state, if (true) always-true branch
-- [ ] creates row div with class frow and correct data-key and data-state
-- [ ] disabled=true adds dimmed class to row and tri span
-- [ ] disabled=false: no dimmed class
-- [ ] clicking row toggles tri-state: neutral→selected→hidden→neutral cycle
-- [ ] click handler calls provided handler function with event
-- [ ] count span shows the count number as text
-- [ ] if (true) always attaches click handler even when disabled (BUG: dead code branch)
+- [x] creates row div with class frow and correct data-key and data-state
+- [x] disabled=true adds dimmed class to row and tri span
+- [x] disabled=false: no dimmed class
+- [x] clicking row toggles tri-state: neutral→selected→hidden→neutral cycle
+- [x] click handler calls provided handler function with event
+- [x] count span shows the count number as text
+- [x] if (true) always attaches click handler even when disabled (BUG: dead code branch)
 
 #### handleDegreeSelect (internal, tested via DOM event)
 Paths: selected value is numeric string → parseInt, selected value is "" → degree=null, updateCallback null vs set
-- [ ] selecting a degree option sets filterState.degree to the parsed integer
-- [ ] selecting "Alle" (empty value) sets filterState.degree to null
-- [ ] always resets filterState.semester to null
-- [ ] calls updateCallback when set
-- [ ] does not throw when updateCallback is null
+- [x] selecting a degree option sets filterState.degree to the parsed integer
+- [x] selecting "Alle" (empty value) sets filterState.degree to null
+- [x] always resets filterState.semester to null
+- [x] calls updateCallback when set
+- [x] does not throw when updateCallback is null
 
 #### handleSemesterSelect (internal, tested via DOM event)
 Paths: selected value is numeric string, selected value is "" → semester=null, updateCallback
-- [ ] selecting a semester option sets filterState.semester to the parsed integer
-- [ ] selecting "Alle" (empty value) sets filterState.semester to null
-- [ ] calls updateCallback when set
+- [x] selecting a semester option sets filterState.semester to the parsed integer
+- [x] selecting "Alle" (empty value) sets filterState.semester to null
+- [x] calls updateCallback when set
 
 #### handleModuleSelect (internal, tested via DOM event)
 Paths: newState is SELECTED/HIDDEN/NEUTRAL, moduleId is valid number vs NaN
-- [ ] SELECTED: adds to selectedModules, removes from hiddenModules
-- [ ] HIDDEN: adds to hiddenModules, removes from selectedModules
-- [ ] NEUTRAL: removes from both sets
-- [ ] NaN moduleId: does not modify any sets, still calls updateCallback
-- [ ] calls updateCallback when set
+- [x] SELECTED: adds to selectedModules, removes from hiddenModules
+- [x] HIDDEN: adds to hiddenModules, removes from selectedModules
+- [x] NEUTRAL: removes from both sets
+- [x] NaN moduleId: does not modify any sets, still calls updateCallback
+- [x] calls updateCallback when set
 
 #### handleTypeSelect (internal, tested via DOM event)
 Paths: newState is SELECTED/HIDDEN/NEUTRAL (no NaN check on typeId, it is a string)
-- [ ] SELECTED: adds to selectedTypes, removes from hiddenTypes
-- [ ] HIDDEN: adds to hiddenTypes, removes from selectedTypes
-- [ ] NEUTRAL: removes from both sets
-- [ ] calls updateCallback when set
+- [x] SELECTED: adds to selectedTypes, removes from hiddenTypes
+- [x] HIDDEN: adds to hiddenTypes, removes from selectedTypes
+- [x] NEUTRAL: removes from both sets
+- [x] calls updateCallback when set
 
 #### handleStateSelect (internal, tested via DOM event)
 Paths: sets filterState.status[key] to the new state value
-- [ ] sets filterState.status[stateKey] to the provided newState
-- [ ] calls updateCallback when set
-- [ ] stateKey that is not a valid StatusKey: sets arbitrary key on status object (BUG: no validation)
+- [x] sets filterState.status[stateKey] to the provided newState
+- [x] calls updateCallback when set
+- [x] stateKey that is not a valid StatusKey: sets arbitrary key on status object (BUG: no validation)
 
 #### handleStaffSelect (internal, tested via DOM event)
 Paths: SELECTED/HIDDEN/NEUTRAL branches, staffId NaN (no-op + no callback call)
-- [ ] SELECTED: adds to selectedStaff, removes from hiddenStaff
-- [ ] HIDDEN: adds to hiddenStaff, removes from selectedStaff
-- [ ] NEUTRAL: removes from both sets
-- [ ] NaN staffId: does not modify any sets AND does not call updateCallback (callback is inside the if block)
-- [ ] calls updateCallback only when staffId is valid
+- [x] SELECTED: adds to selectedStaff, removes from hiddenStaff
+- [x] HIDDEN: adds to hiddenStaff, removes from selectedStaff
+- [x] NEUTRAL: removes from both sets
+- [x] NaN staffId: does not modify any sets AND does not call updateCallback (callback is inside the if block)
+- [x] calls updateCallback only when staffId is valid
 
 #### handleLocationSelect (internal, tested via DOM event)
 Paths: SELECTED/HIDDEN/NEUTRAL branches, locationId NaN (no-op + no callback call)
-- [ ] SELECTED: adds to selectedLocations, removes from hiddenLocations
-- [ ] HIDDEN: adds to hiddenLocations, removes from selectedLocations
-- [ ] NEUTRAL: removes from both sets
-- [ ] NaN locationId: does not modify any sets AND does not call updateCallback
-- [ ] calls updateCallback only when locationId is valid
+- [x] SELECTED: adds to selectedLocations, removes from hiddenLocations
+- [x] HIDDEN: adds to hiddenLocations, removes from selectedLocations
+- [x] NEUTRAL: removes from both sets
+- [x] NaN locationId: does not modify any sets AND does not call updateCallback
+- [x] calls updateCallback only when locationId is valid
 
 ---
 
