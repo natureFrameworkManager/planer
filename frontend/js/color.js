@@ -13,6 +13,19 @@ export function setColorUpdateCallback(func) {
 }
 
 /**
+ * Cache for generated color maps to avoid regenerating them on every call to getEventColor.
+ * Each map is keyed by the relevant property (e.g. event type, module id) and maps to a color string.
+ * The maps are generated on demand when getEventColor is called for the first time with a given color mode.
+ * @type {Object<string, Map<string|number, string>|null>}
+ */
+let savedColorMaps = {
+    type: null,
+    module: null,
+    status: null,
+    staff: null,
+};
+
+/**
  * Get the color for an event based on the currently selected color mode and the event's properties.
  * Falls back to a default color if the event's relevant property is not found in the data.
  * @param {import('./api.js').Event} event 
@@ -21,37 +34,53 @@ export function setColorUpdateCallback(func) {
 export function getEventColor(event) {
     switch (colorMode.value) {
         case "type":
+            if (savedColorMaps["type"] && savedColorMaps["type"].has(event.type)) {
+                return savedColorMaps["type"].get(event.type) || generatePalette(10)[7];
+            }
             var types = [...new Set(fetchedData.events.map(el => el.type))];
             var palette = generatePalette(types.length);
-            var colorMap = new Map();
+            var colorMap = /** @type {Map<string|number, string>} */ (new Map());
             for (let index = 0; index < types.length; index++) {
                 colorMap.set(types[index], palette[index]);
             }
-            return colorMap.get(event.type);
+            savedColorMaps["type"] = colorMap; // Save the generated color map for types
+            return colorMap.get(event.type) || generatePalette(10)[7];
         case "module":
+            if (savedColorMaps["module"] && savedColorMaps["module"].has(event.module_ids[0])) {
+                return savedColorMaps["module"].get(event.module_ids[0]) || generatePalette(10)[7];
+            }
             var modules = fetchedData.modules.map(el => el.id);
             var palette = generatePalette(modules.length);
-            var colorMap = new Map();
+            var colorMap = /** @type {Map<string|number, string>} */ (new Map());
             for (let index = 0; index < modules.length; index++) {
                 colorMap.set(modules[index], palette[index]);
             }
-            return colorMap.get(event.module_ids[0]);
+            savedColorMaps["module"] = colorMap; // Save the generated color map for modules
+            return colorMap.get(event.module_ids[0]) || generatePalette(10)[7];
         case "status":
+            if (savedColorMaps["status"] && savedColorMaps["status"].has(event.status)) {
+                return savedColorMaps["status"].get(event.status) || generatePalette(10)[7];
+            }
             var states = fetchedData.states.map(el => el.key);
             var palette = generatePalette(states.length);
-            var colorMap = new Map();
+            var colorMap = /** @type {Map<string|number, string>} */ (new Map());
             for (let index = 0; index < states.length; index++) {
                 colorMap.set(states[index], palette[index]);
             }
-            return colorMap.get(event.status);
+            savedColorMaps["status"] = colorMap; // Save the generated color map for statuses
+            return colorMap.get(event.status) || generatePalette(10)[7];
         case "staff":
+            if (savedColorMaps["staff"] && savedColorMaps["staff"].has(event.staff_ids[0])) {
+                return savedColorMaps["staff"].get(event.staff_ids[0]) || generatePalette(10)[7];
+            }
             var staff = fetchedData.staff.map(el => el.id);
             var palette = generatePalette(staff.length);
-            var colorMap = new Map();
+            var colorMap = /** @type {Map<string|number, string>} */ (new Map());
             for (let index = 0; index < staff.length; index++) {
                 colorMap.set(staff[index], palette[index]);
             }
-            return colorMap.get(event.staff_ids[0]);
+            savedColorMaps["staff"] = colorMap; // Save the generated color map for staff
+            return colorMap.get(event.staff_ids[0]) || generatePalette(10)[7];
         case "custom":
             // TODO: implement custom color picker and return selected color for event
             break;
@@ -165,6 +194,9 @@ export function generatePalette(count, opts = {}) {
     return colors;
 }
 
+/** @type {Record<string, "#ffffff" | "#000000">} */
+let savedContrastTextColors = {};
+
 /**
  * Give a text color with maximum contrast given a background color.  
  * Composites `color` over `bgColor` (defaults to --color-background)
@@ -177,6 +209,10 @@ export function getContrastTextColor(color, bgColor) {
     const resolvedBg = bgColor
         ?? getComputedStyle(document.documentElement)
                .getPropertyValue("--color-background").trim();
+    if (savedContrastTextColors[`${color}|${resolvedBg}`]) {
+        console.log("Using cached contrast text color");
+        return savedContrastTextColors[`${color}|${resolvedBg}`];
+    }
 
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = 1;
@@ -202,7 +238,9 @@ export function getContrastTextColor(color, bgColor) {
     const contrastWithWhite = 1.05 / (L + 0.05);
     const contrastWithBlack = (L + 0.05) / 0.05;
 
-    return contrastWithWhite >= contrastWithBlack ? "#ffffff" : "#000000";
+    const result = contrastWithWhite >= contrastWithBlack ? "#ffffff" : "#000000";
+    savedContrastTextColors[`${color}|${resolvedBg}`] = result;
+    return result;
 }
 
 // TODO: implement custom color picker and save selected colors in state
