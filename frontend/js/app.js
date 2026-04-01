@@ -91,6 +91,31 @@ function update() {
  * Set up global event listeners for UI controls (e.g. toggle buttons)
  */
 function globalEventListeners() {
+    document.querySelector("#hamburgerBtn")?.addEventListener("click", () => {
+        document.querySelector("#sidebar")?.classList.toggle("open");
+        var backdropEl = /** @type {HTMLElement | null} */ (document.querySelector("#sbBackdrop"));
+        if (backdropEl) {
+            backdropEl.style.display = document.querySelector("#sidebar")?.classList.contains("open") ? "block" : "none";
+        }
+    });
+
+    document.querySelector("#sbBackdrop")?.addEventListener("click", () => {
+        document.querySelector("#sidebar")?.classList.remove("open");
+        var backdropEl = /** @type {HTMLElement | null} */ (document.querySelector("#sbBackdrop"));
+        if (backdropEl) {
+            backdropEl.style.display = "none";
+        }
+    });
+
+    document.querySelector("#sidebarCloseBtn")?.addEventListener("click", () => {
+        document.querySelector("#sidebar")?.classList.remove("open");
+        var backdropEl = /** @type {HTMLElement | null} */ (document.querySelector("#sbBackdrop"));
+        if (backdropEl) {
+            backdropEl.style.display = "none";
+        }
+    });
+
+
     // Reset filters button
     document.querySelector("#resetAllBtn")?.addEventListener("click", () => {
         clearStateStorage();
