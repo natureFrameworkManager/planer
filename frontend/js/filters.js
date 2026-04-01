@@ -498,6 +498,12 @@ function handleLocationSelect(ev) {
     }
 }
 
+/** @type {{ cacheKey: string, events: import('./api.js').Event[] | null }} */
+var cachedEvents = {
+    cacheKey: "",
+    events: null
+};
+
 /**
  * Compute events based on selected degree, semester, modules, types, staff, locations and states.
  * Also consider hidden modules, types, staff, locations and states.
@@ -505,6 +511,25 @@ function handleLocationSelect(ev) {
  * @returns {import('./api.js').Event[]}
  */
 export function getEvents() {
+    var currentDegree = filterState.degree;
+    var currentSemester = filterState.semester;
+    var currentSelectedModules = [...filterState.selectedModules].sort().join(",");
+    var currentHiddenModules = [...filterState.hiddenModules].sort().join(",");
+    var currentSelectedTypes = [...filterState.selectedTypes].sort().join(",");
+    var currentHiddenTypes = [...filterState.hiddenTypes].sort().join(",");
+    var currentSelectedStaff = [...filterState.selectedStaff].sort().join(",");
+    var currentHiddenStaff = [...filterState.hiddenStaff].sort().join(",");
+    var currentSelectedLocations = [...filterState.selectedLocations].sort().join(",");
+    var currentHiddenLocations = [...filterState.hiddenLocations].sort().join(",");
+    var currentStatus = Object.entries(filterState.status).map(([key, value]) => `${key}:${value}`).sort().join(",");
+    var cacheKey = `${currentDegree}|${currentSemester}|${currentSelectedModules}|${currentHiddenModules}|${currentSelectedTypes}|${currentHiddenTypes}|${currentSelectedStaff}|${currentHiddenStaff}|${currentSelectedLocations}|${currentHiddenLocations}|${currentStatus}`;
+    
+    // Check if filter has changed in a way that requires recomputing events, if not return cached events
+    if (cachedEvents) {
+        if (cachedEvents.cacheKey === cacheKey && cachedEvents.events !== null) {
+            return cachedEvents.events;
+        }
+    }
     // modules
     if (filterState.degree !== null) {
         var degreeModules = fetchedData.modules.filter(el => /** @type {number} */(filterState.degree) in el.degree_ids);
@@ -529,7 +554,7 @@ export function getEvents() {
     modules = modules.concat(moreSelectedModules);
     modules = modules.filter(el => !filterState.hiddenModules.has(el));
 
-    return fetchedData.events.filter(el =>
+    var result = fetchedData.events.filter(el =>
         el.module_ids.some(id => modules.includes(id)) &&
         filterState.status[/** @type {import('./state.js').StatusKey} */ (el.status)] !== TRI.HIDDEN &&
         !el.staff_ids.some(id => filterState.hiddenStaff.has(id)) &&
@@ -541,7 +566,18 @@ export function getEvents() {
         (filterState.selectedStaff.size > 0 ? el.staff_ids.some(id => filterState.selectedStaff.has(id)) : true) &&
         (filterState.selectedLocations.size > 0 ? filterState.selectedLocations.has(el.location_id) : true)
     ).filter(el => !getHiddenEvents().some(he => he.id == el.id));
+    cachedEvents = {
+        cacheKey: cacheKey,
+        events: result
+    };
+    return result;
 }
+
+/** @type {{ cacheKey: string, events: import('./api.js').Event[] | null }} */
+var hiddenEventsCache = {
+    cacheKey: "",
+    events: null
+};
 
 /**
  * Compute hidden events based on pinned events, when they share the same module and type.
@@ -549,6 +585,13 @@ export function getEvents() {
  * @returns {import('./api.js').Event[]}
  */
 export function getHiddenEvents() {
+    var currentPinned = [...pinnedEvents].sort().join(",");
+    var cacheKey = `${currentPinned}`;
+    if (hiddenEventsCache) {
+        if (hiddenEventsCache.cacheKey === cacheKey && hiddenEventsCache.events !== null) {
+            return hiddenEventsCache.events;
+        }
+    }
     /** @type {import('./api.js').Event[]} */
     var hidden = [];
     var eventsPinned = [...pinnedEvents];
@@ -562,6 +605,10 @@ export function getHiddenEvents() {
         );
         hidden = hidden.concat(similar);
     }
+    hiddenEventsCache = {
+        cacheKey: cacheKey,
+        events: hidden
+    };
     return hidden;
 }
 
