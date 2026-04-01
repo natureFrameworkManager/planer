@@ -56,6 +56,7 @@ export function initCalendar() {
         hiddenDays: [0, 6], // hide Sun/Sat
         dayHeaderFormat: { weekday: "short" }, // e.g. "Mo", "Di", etc.
         initialDate: getFixedMonday(), // Generic week: use a fixed Monday. Events use daysOfWeek for recurring.
+        validRange: getValidDateRange(getFixedMonday()), // Limit navigation to a reasonable range around the fixed week
         navLinks: false, // Disable built-in navigation (we have our own controls)
         weekNumbers: false, // No week numbers
         nowIndicator: false, // No current time indicator
@@ -193,6 +194,21 @@ function getFixedMonday() {
     const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     return new Date(d.setDate(diff));
 }
+
+/**
+ * Calculate a valid date range for the calendar based on a fixed Monday 
+ * @see getFixedMonday
+ * @param {Date} fixedMonday 
+ * @returns {{ start: Date, end: Date }}
+ */
+function getValidDateRange(fixedMonday) {
+    const start = new Date(fixedMonday);
+    start.setDate(start.getDate() - 7);
+    const end = new Date(fixedMonday);
+    end.setDate(end.getDate() + 6);
+    return { start, end };
+}
+
 
 /**
  * Build FullCalendar event objects from our event data
