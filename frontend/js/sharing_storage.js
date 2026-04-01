@@ -87,6 +87,8 @@ function setParam(params, key, value) {
     }
 }
 
+// TODO: create a not so cryptic looking share link
+// Currently looks with escaping like a tracking link with random parameters, which might be off-putting for users to click on or share.
 /**
  * Generate a shareable link that encodes the current state of the app (e.g. filters, calendar view, etc.) in the URL parameters. 
  * This allows users to share specific views or configurations of the app with others. 
