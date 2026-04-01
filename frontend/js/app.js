@@ -56,11 +56,11 @@ function initApp() {
     }
 
     // Initialize filters, calendar, colors, and popup, then update calendar with fetched data
+    initColorEvents();
     initFilters();
     updateFilters();
     initCalendar();
     updateCalendar();
-    initColorEvents();
     initPopup();
 
     // Set callbacks for when filters, calendar, colors, or popup need to trigger a calendar update

@@ -1,6 +1,7 @@
 // @ts-check
 import { getContrastTextColor, getEventColor } from "./color.js";
 import { getEvents } from "./filters.js";
+import { saveState } from "./sharing_storage.js";
 import { fetchedData, pinnedEvents, view } from "./state.js";
 
 /** @typedef {import('@fullcalendar/core').Calendar} fullCalendar */
@@ -78,6 +79,24 @@ export function initCalendar() {
     });
 
     calendarInstance?.render();
+
+    // Set initial view toggle button state
+    document.querySelectorAll(".vbtn").forEach((el) => {
+        /**
+         * @type {Record<string, string>}
+         */
+        var viewMap = {
+            "timeGridWeek": "week",
+            "timeGridDay": "day",
+            "listWeek": "list"
+        };
+        var btnView = ( /** @type {HTMLElement} */(el)).dataset["view"];
+        if (btnView === viewMap[view.value]) {
+            el.classList.add("active");
+        } else {
+            el.classList.remove("active");
+        }
+    });
 
     // Set up view toggle buttons
     document.querySelectorAll(".vbtn").forEach((el) => el.addEventListener("click", () => {
@@ -184,6 +203,7 @@ export function changeCalendarView(viewName) {
         : false
     );
     view.value = viewName;
+    saveState();
 }
 
 // TODO: handle day view day change
