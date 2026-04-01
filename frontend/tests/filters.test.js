@@ -246,6 +246,20 @@ describe("getEvents", () => {
         expect(result).toContain(101);
     });
 
+    test("all filter dimensions simultaneously: degree + semester + module + type + status + staff + location", () => {
+        filterState.degree = 10;
+        filterState.semester = 1;
+        filterState.selectedModules.add(1);
+        filterState.selectedTypes.add("Vorlesung");
+        filterState.status.ok = TRI.SELECTED;
+        filterState.selectedStaff.add(7);
+        filterState.selectedLocations.add(100);
+
+        const result = getEvents().map((ev) => ev.id);
+        // Only event 101 matches: module 1 (degree 10, sem 1), Vorlesung, ok, staff 7, location 100
+        expect(result).toEqual([101]);
+    });
+
     test("event with empty module_ids → el.module_ids.some(...) returns false → event excluded", () => {
         fetchedData.events.push(
             { id: 200, module_ids: [], status: "ok", staff_ids: [7], location_id: 100, type: "Vorlesung", title: "NoMod", weekday: 1, start_time: "08:00", end_time: "10:00" }
