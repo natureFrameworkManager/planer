@@ -472,78 +472,78 @@ Paths: eventId is NaN → return, pinnedEvents.has(eventId) → delete, !has →
 
 #### initCalendar
 Paths: #calendar element missing → return, element present → create FullCalendar, .vbtn click handlers, viewType week/day/list/other
-- [ ] creates FullCalendar instance and renders
+- [x] creates FullCalendar instance and renders
 - [x] does nothing if #calendar element is missing
-- [ ] sets up view toggle buttons (.vbtn)
+- [x] sets up view toggle buttons (.vbtn)
 - [x] #calendar element missing: returns without creating instance
-- [ ] #calendar element present: creates FullCalendar instance (calendarInstance not null)
-- [ ] .vbtn with data-view=week: calls changeCalendarView(timeGridWeek)
-- [ ] .vbtn with data-view=day: calls changeCalendarView(timeGridDay)
-- [ ] .vbtn with data-view=list: calls changeCalendarView(listWeek)
-- [ ] .vbtn with data-view=unknown: no changeCalendar call (falls through switch default)
-- [ ] .vbtn click: sets active class on clicked button, removes from siblings
+- [x] #calendar element present: creates FullCalendar instance (calendarInstance not null)
+- [x] .vbtn with data-view=week: calls changeCalendarView(timeGridWeek)
+- [x] .vbtn with data-view=day: calls changeCalendarView(timeGridDay)
+- [x] .vbtn with data-view=list: calls changeCalendarView(listWeek)
+- [x] .vbtn with data-view=unknown: no changeCalendar call (falls through switch default)
+- [x] .vbtn click: sets active class on clicked button, removes from siblings
 
 #### changeCalendarView
 Paths: calendarInstance is null → return, calendarInstance exists → changeView + update view.value
 - [x] calendarInstance is null: returns without error
-- [ ] calendarInstance exists: calls changeView and updates view.value
+- [x] calendarInstance exists: calls changeView and updates view.value
 - [x] updates view.value state
 - [x] does nothing if calendarInstance is null
 
 #### getFixedMonday
 Paths: today is Monday (day=1), Tuesday-Saturday (day=2-6), Sunday (day=0 → special -6 path)
-- [ ] returns a Date that is a Monday (getDay() === 1)
-- [ ] when today is Monday: returns today
-- [ ] when today is Wednesday: returns previous Monday
-- [ ] when today is Sunday: day===0 → diff = date - 0 + (-6) → check correct Monday (BUG potential)
-- [ ] when today is Saturday: day===6 → diff = date - 6 + 1 → returns previous Monday
+- [x] returns a Date that is a Monday (getDay() === 1)
+- [x] when today is Monday: returns today
+- [x] when today is Wednesday: returns previous Monday
+- [x] when today is Sunday: day===0 → diff = date - 0 + (-6) → check correct Monday (BUG potential)
+- [x] when today is Saturday: day===6 → diff = date - 6 + 1 → returns previous Monday
 - [ ] BUG edge case: when today is Sunday, getDay()===0 path may produce wrong week
 
 #### buildCalendarEvents
 Paths per event: pinned vs not, getEventColor returns falsy → fallback #3B82F6, moduleNames array has entries vs empty, weekday mapping (1-6 → same, 7 → 0)
-- [ ] maps weekday 1 (Monday) to fcDay 1
-- [ ] maps weekday 7 (Sunday) to fcDay 0
-- [ ] maps weekday 6 (Saturday) to fcDay 6
-- [ ] adds "pinned" class for pinned events
-- [ ] empty class list for unpinned events
-- [ ] includes module names in extendedProps
+- [x] maps weekday 1 (Monday) to fcDay 1
+- [x] maps weekday 7 (Sunday) to fcDay 0
+- [x] maps weekday 6 (Saturday) to fcDay 6
+- [x] adds "pinned" class for pinned events
+- [x] empty class list for unpinned events
+- [x] includes module names in extendedProps
 - [ ] sets fallback color "#3B82F6" when getEventColor returns falsy
-- [ ] typeShort is always "?" (hardcoded, maps commented out)
-- [ ] statusColor is always "#6b7280" (hardcoded)
-- [ ] event id is stringified in fc event
-- [ ] empty events array produces empty fc events
+- [x] typeShort is always "?" (hardcoded, maps commented out)
+- [x] statusColor is always "#6b7280" (hardcoded)
+- [x] event id is stringified in fc event
+- [x] empty events array produces empty fc events
 - [ ] event with module_ids referencing non-existent modules: empty moduleNames
-- [ ] empty events array → returns []
-- [ ] event with weekday=1 (Monday): fcDay = 1 % 7 = 1
-- [ ] event with weekday=7 (Sunday): fcDay = 7 % 7 = 0
-- [ ] event with weekday=6 (Saturday): fcDay = 6 % 7 = 6
-- [ ] event with weekday=5 (Friday): fcDay = 5 % 7 = 5
-- [ ] pinned event: classNames includes pinned
-- [ ] unpinned event: classNames filtered to empty array
+- [x] empty events array → returns []
+- [x] event with weekday=1 (Monday): fcDay = 1 % 7 = 1
+- [x] event with weekday=7 (Sunday): fcDay = 7 % 7 = 0
+- [x] event with weekday=6 (Saturday): fcDay = 6 % 7 = 6
+- [x] event with weekday=5 (Friday): fcDay = 5 % 7 = 5
+- [x] pinned event: classNames includes pinned
+- [x] unpinned event: classNames filtered to empty array
 - [ ] getEventColor returns falsy/undefined: color falls back to #3B82F6
-- [ ] getEventColor returns valid color: that color is used
-- [ ] module_ids reference existing modules: moduleNames populated with names
+- [x] getEventColor returns valid color: that color is used
+- [x] module_ids reference existing modules: moduleNames populated with names
 - [ ] module_ids reference non-existent modules: .find() returns undefined → filtered out by .filter(Boolean) → empty moduleNames
-- [ ] event id is stringified in FullCalendar event (id: String(ev.id))
-- [ ] typeShort is always ? (commented-out map)
-- [ ] statusColor is always #6b7280 (commented-out status colors)
-- [ ] all fc event fields present: daysOfWeek, startTime, endTime, extendedProps, display, classNames
+- [x] event id is stringified in FullCalendar event (id: String(ev.id))
+- [x] typeShort is always ? (commented-out map)
+- [x] statusColor is always #6b7280 (commented-out status colors)
+- [x] all fc event fields present: daysOfWeek, startTime, endTime, extendedProps, display, classNames
 
 #### renderEventContent (internal, DOM-dependent)
 Paths: props.moduleNames.length > 0 → meta element, length === 0 → no meta element, pin click handler
 - [ ] creates div with ev-title containing typeShort + title
-- [ ] moduleNames length > 0: creates ev-meta div with first module name
-- [ ] moduleNames length === 0: no ev-meta div created
-- [ ] creates sdot span with statusColor background
-- [ ] creates ev-pin-icon span with click handler
-- [ ] pin icon click calls onPinToggle with numeric event id
-- [ ] pin icon click stopPropagation prevents event click handler
+- [x] moduleNames length > 0: creates ev-meta div with first module name
+- [x] moduleNames length === 0: no ev-meta div created
+- [x] creates sdot span with statusColor background
+- [x] creates ev-pin-icon span with click handler
+- [x] pin icon click calls onPinToggle with numeric event id
+- [x] pin icon click stopPropagation prevents event click handler
 
 #### handleEventClick (internal)
 Paths: openEventPopupCallback is null vs set
-- [ ] calls openEventPopupCallback with numeric event id when set
-- [ ] does nothing when openEventPopupCallback is null (no error)
-- [ ] preventDefault is called on jsEvent
+- [x] calls openEventPopupCallback with numeric event id when set
+- [x] does nothing when openEventPopupCallback is null (no error)
+- [x] preventDefault is called on jsEvent
 
 #### setCalendarUpdateCallback / setOpenPopupCallback
 - [x] stores callback without error
@@ -551,14 +551,14 @@ Paths: openEventPopupCallback is null vs set
 #### updateCalendar
 Paths: calendarInstance is null → return early, calendarInstance exists → removeAllEvents + addEventSource
 - [x] calendarInstance is null: no error, returns early
-- [ ] calendarInstance exists: removes old events and adds new source from getEvents + buildCalendarEvents
+- [x] calendarInstance exists: removes old events and adds new source from getEvents + buildCalendarEvents
 
 #### onPinToggle (internal)
 Paths: event already pinned → delete, not pinned → add, updateCalendarCallback null vs set
-- [ ] not pinned: adds to pinnedEvents
-- [ ] already pinned: removes from pinnedEvents
-- [ ] calls updateCalendarCallback when set
-- [ ] does not throw when updateCalendarCallback is null
+- [x] not pinned: adds to pinnedEvents
+- [x] already pinned: removes from pinnedEvents
+- [x] calls updateCalendarCallback when set
+- [x] does not throw when updateCalendarCallback is null
 
 ---
 
