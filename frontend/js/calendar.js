@@ -146,7 +146,7 @@ function renderEventContent(arg) {
     // Title
     const titleEl = document.createElement("div");
     titleEl.className = "ev-title";
-    titleEl.textContent = `${props.typeShort} ${arg.event.title}`;
+    titleEl.textContent = `${arg.event.title}`; // `${props.typeShort} ${arg.event.title}`;
     el.appendChild(titleEl);
 
     // Module name
@@ -206,10 +206,6 @@ export function changeCalendarView(viewName) {
     saveState();
 }
 
-// TODO: handle day view day change
-// Use buttons inside
-
-
 /** 
  * Get a fixed Monday date for consistent calendar rendering
  * @returns {Date}
@@ -257,7 +253,7 @@ function buildCalendarEvents(events) {
             .filter(Boolean);
 
         // Status color
-        const statusColor = /* STATUS_COLORS[ev.status] || */ "#6b7280";
+        const statusColor = /* STATUS_COLORS[ev.status] || */ "#6b7280"; // TODO: add status color mapping, default to gray
 
         fcEvents.push({
             id: String(ev.id),
@@ -270,12 +266,11 @@ function buildCalendarEvents(events) {
                 color,
                 statusColor,
                 moduleNames,
-                typeShort: /* TYPE_SHORT[ev.type] || */ "?",
+                typeShort: /* TYPE_SHORT[ev.type] || */ "?", // TODO: add type short mapping
             },
             display: "auto",
             classNames: [
-                isPinned ? "pinned" : "",
-                /* isExcluded ? "excluded" : "", */
+                isPinned ? "pinned" : ""
             ].filter(Boolean),
         });
     }
