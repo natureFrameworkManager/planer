@@ -556,7 +556,8 @@ export function getEvents() {
     var currentSelectedLocations = [...filterState.selectedLocations].sort().join(",");
     var currentHiddenLocations = [...filterState.hiddenLocations].sort().join(",");
     var currentStatus = Object.entries(filterState.status).map(([key, value]) => `${key}:${value}`).sort().join(",");
-    var cacheKey = `${currentDegree}|${currentSemester}|${currentSelectedModules}|${currentHiddenModules}|${currentSelectedTypes}|${currentHiddenTypes}|${currentSelectedStaff}|${currentHiddenStaff}|${currentSelectedLocations}|${currentHiddenLocations}|${currentStatus}`;
+    var currentPinned = [...pinnedEvents].sort().join(",");
+    var cacheKey = `${currentDegree}|${currentSemester}|${currentSelectedModules}|${currentHiddenModules}|${currentSelectedTypes}|${currentHiddenTypes}|${currentSelectedStaff}|${currentHiddenStaff}|${currentSelectedLocations}|${currentHiddenLocations}|${currentStatus}|${currentPinned}`;
     
     // Check if filter has changed in a way that requires recomputing events, if not return cached events
     if (cachedEvents) {
