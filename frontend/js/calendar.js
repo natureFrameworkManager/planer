@@ -46,8 +46,8 @@ export function initCalendar() {
         initialView: view.value || "timeGridWeek", // Initial view
         locale: "de", // German locale
         headerToolbar: (view.value || "timeGridWeek") === "timeGridDay"
-        ? { start: "", center: "", end: "prev,next" }
-        : false, // Disable built-in header outside of timeGridDay view, then display prev,next buttons on the right for day view
+            ? { start: "", center: "", end: "prev,next" }
+            : false, // Disable built-in header outside of timeGridDay view, then display prev,next buttons on the right for day view
         allDaySlot: false, // No all-day events
         slotMinTime: "07:00:00", // Start time for calendar (7am)
         slotMaxTime: "21:00:00", // End time for calendar (9pm)
@@ -235,7 +235,7 @@ function getValidDateRange(fixedMonday) {
 /**
  * Build FullCalendar event objects from our event data
  * @param {import("./api").Event[]} events 
- * @returns {Object[]}
+ * @returns {{id: string, title: string, daysOfWeek: number[], startTime: string, endTime: string, extendedProps: {eventData: import("./api").Event, color: string, statusColor: string, moduleNames: string[], typeShort: string}, display: string, classNames: string[]}[]}
  */
 function buildCalendarEvents(events) {
     const fcEvents = [];
@@ -250,7 +250,8 @@ function buildCalendarEvents(events) {
         // Get module names for display
         const moduleNames = ev.module_ids
             .map((moduleId) => moduleMap.get(moduleId)?.name)
-            .filter(Boolean);
+            .filter(Boolean)
+            .filter(el => el !== undefined);
 
         // Status color
         const statusColor = /* STATUS_COLORS[ev.status] || */ "#6b7280"; // TODO: add status color mapping, default to gray
