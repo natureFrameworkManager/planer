@@ -50,6 +50,7 @@ export function initCalendar() {
         slotMaxTime: "21:00:00", // End time for calendar (9pm)
         slotDuration: "00:30:00", // Duration of each time slot
         slotLabelInterval: "01:00:00", // Interval for time labels
+        eventMaxStack: 4,
         expandRows: true, // Expand rows to fill available height
         slotEventOverlap: false, // Prevent events from overlapping
         hiddenDays: [0, 6], // hide Sun/Sat
