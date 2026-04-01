@@ -746,10 +746,9 @@ body {
     }
 
     .sidebar {
-        @apply fixed top-0 bottom-0 left-0 z-60;
+        @apply fixed top-0 bottom-0 left-0 z-60 -translate-x-full transition-transform duration-300 ease-in-out;
         width: 88vw;
         max-width: 320px;
-        transform: translateX(-110%);
         padding-top: env(safe-area-inset-top, 0px);
     }
 
