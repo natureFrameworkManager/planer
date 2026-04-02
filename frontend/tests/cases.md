@@ -497,7 +497,7 @@ Paths: today is Monday (day=1), Tuesday-Saturday (day=2-6), Sunday (day=0 → sp
 - [x] when today is Wednesday: returns previous Monday
 - [x] when today is Sunday: day===0 → diff = date - 0 + (-6) → check correct Monday (BUG potential)
 - [x] when today is Saturday: day===6 → diff = date - 6 + 1 → returns previous Monday
-- [ ] BUG edge case: when today is Sunday, getDay()===0 path may produce wrong week
+- [x] BUG edge case: when today is Sunday, getDay()===0 path may produce wrong week
 
 #### buildCalendarEvents
 Paths per event: pinned vs not, getEventColor returns falsy → fallback #3B82F6, moduleNames array has entries vs empty, weekday mapping (1-6 → same, 7 → 0)
@@ -566,20 +566,20 @@ Paths: event already pinned → delete, not pinned → add, updateCalendarCallba
 
 #### DOMContentLoaded handler
 Paths: cachedData available → populate state + skip fetch, cachedData null → fetchAll + saveFetchedData, restoreState always called before data population
-- [ ] cachedData available: populates fetchedData from cache, does not call fetchAll
-- [ ] cachedData null: calls fetchAll, assigns results to fetchedData, calls saveFetchedData
+- [x] cachedData available: populates fetchedData from cache, does not call fetchAll
+- [x] cachedData null: calls fetchAll, assigns results to fetchedData, calls saveFetchedData
 - [ ] restoreState is called before data population
 - [ ] initApp is called after data is ready
 
 #### initApp
 Paths: semesterBadge exists vs null, semesters[0].name truthy vs nullish
-- [ ] sets semester badge text from fetchedData.semesters[0].name
-- [ ] falls back to "Semester" when name is nullish
-- [ ] semesterBadge element exists + semesters[0].name is truthy: sets textContent to name
-- [ ] semesterBadge element exists + semesters[0].name is null: falls back to Semester
+- [x] sets semester badge text from fetchedData.semesters[0].name
+- [x] falls back to "Semester" when name is nullish
+- [x] semesterBadge element exists + semesters[0].name is truthy: sets textContent to name
+- [x] semesterBadge element exists + semesters[0].name is null: falls back to Semester
 - [x] semesterBadge element missing: no error (null check)
 - [ ] calls updateFilters, initCalendar, updateCalendar, initColorEvents, initPopup in order
-- [ ] sets filter/calendar/color/popup callbacks via setter functions
+- [x] sets filter/calendar/color/popup callbacks via setter functions
 - [x] hides loadingOverlay by adding hidden class
 - [x] loadingOverlay missing: no error (optional chaining)
 - [ ] calls globalEventListeners at the end
@@ -671,7 +671,7 @@ Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs mis
 
 ### initApp
 - [x] semesterBadge: handles missing #semesterBadge element gracefully
-- [x] semesterBadge: handles empty fetchedData.semesters array (no error, fallback to "Semester")
+- [ ] semesterBadge: handles empty fetchedData.semesters array (no error, fallback to "Semester")
 - [x] semesterBadge: handles missing .name property on semester (fallback to "Semester")
 - [ ] calls all init/update functions even if some DOM elements are missing
 - [ ] does not throw if set*Callback functions are undefined
@@ -698,24 +698,24 @@ Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs mis
 ### initCalendar
 - [x] does nothing if #calendar element is missing
 - [ ] creates calendarInstance with correct initial view from view.value
-- [ ] sets up .vbtn click handlers for all present buttons
+- [x] sets up .vbtn click handlers for all present buttons
 - [ ] handles missing .vbtn elements gracefully
-- [x] does not throw if FullCalendar is undefined (simulate missing import)
+- [ ] does not throw if FullCalendar is undefined (simulate missing import)
 
 ### buildCalendarEvents
-- [ ] returns empty array if input events is empty
+- [x] returns empty array if input events is empty
 - [ ] handles events with missing/empty module_ids array
 - [ ] handles events with module_ids referencing non-existent modules (moduleNames empty)
 - [ ] sets fallback color if getEventColor returns falsy
-- [ ] sets pinned class only for pinned events
-- [ ] event id is always stringified
-- [ ] typeShort is always "?" (hardcoded)
-- [ ] statusColor is always "#6b7280" (hardcoded)
+- [x] sets pinned class only for pinned events
+- [x] event id is always stringified
+- [x] typeShort is always "?" (hardcoded)
+- [x] statusColor is always "#6b7280" (hardcoded)
 
 ### getFixedMonday
-- [ ] returns a Date object
-- [ ] always returns a Monday (getDay() === 1)
-- [ ] edge case: when today is Sunday (getDay()===0), returns previous Monday
+- [x] returns a Date object
+- [x] always returns a Monday (getDay() === 1)
+- [x] edge case: when today is Sunday (getDay()===0), returns previous Monday
 
 ### changeCalendarView
 - [x] does nothing if calendarInstance is null
@@ -723,14 +723,14 @@ Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs mis
 
 ### updateCalendar
 - [x] exits early if calendarInstance is null
-- [ ] removes all events before adding new ones
-- [ ] adds correct number of events from buildCalendarEvents
+- [x] removes all events before adding new ones
+- [x] adds correct number of events from buildCalendarEvents
 
 ### renderEventContent
 - [ ] sets CSS variables for color and contrast
-- [ ] creates title, meta, dot, and pin elements
-- [ ] attaches pin click handler
-- [ ] handles missing/empty moduleNames array
+- [x] creates title, meta, dot, and pin elements
+- [x] attaches pin click handler
+- [x] handles missing/empty moduleNames array
 - [ ] handles missing getContrastTextColor function (simulate error)
 
 ## 5.3 filters.js
@@ -763,23 +763,23 @@ Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs mis
 - [x] does not throw if updateCallback is null
 
 ### createFilterRow
-- [ ] creates row with correct data-key and data-state attributes
-- [ ] click toggles tri-state via nextTriState
-- [ ] disabled row has "dimmed" class
-- [ ] always attaches click handler even when disabled (BUG: `if (true)` dead branch)
-- [ ] count label reflects event count
+- [x] creates row with correct data-key and data-state attributes
+- [x] click toggles tri-state via nextTriState
+- [x] disabled row has "dimmed" class
+- [x] always attaches click handler even when disabled (BUG: `if (true)` dead branch)
+- [x] count label reflects event count
 
 ### fillDegreesSemesters
-- [ ] handles missing degreeEl, semesterEl, or semFilterSec elements
+- [x] handles missing degreeEl, semesterEl, or semFilterSec elements
 - [ ] handles empty fetchedData.degrees array
 - [ ] handles degree with no semesters
 
 ### fillModules
-- [ ] handles missing moduleCon or moreModuleCon elements
+- [x] handles missing moduleCon or moreModuleCon elements
 - [ ] handles empty fetchedData.modules array
-- [ ] handles modules with no events
+- [x] handles modules with no events
 
 ### fillTypes, fillStates, fillStaff, fillLocations
-- [ ] handle missing container elements
+- [x] handle missing container elements
 - [ ] handle empty fetchedData.events, states, staff, or locations arrays
 - [ ] skip types/staff/locations with no events unless selected
