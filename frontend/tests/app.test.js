@@ -339,3 +339,238 @@ describe("initApp behavior", () => {
         expect(overlay.classList.contains("hidden")).toBe(true);
     });
 });
+
+function setupAppBootstrapDOM() {
+    document.body.innerHTML = `
+        <span id="semesterBadge"></span>
+        <div id="loadingOverlay"></div>
+        <div id="sidebar"></div>
+        <div id="sbBackdrop" style="display:none"></div>
+        <button id="hamburgerBtn"></button>
+        <button id="sidebarCloseBtn"></button>
+        <button id="resetAllBtn"></button>
+        <button id="shareLinkBtn"></button>
+        <span id="shareLinkSuccessMSg"></span>
+        <span id="shareLink"></span>
+        <div id="share-link-popup">
+            <div class="popup-box">
+                <button id="shareLinkCloseBtn"></button>
+            </div>
+        </div>
+    `;
+}
+
+async function importAppWithMocks({ cachedData, fetchAllResult, shareLink = "http://localhost/app?x=1" }) {
+    jest.resetModules();
+    /** @type {((ev: Event) => unknown) | null} */
+    let domReadyHandler = null;
+    const originalAddEventListener = document.addEventListener.bind(document);
+    const addEventListenerSpy = jest.spyOn(document, "addEventListener").mockImplementation((type, listener, options) => {
+        if (type === "DOMContentLoaded") {
+            domReadyHandler = /** @type {(ev: Event) => unknown} */ (listener);
+            return;
+        }
+        originalAddEventListener(type, listener, options);
+    });
+
+    const callbacks = {
+        filter: null,
+        calendar: null,
+        color: null,
+        popup: null,
+    };
+
+    const mocks = {
+        fetchAll: jest.fn().mockResolvedValue(fetchAllResult),
+        initCalendar: jest.fn(),
+        setCalendarUpdateCallback: jest.fn((cb) => { callbacks.calendar = cb; }),
+        setOpenPopupCallback: jest.fn(),
+        updateCalendar: jest.fn(),
+        initColorEvents: jest.fn(),
+        setColorUpdateCallback: jest.fn((cb) => { callbacks.color = cb; }),
+        clearFilters: jest.fn(),
+        initFilters: jest.fn(),
+        setFilterUpdateCallback: jest.fn((cb) => { callbacks.filter = cb; }),
+        updateFilters: jest.fn(),
+        initPopup: jest.fn(),
+        openPopup: jest.fn(),
+        setPopupUpdateCallback: jest.fn((cb) => { callbacks.popup = cb; }),
+        restoreState: jest.fn(),
+        saveFetchedData: jest.fn(),
+        saveState: jest.fn(),
+        getShareLink: jest.fn(() => shareLink),
+        clearStateStorage: jest.fn(),
+        loadFetchedDataAsync: jest.fn().mockResolvedValue(cachedData),
+    };
+
+    const mockFetchedData = {
+        degrees: [],
+        modules: [],
+        events: [],
+        staff: [],
+        locations: [],
+        semesters: [],
+    };
+
+    jest.unstable_mockModule("../js/api.js", () => ({
+        fetchAll: mocks.fetchAll,
+    }));
+
+    jest.unstable_mockModule("../js/calendar.js", () => ({
+        initCalendar: mocks.initCalendar,
+        setCalendarUpdateCallback: mocks.setCalendarUpdateCallback,
+        setOpenPopupCallback: mocks.setOpenPopupCallback,
+        updateCalendar: mocks.updateCalendar,
+    }));
+
+    jest.unstable_mockModule("../js/color.js", () => ({
+        initColorEvents: mocks.initColorEvents,
+        setColorUpdateCallback: mocks.setColorUpdateCallback,
+    }));
+
+    jest.unstable_mockModule("../js/filters.js", () => ({
+        clearFilters: mocks.clearFilters,
+        initFilters: mocks.initFilters,
+        setFilterUpdateCallback: mocks.setFilterUpdateCallback,
+        updateFilters: mocks.updateFilters,
+    }));
+
+    jest.unstable_mockModule("../js/popup.js", () => ({
+        initPopup: mocks.initPopup,
+        openPopup: mocks.openPopup,
+        setPopupUpdateCallback: mocks.setPopupUpdateCallback,
+    }));
+
+    jest.unstable_mockModule("../js/sharing_storage.js", () => ({
+        restoreState: mocks.restoreState,
+        saveFetchedData: mocks.saveFetchedData,
+        saveState: mocks.saveState,
+        getShareLink: mocks.getShareLink,
+        clearStateStorage: mocks.clearStateStorage,
+        loadFetchedDataAsync: mocks.loadFetchedDataAsync,
+    }));
+
+    jest.unstable_mockModule("../js/state.js", () => ({
+        fetchedData: mockFetchedData,
+    }));
+
+    await import("../js/app.js");
+    addEventListenerSpy.mockRestore();
+    if (domReadyHandler) {
+        await domReadyHandler(new Event("DOMContentLoaded"));
+    }
+    await Promise.resolve();
+    await Promise.resolve();
+
+    return { callbacks, mocks, fetchedData: mockFetchedData };
+}
+
+describe("app.js bootstrap integration", () => {
+    beforeEach(() => {
+        setupAppBootstrapDOM();
+        window.history.pushState({}, "", "http://localhost/app");
+    });
+
+    test("uses cached data path and initializes UI", async () => {
+        const cachedData = {
+            degrees: [{ id: 1, name: "INF" }],
+            modules: [{ id: 11, name: "Algo" }],
+            events: [{ id: 21, title: "Algo V" }],
+            staff: [{ id: 31, name: "Prof X" }],
+            locations: [{ id: 41, name: "H1" }],
+            semesters: [{ id: 51, name: "SoSe 2026" }],
+        };
+
+        const { callbacks, mocks, fetchedData: state } = await importAppWithMocks({
+            cachedData,
+            fetchAllResult: [[], [], [], [], [], []],
+        });
+
+        expect(mocks.loadFetchedDataAsync).toHaveBeenCalledTimes(1);
+        expect(mocks.fetchAll).not.toHaveBeenCalled();
+        expect(mocks.saveFetchedData).not.toHaveBeenCalled();
+        expect(mocks.restoreState).toHaveBeenCalledTimes(1);
+        expect(mocks.initFilters).toHaveBeenCalledTimes(1);
+        expect(mocks.initCalendar).toHaveBeenCalledTimes(1);
+        expect(mocks.initColorEvents).toHaveBeenCalledTimes(1);
+        expect(mocks.initPopup).toHaveBeenCalledTimes(1);
+        expect(state.semesters[0].name).toBe("SoSe 2026");
+        expect(document.querySelector("#semesterBadge")?.textContent).toBe("SoSe 2026");
+        expect(document.querySelector("#loadingOverlay")?.classList.contains("hidden")).toBe(true);
+
+        callbacks.filter?.();
+        expect(mocks.saveState).toHaveBeenCalledTimes(1);
+
+        callbacks.calendar?.();
+        callbacks.color?.();
+        callbacks.popup?.();
+        expect(mocks.saveState).toHaveBeenCalledTimes(4);
+        expect(mocks.updateFilters).toHaveBeenCalledTimes(5);
+        expect(mocks.updateCalendar).toHaveBeenCalledTimes(5);
+    });
+
+    test("fetches data when cache is missing and stores fetched payload", async () => {
+        const fetchAllResult = [
+            [{ id: 1, name: "INF" }],
+            [{ id: 11, name: "Algo" }],
+            [{ id: 21, title: "Algo V" }],
+            [{ id: 31, name: "Prof X" }],
+            [{ id: 41, name: "H1" }],
+            [{ id: 51, name: "WiSe 2026" }],
+        ];
+
+        const { mocks, fetchedData: state } = await importAppWithMocks({
+            cachedData: null,
+            fetchAllResult,
+        });
+
+        expect(mocks.fetchAll).toHaveBeenCalledTimes(1);
+        expect(mocks.saveFetchedData).toHaveBeenCalledTimes(1);
+        expect(state.degrees[0].name).toBe("INF");
+        expect(state.semesters[0].name).toBe("WiSe 2026");
+        expect(document.querySelector("#semesterBadge")?.textContent).toBe("WiSe 2026");
+    });
+
+    test("global listeners wire sidebar, reset and share interactions", async () => {
+        const writeTextMock = jest.fn().mockResolvedValue(undefined);
+        Object.assign(navigator, { clipboard: { writeText: writeTextMock } });
+
+        const { mocks } = await importAppWithMocks({
+            cachedData: {
+                degrees: [],
+                modules: [],
+                events: [],
+                staff: [],
+                locations: [],
+                semesters: [{ id: 1, name: "SoSe" }],
+            },
+            fetchAllResult: [[], [], [], [], [], []],
+            shareLink: "http://localhost/app?share=abc",
+        });
+
+        const sidebar = document.querySelector("#sidebar");
+        const backdrop = /** @type {HTMLElement | null} */ (document.querySelector("#sbBackdrop"));
+        document.querySelector("#hamburgerBtn")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        expect(sidebar?.classList.contains("open")).toBe(true);
+        expect(backdrop?.style.display).toBe("block");
+
+        document.querySelector("#sidebarCloseBtn")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        expect(sidebar?.classList.contains("open")).toBe(false);
+        expect(backdrop?.style.display).toBe("none");
+
+        document.querySelector("#resetAllBtn")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        expect(mocks.clearStateStorage).toHaveBeenCalledTimes(1);
+        expect(mocks.clearFilters).toHaveBeenCalledTimes(1);
+
+        document.querySelector("#shareLinkBtn")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        await Promise.resolve();
+        expect(writeTextMock).toHaveBeenCalledWith("http://localhost/app?share=abc");
+        expect(document.querySelector("#shareLink")?.textContent).toBe("http://localhost/app?share=abc");
+        expect(document.querySelector("#shareLinkSuccessMSg")?.textContent).toBe("Link wurde kopiert!");
+
+        const sharePopup = document.querySelector("#share-link-popup");
+        expect(sharePopup?.classList.contains("show")).toBe(true);
+        document.querySelector("#shareLinkCloseBtn")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        expect(sharePopup?.classList.contains("show")).toBe(false);
+    });
+});
