@@ -173,6 +173,15 @@ describe("initCalendar", () => {
         expect(getCalendar()).toBe(fullCalendarMock.instances[0]);
     });
 
+    test("creates calendar with initial view from view.value", () => {
+        view.value = "listWeek";
+        setupCalendarDOM();
+        initCalendar();
+
+        const options = fullCalendarMock.Calendar.mock.calls[0][1];
+        expect(options.initialView).toBe("listWeek");
+    });
+
     test("sets up view toggle buttons and maps week/day/list correctly", () => {
         setupCalendarDOM();
         initCalendar();
@@ -213,6 +222,18 @@ describe("initCalendar", () => {
         expect(dayBtn.classList.contains("active")).toBe(true);
         expect(weekBtn.classList.contains("active")).toBe(false);
         expect(listBtn.classList.contains("active")).toBe(false);
+    });
+
+    test("handles missing .vbtn elements gracefully", () => {
+        document.body.innerHTML = '<div id="calendar"></div>';
+        expect(() => initCalendar()).not.toThrow();
+    });
+
+    test("throws when FullCalendar is undefined", () => {
+        // @ts-ignore
+        globalThis.FullCalendar = undefined;
+        setupCalendarDOM();
+        expect(() => initCalendar()).toThrow();
     });
 
     test("getFixedMonday path: Monday returns Monday", () => {
@@ -381,6 +402,52 @@ describe("updateCalendar", () => {
         const source = fullCalendarMock.instances[0].addEventSource.mock.calls[0][0];
         expect(source).toEqual([]);
     });
+
+    test("event with empty module_ids produces empty moduleNames", () => {
+        setupCalendarDOM();
+        fetchedData.modules = [{ id: 10, name: "M1", degree_ids: {}, event_ids: [1] }];
+        fetchedData.events = [{
+            id: 1,
+            title: "No Modules",
+            type: "Vorlesung",
+            weekday: 1,
+            start_time: "08:00:00",
+            end_time: "10:00:00",
+            status: "ok",
+            module_ids: [],
+            staff_ids: [],
+            location_id: 1,
+        }];
+
+        initCalendar();
+        updateCalendar();
+
+        const source = fullCalendarMock.instances[0].addEventSource.mock.calls[0][0];
+        expect(source[0].extendedProps.moduleNames).toEqual([]);
+    });
+
+    test("non-existent module ids are filtered out from moduleNames", () => {
+        setupCalendarDOM();
+        fetchedData.modules = [{ id: 10, name: "M1", degree_ids: {}, event_ids: [1] }];
+        fetchedData.events = [{
+            id: 1,
+            title: "Unknown Module",
+            type: "Vorlesung",
+            weekday: 1,
+            start_time: "08:00:00",
+            end_time: "10:00:00",
+            status: "ok",
+            module_ids: [999],
+            staff_ids: [],
+            location_id: 1,
+        }];
+
+        initCalendar();
+        updateCalendar();
+
+        const source = fullCalendarMock.instances[0].addEventSource.mock.calls[0][0];
+        expect(source[0].extendedProps.moduleNames).toEqual([]);
+    });
 });
 
 describe("renderEventContent and eventClick via calendar options", () => {
@@ -425,6 +492,26 @@ describe("renderEventContent and eventClick via calendar options", () => {
         root.querySelector(".ev-pin-icon").dispatchEvent(new MouseEvent("click", { bubbles: true }));
         expect(pinnedEvents.has(99)).toBe(false);
         expect(updateCb).toHaveBeenCalledTimes(2);
+    });
+
+    test("renderEventContent sets CSS variables for color and contrast", () => {
+        const eventContent = fullCalendarMock.Calendar.mock.calls[0][1].eventContent;
+        const rendered = eventContent({
+            event: {
+                id: "77",
+                title: "Color Test",
+                extendedProps: {
+                    color: "#112233",
+                    statusColor: "#6b7280",
+                    moduleNames: ["M"],
+                    typeShort: "VL",
+                },
+            },
+        });
+
+        const root = rendered.domNodes[0];
+        expect(root.style.getPropertyValue("--ev-background")).toBe("#112233");
+        expect(root.style.getPropertyValue("--ev-color")).toBeTruthy();
     });
 
     test("renderEventContent with empty moduleNames omits ev-meta", () => {
@@ -511,5 +598,146 @@ describe("renderEventContent and eventClick via calendar options", () => {
                 .querySelector(".ev-pin-icon")
                 .dispatchEvent(new MouseEvent("click", { bubbles: true }));
         }).not.toThrow();
+    });
+
+    test("rendered title contains event title", () => {
+        const eventContent = fullCalendarMock.Calendar.mock.calls[0][1].eventContent;
+        const rendered = eventContent({
+            event: {
+                id: "88",
+                title: "Rendered Title",
+                extendedProps: {
+                    color: "#000000",
+                    statusColor: "#6b7280",
+                    moduleNames: ["M"],
+                    typeShort: "VL",
+                },
+            },
+        });
+
+        expect(rendered.domNodes[0].querySelector(".ev-title")?.textContent).toContain("Rendered Title");
+    });
+});
+
+describe("calendar.js with mocked color module", () => {
+    test("falls back to #3B82F6 when getEventColor returns falsy", async () => {
+        jest.resetModules();
+        document.body.innerHTML = `
+            <div id="calendar"></div>
+            <button class="vbtn" data-view="week">Week</button>
+        `;
+
+        const instances = [];
+        globalThis.FullCalendar = {
+            Calendar: jest.fn((el, options) => {
+                const instance = {
+                    el,
+                    options,
+                    render: jest.fn(),
+                    changeView: jest.fn(),
+                    setOption: jest.fn(),
+                    removeAllEvents: jest.fn(),
+                    addEventSource: jest.fn(),
+                };
+                instances.push(instance);
+                return instance;
+            }),
+        };
+
+        const localFetchedData = {
+            degrees: [],
+            modules: [],
+            events: [
+                {
+                    id: 1,
+                    title: "E1",
+                    type: "Vorlesung",
+                    weekday: 1,
+                    start_time: "08:00:00",
+                    end_time: "10:00:00",
+                    status: "ok",
+                    module_ids: [999],
+                    staff_ids: [],
+                    location_id: 1,
+                },
+            ],
+            staff: [],
+            locations: [],
+            semesters: [],
+            states: [{ key: "ok", name: "OK" }],
+        };
+
+        jest.unstable_mockModule("../js/color.js", () => ({
+            getContrastTextColor: jest.fn(() => "#ffffff"),
+            getEventColor: jest.fn(() => undefined),
+        }));
+        jest.unstable_mockModule("../js/filters.js", () => ({
+            getEvents: jest.fn(() => localFetchedData.events),
+        }));
+        jest.unstable_mockModule("../js/sharing_storage.js", () => ({
+            saveState: jest.fn(),
+        }));
+        jest.unstable_mockModule("../js/state.js", () => ({
+            fetchedData: localFetchedData,
+            pinnedEvents: new Set(),
+            view: { value: "timeGridWeek" },
+        }));
+
+        const mod = await import("../js/calendar.js");
+        mod.initCalendar();
+        mod.updateCalendar();
+
+        const source = instances[0].addEventSource.mock.calls[0][0];
+        expect(source[0].extendedProps.color).toBe("#3B82F6");
+        expect(source[0].extendedProps.moduleNames).toEqual([]);
+    });
+
+    test("throws when getContrastTextColor is missing", async () => {
+        jest.resetModules();
+        document.body.innerHTML = `
+            <div id="calendar"></div>
+            <button class="vbtn" data-view="week">Week</button>
+        `;
+
+        globalThis.FullCalendar = {
+            Calendar: jest.fn((el, options) => ({
+                el,
+                options,
+                render: jest.fn(),
+                changeView: jest.fn(),
+                setOption: jest.fn(),
+                removeAllEvents: jest.fn(),
+                addEventSource: jest.fn(),
+            })),
+        };
+
+        jest.unstable_mockModule("../js/color.js", () => ({
+            getContrastTextColor: undefined,
+            getEventColor: jest.fn(() => "#123456"),
+        }));
+        jest.unstable_mockModule("../js/filters.js", () => ({
+            getEvents: jest.fn(() => []),
+        }));
+        jest.unstable_mockModule("../js/sharing_storage.js", () => ({
+            saveState: jest.fn(),
+        }));
+        jest.unstable_mockModule("../js/state.js", () => ({
+            fetchedData: { modules: [] },
+            pinnedEvents: new Set(),
+            view: { value: "timeGridWeek" },
+        }));
+
+        const mod = await import("../js/calendar.js");
+        mod.initCalendar();
+        const options = globalThis.FullCalendar.Calendar.mock.calls[0][1];
+        expect(() => {
+            options.eventContent({
+                event: {
+                    id: "1",
+                    title: "E",
+                    extendedProps: { color: "#123456", statusColor: "#6b7280", moduleNames: [], typeShort: "?" },
+                },
+            });
+        }).toThrow();
     });
 });

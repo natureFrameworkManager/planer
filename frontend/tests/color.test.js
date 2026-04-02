@@ -79,6 +79,92 @@ describe("generatePalette", () => {
         // The wrapped hue should be < 360
         expect(hues[1]).toBeLessThan(360);
     });
+
+    test("repeated calls with same inputs are deterministic", () => {
+        const first = generatePalette(5, { hueOffset: 10 });
+        const second = generatePalette(5, { hueOffset: 10 });
+        expect(second).toEqual(first);
+    });
+
+    test("handles non-integer count", () => {
+        const run = () => generatePalette(2.4);
+        expect(run).not.toThrow();
+        const palette = run();
+        expect(Array.isArray(palette)).toBe(true);
+        expect(Number.isInteger(palette.length)).toBe(true);
+    });
+
+    test("handles non-numeric count by throwing or returning empty array", () => {
+        let palette = null;
+        let threw = false;
+        try {
+            palette = generatePalette("x");
+        } catch {
+            threw = true;
+        }
+        expect(threw || (Array.isArray(palette) && palette.length === 0)).toBe(true);
+    });
+
+    test("handles negative hueOffset values", () => {
+        const palette = generatePalette(1, { hueOffset: -10 });
+        const rawHue = parseFloat(palette[0].match(/(-?[\d.]+)\)$/)[1]);
+        const normalizedHue = ((rawHue % 360) + 360) % 360;
+        expect(normalizedHue).toBeCloseTo(350, 1);
+    });
+
+    test("handles non-numeric hueOffset input", () => {
+        let palette = null;
+        let threw = false;
+        try {
+            palette = generatePalette(1, { hueOffset: "bad" });
+        } catch {
+            threw = true;
+        }
+        if (!threw) {
+            expect(Array.isArray(palette)).toBe(true);
+            expect(palette).toHaveLength(1);
+        }
+    });
+
+    test("handles non-integer hueOffset", () => {
+        const palette = generatePalette(1, { hueOffset: 10.7 });
+        const hue = parseFloat(palette[0].match(/(-?[\d.]+)\)$/)[1]);
+        expect(Number.isFinite(hue)).toBe(true);
+    });
+
+    test("extra options keys do not affect output", () => {
+        const base = generatePalette(3, { hueOffset: 20 });
+        const withExtra = generatePalette(3, { hueOffset: 20, unusedKey: 123 });
+        expect(withExtra).toEqual(base);
+    });
+
+    test("supports options with custom lightness/chroma values", () => {
+        const palette = generatePalette(4, { lightness: [0.2, 0.9], chroma: [0.05, 0.3] });
+        expect(palette).toHaveLength(4);
+        palette.forEach((color) => expect(color).toMatch(/^oklch\(/));
+    });
+
+    test("options object with missing keys uses defaults", () => {
+        const withPartial = generatePalette(3, { hueOffset: 5 });
+        const withEquivalent = generatePalette(3, { hueOffset: 5, lightness: [0.60, 0.82], chroma: [0.13, 0.24] });
+        expect(withPartial).toEqual(withEquivalent);
+    });
+
+    test("invalid options object is handled", () => {
+        let threw = false;
+        let palette = null;
+        try {
+            palette = generatePalette(2, null);
+        } catch {
+            threw = true;
+        }
+        expect(threw || (Array.isArray(palette) && palette.length === 2)).toBe(true);
+    });
+
+    test("very large count returns expected length", () => {
+        const palette = generatePalette(1000);
+        expect(palette).toHaveLength(1000);
+    });
 });
 
 describe("getEventColor", () => {

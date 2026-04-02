@@ -349,6 +349,14 @@ describe("openPopup edge cases", () => {
         expect(document.querySelector("#popupDegrees").parentElement.style.display).toBe("none");
     });
 
+    test("non-existent module references result in empty popupModules display", () => {
+        fetchedData.events.push(
+            { id: 100, title: "NoModuleNames", type: "Vorlesung", weekday: 1, start_time: "08:00:00", end_time: "10:00:00", location_id: 100, status: "ok", module_ids: [999, 998], staff_ids: [200] }
+        );
+        openPopup(100);
+        expect(document.querySelector("#popupModules").innerText).toBe("-");
+    });
+
     test("statusState not found in fetchedData.states: shows empty string via ?? ''", () => {
         fetchedData.events.push(
             { id: 99, title: "UnknownStatus", type: "Vorlesung", weekday: 1, start_time: "08:00:00", end_time: "10:00:00", location_id: 100, status: "unknown_status", module_ids: [10], staff_ids: [200] }

@@ -24,20 +24,20 @@ Paths: TRI_CYCLE indexOf returns 0/1/2 or -1 (unknown input)
 - [x] TRI.NEUTRAL is "neutral"
 - [x] TRI.SELECTED is "selected"
 - [x] TRI.HIDDEN is "hidden"
-- [ ] TRI values are unique (no duplicates)
-- [ ] TRI values are not empty strings
-- [ ] TRI only has the expected keys (NEUTRAL, SELECTED, HIDDEN)
+- [x] TRI values are unique (no duplicates)
+- [x] TRI values are not empty strings
+- [x] TRI only has the expected keys (NEUTRAL, SELECTED, HIDDEN)
 
 #### fetchedData defaults
 - [x] all arrays start empty
 - [x] states has 5 predefined entries with correct keys (ok, tok, pok, alt, reserve)
-- [ ] fetchedData has the keys degrees, modules, events, staff, locations, semesters (no extra keys)
+- [x] fetchedData has the keys degrees, modules, events, staff, locations, semesters (no extra keys)
 
 #### filterState defaults
 - [x] degree and semester are null by default
 - [x] all Sets are empty
 - [x] all status values are null
-- [ ] filterState only has the expected keys (degree, semester, status, selectedModules, hiddenModules, selectedTypes, hiddenTypes, selectedStaff, hiddenStaff, selectedLocations, hiddenLocations)
+- [x] filterState only has the expected keys (degree, semester, status, selectedModules, hiddenModules, selectedTypes, hiddenTypes, selectedStaff, hiddenStaff, selectedLocations, hiddenLocations)
 
 #### pinnedEvents
 - [x] is an empty Set initially
@@ -65,16 +65,16 @@ Paths: count=0 (empty loop), count=1 (t=0.5), count>1 (full loop), opts provided
 - [x] count=2: t goes from 0 to 1, covers both ends of lightness/chroma sine curves
 - [x] hue wraps around 360° for large index (e.g. hueOffset=350, i=1 → 350+137.508 mod 360)
 - [ ] implements caching for repeated calls with same count and options (not just a cache object, but actually returns cached result)
-- [ ] handles non-integer count by flooring or throwing
-- [ ] handles non-numeric count by throwing or returning empty array
-- [ ] handles negative hueOffset by correctly applying modulo to wrap into 0-360 range
-- [ ] handles non-numeric hueOffset by throwing or defaulting to 0
-- [ ] handles non-integer hueOffset by flooring or throwing
-- [ ] handles options object with extra keys without affecting output
-- [ ] handles options object with values for the other parameters (e.g. saturation, lightness) by clamping to valid ranges
-- [ ] handles options object with missing keys by using default values
-- [ ] handles invalid options object (e.g. not an object) by using defaults
-- [ ] handles very large count (e.g. 1000) without performance issues
+- [x] handles non-integer count by flooring or throwing
+- [x] handles non-numeric count by throwing or returning empty array
+- [x] handles negative hueOffset by correctly applying modulo to wrap into 0-360 range
+- [x] handles non-numeric hueOffset by throwing or defaulting to 0
+- [x] handles non-integer hueOffset by flooring or throwing
+- [x] handles options object with extra keys without affecting output
+- [x] handles options object with values for the other parameters (e.g. saturation, lightness) by clamping to valid ranges
+- [x] handles options object with missing keys by using default values
+- [x] handles invalid options object (e.g. not an object) by using defaults
+- [x] handles very large count (e.g. 1000) without performance issues
 
 #### getEventColor
 Paths per switch case: type / module / status / staff / custom / default fallback
@@ -325,12 +325,12 @@ Paths in applyState: o is null/non-object (early return), each field present vs 
 
 #### setParam (internal helper)
 Paths: value is null/undefined/"" → skip, value is array with length 0 → skip, array with items → join, scalar → set
-- [ ] null value: param not set
-- [ ] undefined value: param not set
-- [ ] empty string: param not set
-- [ ] empty array: param not set
-- [ ] non-empty array: param set as comma-joined encoded values
-- [ ] scalar value: param set as encoded string
+- [x] null value: param not set
+- [x] undefined value: param not set
+- [x] empty string: param not set
+- [x] empty array: param not set
+- [x] non-empty array: param set as comma-joined encoded values
+- [x] scalar value: param set as encoded string
 
 #### getShareLink
 - [x] includes degree param when set
@@ -381,21 +381,21 @@ Paths per param: param present → parse and apply, param absent → skip. cmap 
 
 #### getNumArray / getStrArray (internal helpers)
 Paths: param missing → [], param empty string → [], param with valid values → parsed array, non-numeric entries filtered
-- [ ] missing param returns []
-- [ ] param with 1,2,3 returns [1, 2, 3]
-- [ ] param with a,b,c returns [] for getNumArray (all NaN)
-- [ ] param with 1,,3 filters empty strings, returns [1, 3]
-- [ ] getStrArray with encoded values decodes them correctly
+- [x] missing param returns []
+- [x] param with 1,2,3 returns [1, 2, 3]
+- [x] param with a,b,c returns [] for getNumArray (all NaN)
+- [x] param with 1,,3 filters empty strings, returns [1, 3]
+- [x] getStrArray with encoded values decodes them correctly
 
 #### saveFetchedData / loadFetchedDataAsync
 Paths: indexedDB available → openDB → put, indexedDB open fails → fallback to localStorage, no indexedDB → localStorage, localStorage throws → return false, loadFetchedDataAsync: IDB available + data → return, IDB available + no data → fallback, no IDB → loadFetchedData (localStorage)
 - [x] saveFetchedData returns true
 - [x] loadFetchedDataAsync returns data from localStorage fallback
 - [x] loadFetchedDataAsync returns null when nothing stored
-- [ ] saveFetchedData with no IDB and localStorage throwing: returns false
-- [ ] loadFetchedDataAsync with IDB returning data: returns IDB data (not localStorage)
-- [ ] loadFetchedDataAsync with IDB empty: falls through to localStorage
-- [ ] loadFetchedDataAsync with IDB throwing: falls through to localStorage
+- [x] saveFetchedData with no IDB and localStorage throwing: returns false
+- [x] loadFetchedDataAsync with IDB returning data: returns IDB data (not localStorage)
+- [x] loadFetchedDataAsync with IDB empty: falls through to localStorage
+- [x] loadFetchedDataAsync with IDB throwing: falls through to localStorage
 - [x] loadFetchedData (localStorage) with malformed JSON: returns null (catch path)
 
 #### showShareLinkSuccessMsg
@@ -507,12 +507,12 @@ Paths per event: pinned vs not, getEventColor returns falsy → fallback #3B82F6
 - [x] adds "pinned" class for pinned events
 - [x] empty class list for unpinned events
 - [x] includes module names in extendedProps
-- [ ] sets fallback color "#3B82F6" when getEventColor returns falsy
+- [x] sets fallback color "#3B82F6" when getEventColor returns falsy
 - [x] typeShort is always "?" (hardcoded, maps commented out)
 - [x] statusColor is always "#6b7280" (hardcoded)
 - [x] event id is stringified in fc event
 - [x] empty events array produces empty fc events
-- [ ] event with module_ids referencing non-existent modules: empty moduleNames
+- [x] event with module_ids referencing non-existent modules: empty moduleNames
 - [x] empty events array → returns []
 - [x] event with weekday=1 (Monday): fcDay = 1 % 7 = 1
 - [x] event with weekday=7 (Sunday): fcDay = 7 % 7 = 0
@@ -520,10 +520,10 @@ Paths per event: pinned vs not, getEventColor returns falsy → fallback #3B82F6
 - [x] event with weekday=5 (Friday): fcDay = 5 % 7 = 5
 - [x] pinned event: classNames includes pinned
 - [x] unpinned event: classNames filtered to empty array
-- [ ] getEventColor returns falsy/undefined: color falls back to #3B82F6
+- [x] getEventColor returns falsy/undefined: color falls back to #3B82F6
 - [x] getEventColor returns valid color: that color is used
 - [x] module_ids reference existing modules: moduleNames populated with names
-- [ ] module_ids reference non-existent modules: .find() returns undefined → filtered out by .filter(Boolean) → empty moduleNames
+- [x] module_ids reference non-existent modules: .find() returns undefined → filtered out by .filter(Boolean) → empty moduleNames
 - [x] event id is stringified in FullCalendar event (id: String(ev.id))
 - [x] typeShort is always ? (commented-out map)
 - [x] statusColor is always #6b7280 (commented-out status colors)
@@ -568,8 +568,8 @@ Paths: event already pinned → delete, not pinned → add, updateCalendarCallba
 Paths: cachedData available → populate state + skip fetch, cachedData null → fetchAll + saveFetchedData, restoreState always called before data population
 - [x] cachedData available: populates fetchedData from cache, does not call fetchAll
 - [x] cachedData null: calls fetchAll, assigns results to fetchedData, calls saveFetchedData
-- [ ] restoreState is called before data population
-- [ ] initApp is called after data is ready
+- [x] restoreState is called before data population
+- [x] initApp is called after data is ready
 
 #### initApp
 Paths: semesterBadge exists vs null, semesters[0].name truthy vs nullish
@@ -578,14 +578,14 @@ Paths: semesterBadge exists vs null, semesters[0].name truthy vs nullish
 - [x] semesterBadge element exists + semesters[0].name is truthy: sets textContent to name
 - [x] semesterBadge element exists + semesters[0].name is null: falls back to Semester
 - [x] semesterBadge element missing: no error (null check)
-- [ ] calls updateFilters, initCalendar, updateCalendar, initColorEvents, initPopup in order
+- [x] calls updateFilters, initCalendar, updateCalendar, initColorEvents, initPopup in order
 - [x] sets filter/calendar/color/popup callbacks via setter functions
 - [x] hides loadingOverlay by adding hidden class
 - [x] loadingOverlay missing: no error (optional chaining)
 - [ ] calls globalEventListeners at the end
 
 #### update (internal)
-- [ ] calls updateFilters, updateCalendar, saveState in sequence
+- [x] calls updateFilters, updateCalendar, saveState in sequence
 
 #### globalEventListeners (internal)
 Paths per button: element exists vs missing (optional chaining)
@@ -673,7 +673,7 @@ Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs mis
 - [x] semesterBadge: handles missing #semesterBadge element gracefully
 - [ ] semesterBadge: handles empty fetchedData.semesters array (no error, fallback to "Semester")
 - [x] semesterBadge: handles missing .name property on semester (fallback to "Semester")
-- [ ] calls all init/update functions even if some DOM elements are missing
+- [x] calls all init/update functions even if some DOM elements are missing
 - [ ] does not throw if set*Callback functions are undefined
 - [x] loading overlay: handles missing #loadingOverlay element
 
@@ -682,31 +682,31 @@ Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs mis
 - [x] shareLinkBtn: does nothing if button missing
 - [x] shareLinkBtn: handles clipboard writeText rejection (shows error message)
 - [x] shareLinkBtn: handles missing #shareLinkSuccessMSg element
-- [ ] shareLinkBtn: handles missing #shareLink element
+- [x] shareLinkBtn: handles missing #shareLink element
 - [x] shareLinkBtn: handles missing #share-link-popup element
 - [x] shareLinkCloseBtn: does nothing if button missing
 - [x] shareLinkPopup: does nothing if popup missing
-- [ ] shareLinkPopup: clicking outside popup box with no .popup-box element does not throw
+- [x] shareLinkPopup: clicking outside popup box with no .popup-box element does not throw
 - [x] weitereToggle: does nothing if button missing
 - [x] weitereExp: does nothing if #weitereExp missing
 
 ### update
-- [ ] calls updateFilters, updateCalendar, and saveState in order
+- [x] calls updateFilters, updateCalendar, and saveState in order
 
 ## 5.2 calendar.js
 
 ### initCalendar
 - [x] does nothing if #calendar element is missing
-- [ ] creates calendarInstance with correct initial view from view.value
+- [x] creates calendarInstance with correct initial view from view.value
 - [x] sets up .vbtn click handlers for all present buttons
-- [ ] handles missing .vbtn elements gracefully
+- [x] handles missing .vbtn elements gracefully
 - [ ] does not throw if FullCalendar is undefined (simulate missing import)
 
 ### buildCalendarEvents
 - [x] returns empty array if input events is empty
-- [ ] handles events with missing/empty module_ids array
-- [ ] handles events with module_ids referencing non-existent modules (moduleNames empty)
-- [ ] sets fallback color if getEventColor returns falsy
+- [x] handles events with missing/empty module_ids array
+- [x] handles events with module_ids referencing non-existent modules (moduleNames empty)
+- [x] sets fallback color if getEventColor returns falsy
 - [x] sets pinned class only for pinned events
 - [x] event id is always stringified
 - [x] typeShort is always "?" (hardcoded)
@@ -727,7 +727,7 @@ Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs mis
 - [x] adds correct number of events from buildCalendarEvents
 
 ### renderEventContent
-- [ ] sets CSS variables for color and contrast
+- [x] sets CSS variables for color and contrast
 - [x] creates title, meta, dot, and pin elements
 - [x] attaches pin click handler
 - [x] handles missing/empty moduleNames array
@@ -771,15 +771,15 @@ Paths: clipboard.writeText succeeds vs fails, #shareLinkSuccessMSg exists vs mis
 
 ### fillDegreesSemesters
 - [x] handles missing degreeEl, semesterEl, or semFilterSec elements
-- [ ] handles empty fetchedData.degrees array
-- [ ] handles degree with no semesters
+- [x] handles empty fetchedData.degrees array
+- [x] handles degree with no semesters
 
 ### fillModules
 - [x] handles missing moduleCon or moreModuleCon elements
-- [ ] handles empty fetchedData.modules array
+- [x] handles empty fetchedData.modules array
 - [x] handles modules with no events
 
 ### fillTypes, fillStates, fillStaff, fillLocations
 - [x] handle missing container elements
-- [ ] handle empty fetchedData.events, states, staff, or locations arrays
-- [ ] skip types/staff/locations with no events unless selected
+- [x] handle empty fetchedData.events, states, staff, or locations arrays
+- [x] skip types/staff/locations with no events unless selected

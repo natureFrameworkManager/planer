@@ -497,6 +497,47 @@ describe("getShareLink edge cases", () => {
         expect(st).not.toBeNull();
         expect(decodeURIComponent(st)).toContain("Übung & Praktikum");
     });
+
+    test("null value is not added as URL param", () => {
+        filterState.degree = null;
+        const url = new URL(getShareLink());
+        expect(url.searchParams.has("d")).toBe(false);
+    });
+
+    test("undefined value is not added as URL param", () => {
+        colorMode.value = undefined;
+        const url = new URL(getShareLink());
+        expect(url.searchParams.has("cm")).toBe(false);
+    });
+
+    test("empty string value is not added as URL param", () => {
+        view.value = "";
+        const url = new URL(getShareLink());
+        expect(url.searchParams.has("v")).toBe(false);
+    });
+
+    test("empty array value is not added as URL param", () => {
+        filterState.selectedModules.clear();
+        const url = new URL(getShareLink());
+        expect(url.searchParams.has("sm")).toBe(false);
+    });
+
+    test("non-empty arrays are serialized as comma-separated encoded values", () => {
+        filterState.selectedTypes.clear();
+        filterState.selectedTypes.add("Übung");
+        filterState.selectedTypes.add("Seminar & Lab");
+        const url = new URL(getShareLink());
+        const st = url.searchParams.get("st");
+        expect(st).not.toBeNull();
+        expect(decodeURIComponent(st)).toContain("Übung");
+        expect(decodeURIComponent(st)).toContain("Seminar & Lab");
+    });
+
+    test("scalar value is encoded as string", () => {
+        view.value = "list Week/ä";
+        const url = new URL(getShareLink());
+        expect(decodeURIComponent(url.searchParams.get("v"))).toBe("list Week/ä");
+    });
 });
 
 describe("restoreState edge cases", () => {
@@ -631,6 +672,38 @@ describe("restoreState edge cases", () => {
         restoreState();
         expect(filterState.status.ok).toBeNull();
     });
+
+    test("sm missing or empty behaves like empty number array", () => {
+        filterState.selectedModules.add(123);
+        window.history.pushState({}, '', 'http://localhost/app?sm=');
+        restoreState();
+        expect(filterState.selectedModules.size).toBe(0);
+    });
+
+    test("sm=1,2,3 parses to [1,2,3]", () => {
+        window.history.pushState({}, '', 'http://localhost/app?sm=1,2,3');
+        restoreState();
+        expect([...filterState.selectedModules].sort()).toEqual([1, 2, 3]);
+    });
+
+    test("sm=a,b,c parses to []", () => {
+        window.history.pushState({}, '', 'http://localhost/app?sm=a,b,c');
+        restoreState();
+        expect(filterState.selectedModules.size).toBe(0);
+    });
+
+    test("sm=1,,3 filters empty entries", () => {
+        window.history.pushState({}, '', 'http://localhost/app?sm=1,,3');
+        restoreState();
+        expect([...filterState.selectedModules].sort()).toEqual([1, 3]);
+    });
+
+    test("string arrays are decoded from URL params", () => {
+        window.history.pushState({}, '', 'http://localhost/app?st=Vorlesung%20A%2FB,Seminar%26Lab');
+        restoreState();
+        expect(filterState.selectedTypes.has("Vorlesung A/B")).toBe(true);
+        expect(filterState.selectedTypes.has("Seminar&Lab")).toBe(true);
+    });
 });
 
 describe("loadFetchedData edge cases", () => {
@@ -642,6 +715,134 @@ describe("loadFetchedData edge cases", () => {
         localStorage.setItem("planerFetchedData", "{broken json!!}");
         const loaded = await loadFetchedDataAsync();
         expect(loaded).toBeNull();
+    });
+
+    test("saveFetchedData without IndexedDB and failing localStorage returns false", () => {
+        const originalIndexedDB = globalThis.indexedDB;
+        const storageSpy = jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+            throw new Error("storage failed");
+        });
+        try {
+            // @ts-ignore
+            delete globalThis.indexedDB;
+            expect(saveFetchedData()).toBe(false);
+        } finally {
+            storageSpy.mockRestore();
+            if (originalIndexedDB === undefined) {
+                // @ts-ignore
+                delete globalThis.indexedDB;
+            } else {
+                // @ts-ignore
+                globalThis.indexedDB = originalIndexedDB;
+            }
+        }
+    });
+
+    test("loadFetchedDataAsync returns IndexedDB data when present", async () => {
+        const originalIndexedDB = globalThis.indexedDB;
+        const idbData = { degrees: [{ id: 99 }], modules: [], events: [], staff: [], locations: [], semesters: [], states: [] };
+        const fakeRequest = { onsuccess: null, onerror: null, result: null };
+        const fakeDb = {
+            transaction: () => ({
+                objectStore: () => ({
+                    get: () => {
+                        setTimeout(() => {
+                            fakeRequest.result = idbData;
+                            fakeRequest.onsuccess?.();
+                        }, 0);
+                        return fakeRequest;
+                    },
+                }),
+            }),
+        };
+        const openReq = { onupgradeneeded: null, onsuccess: null, onerror: null, result: fakeDb, error: null };
+        // @ts-ignore
+        globalThis.indexedDB = {
+            open: () => {
+                setTimeout(() => openReq.onsuccess?.(), 0);
+                return openReq;
+            },
+        };
+
+        try {
+            localStorage.setItem("planerFetchedData", JSON.stringify({ degrees: [{ id: 1 }] }));
+            const loaded = await loadFetchedDataAsync();
+            expect(loaded).toEqual(idbData);
+        } finally {
+            if (originalIndexedDB === undefined) {
+                // @ts-ignore
+                delete globalThis.indexedDB;
+            } else {
+                // @ts-ignore
+                globalThis.indexedDB = originalIndexedDB;
+            }
+        }
+    });
+
+    test("loadFetchedDataAsync falls back to localStorage when IndexedDB returns empty", async () => {
+        const originalIndexedDB = globalThis.indexedDB;
+        const fakeRequest = { onsuccess: null, onerror: null, result: null };
+        const fakeDb = {
+            transaction: () => ({
+                objectStore: () => ({
+                    get: () => {
+                        setTimeout(() => {
+                            fakeRequest.result = null;
+                            fakeRequest.onsuccess?.();
+                        }, 0);
+                        return fakeRequest;
+                    },
+                }),
+            }),
+        };
+        const openReq = { onupgradeneeded: null, onsuccess: null, onerror: null, result: fakeDb, error: null };
+        // @ts-ignore
+        globalThis.indexedDB = {
+            open: () => {
+                setTimeout(() => openReq.onsuccess?.(), 0);
+                return openReq;
+            },
+        };
+
+        try {
+            const fallback = { degrees: [{ id: 2 }], modules: [], events: [], staff: [], locations: [], semesters: [], states: [] };
+            localStorage.setItem("planerFetchedData", JSON.stringify(fallback));
+            const loaded = await loadFetchedDataAsync();
+            expect(loaded).toEqual(fallback);
+        } finally {
+            if (originalIndexedDB === undefined) {
+                // @ts-ignore
+                delete globalThis.indexedDB;
+            } else {
+                // @ts-ignore
+                globalThis.indexedDB = originalIndexedDB;
+            }
+        }
+    });
+
+    test("loadFetchedDataAsync falls back to localStorage when IndexedDB throws", async () => {
+        const originalIndexedDB = globalThis.indexedDB;
+        // @ts-ignore
+        globalThis.indexedDB = {
+            open: () => {
+                throw new Error("idb failed");
+            },
+        };
+
+        try {
+            const fallback = { degrees: [{ id: 3 }], modules: [], events: [], staff: [], locations: [], semesters: [], states: [] };
+            localStorage.setItem("planerFetchedData", JSON.stringify(fallback));
+            const loaded = await loadFetchedDataAsync();
+            expect(loaded).toEqual(fallback);
+        } finally {
+            if (originalIndexedDB === undefined) {
+                // @ts-ignore
+                delete globalThis.indexedDB;
+            } else {
+                // @ts-ignore
+                globalThis.indexedDB = originalIndexedDB;
+            }
+        }
     });
 });
 

@@ -98,6 +98,103 @@ describe("updateFilters", () => {
         const semSec = document.querySelector("#semester-filter-section");
         expect(semSec.style.display).toBe("none");
     });
+
+    test("handles empty fetchedData.degrees array", () => {
+        document.body.innerHTML = '<select id="degreeSelect"></select><select id="semesterSelect"></select><div id="semester-filter-section"></div>';
+        fetchedData.degrees = [];
+        filterState.degree = null;
+        expect(() => updateFilters()).not.toThrow();
+        expect(document.querySelector("#degreeSelect").innerHTML).toContain("Alle Studiengänge");
+    });
+
+    test("handles selected degree with no semesters", () => {
+        document.body.innerHTML = '<select id="degreeSelect"></select><select id="semesterSelect"></select><div id="semester-filter-section"></div>';
+        fetchedData.degrees = [{ id: 1, name: "INF", semesters: [], module_ids: [] }];
+        filterState.degree = 1;
+        updateFilters();
+        expect(document.querySelector("#semesterSelect").innerHTML).toContain("Alle Semester");
+    });
+
+    test("handles empty fetchedData.modules array", () => {
+        document.body.innerHTML = `
+            <select id="degreeSelect"></select>
+            <select id="semesterSelect"></select>
+            <div id="semester-filter-section"></div>
+            <div id="moduleList"></div>
+            <div id="weitereModuleList"></div>
+            <div id="weitereSection"></div>
+        `;
+        fetchedData.modules = [];
+        fetchedData.degrees = [];
+        expect(() => updateFilters()).not.toThrow();
+        expect(document.querySelector("#moduleList").children.length).toBe(0);
+    });
+
+    test("handles empty events/states/staff/locations arrays", () => {
+        document.body.innerHTML = `
+            <select id="degreeSelect"></select>
+            <select id="semesterSelect"></select>
+            <div id="semester-filter-section"></div>
+            <div id="moduleList"></div>
+            <div id="weitereModuleList"></div>
+            <div id="weitereSection"></div>
+            <div id="typeList"></div>
+            <div id="statusList"></div>
+            <div id="staffList"></div>
+            <div id="locationList"></div>
+        `;
+        fetchedData.degrees = [];
+        fetchedData.modules = [];
+        fetchedData.events = [];
+        fetchedData.states = [];
+        fetchedData.staff = [];
+        fetchedData.locations = [];
+
+        expect(() => updateFilters()).not.toThrow();
+        expect(document.querySelector("#typeList").children.length).toBe(0);
+        expect(document.querySelector("#statusList").children.length).toBe(0);
+        expect(document.querySelector("#staffList").children.length).toBe(0);
+        expect(document.querySelector("#locationList").children.length).toBe(0);
+    });
+
+    test("types/staff/locations with no events are skipped unless selected/hidden", () => {
+        document.body.innerHTML = `
+            <select id="degreeSelect"></select>
+            <select id="semesterSelect"></select>
+            <div id="semester-filter-section"></div>
+            <div id="moduleList"></div>
+            <div id="weitereModuleList"></div>
+            <div id="weitereSection"></div>
+            <div id="typeList"></div>
+            <div id="statusList"></div>
+            <div id="staffList"></div>
+            <div id="locationList"></div>
+        `;
+
+        fetchedData.degrees = [];
+        fetchedData.modules = [{ id: 1, name: "M1", degree_ids: {}, event_ids: [] }];
+        fetchedData.events = [{ id: 100, module_ids: [1], status: "ok", staff_ids: [1], location_id: 10, type: "Vorlesung", title: "A", weekday: 1, start_time: "08:00", end_time: "10:00" }];
+        fetchedData.states = [{ key: "ok", name: "OK" }];
+        fetchedData.staff = [{ id: 1, name: "Shown" }, { id: 2, name: "HiddenUnlessSelected" }];
+        fetchedData.locations = [{ id: 10, name: "Shown" }, { id: 20, name: "HiddenUnlessSelected" }];
+
+        filterState.selectedStaff.clear();
+        filterState.hiddenStaff.clear();
+        filterState.selectedLocations.clear();
+        filterState.hiddenLocations.clear();
+
+        updateFilters();
+        expect(document.querySelector("#staffList").textContent).toContain("Shown");
+        expect(document.querySelector("#staffList").textContent).not.toContain("HiddenUnlessSelected");
+        expect(document.querySelector("#locationList").textContent).toContain("Shown");
+        expect(document.querySelector("#locationList").textContent).not.toContain("HiddenUnlessSelected");
+
+        filterState.selectedStaff.add(2);
+        filterState.selectedLocations.add(20);
+        updateFilters();
+        expect(document.querySelector("#staffList").textContent).toContain("HiddenUnlessSelected");
+        expect(document.querySelector("#locationList").textContent).toContain("HiddenUnlessSelected");
+    });
 });
 
 // --- handleDegreeSelect (internal, tested via DOM event) ---

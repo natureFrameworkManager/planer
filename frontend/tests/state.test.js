@@ -52,6 +52,21 @@ describe("TRI constants", () => {
     test("TRI.HIDDEN is 'hidden'", () => {
         expect(TRI.HIDDEN).toBe("hidden");
     });
+
+    test("TRI values are unique (no duplicates)", () => {
+        const values = Object.values(TRI);
+        expect(new Set(values).size).toBe(values.length);
+    });
+
+    test("TRI values are not empty strings", () => {
+        Object.values(TRI).forEach((value) => {
+            expect(value).not.toBe("");
+        });
+    });
+
+    test("TRI only has the expected keys (NEUTRAL, SELECTED, HIDDEN)", () => {
+        expect(Object.keys(TRI).sort()).toEqual(["HIDDEN", "NEUTRAL", "SELECTED"]);
+    });
 });
 
 describe("fetchedData defaults", () => {
@@ -68,6 +83,18 @@ describe("fetchedData defaults", () => {
         expect(fetchedData.states).toHaveLength(5);
         const keys = fetchedData.states.map(s => s.key);
         expect(keys).toEqual(["ok", "tok", "pok", "alt", "reserve"]);
+    });
+
+    test("fetchedData has only expected keys", () => {
+        expect(Object.keys(fetchedData).sort()).toEqual([
+            "degrees",
+            "events",
+            "locations",
+            "modules",
+            "semesters",
+            "staff",
+            "states",
+        ]);
     });
 });
 
@@ -93,11 +120,31 @@ describe("filterState defaults", () => {
             expect(filterState.status[key]).toBeNull();
         }
     });
+
+    test("filterState only has the expected keys", () => {
+        expect(Object.keys(filterState).sort()).toEqual([
+            "degree",
+            "hiddenLocations",
+            "hiddenModules",
+            "hiddenStaff",
+            "hiddenTypes",
+            "selectedLocations",
+            "selectedModules",
+            "selectedStaff",
+            "selectedTypes",
+            "semester",
+            "status",
+        ]);
+    });
 });
 
 describe("pinnedEvents", () => {
     test("is a Set", () => {
         expect(pinnedEvents).toBeInstanceOf(Set);
+    });
+
+    test("is an empty Set initially", () => {
+        expect(pinnedEvents.size).toBe(0);
     });
 });
 
