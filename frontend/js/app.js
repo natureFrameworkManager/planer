@@ -1,5 +1,5 @@
 // @ts-check
-import { fetchAll } from "./api.js";
+import { fetchAll, syncData } from "./api.js";
 import { initCalendar, setCalendarUpdateCallback, setOpenPopupCallback, updateCalendar } from "./calendar.js";
 import { initColorEvents, setColorUpdateCallback } from "./color.js";
 import { clearFilters, initFilters, setFilterUpdateCallback, updateFilters } from "./filters.js";
@@ -35,9 +35,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Setup background sync to periodically refresh data in the background
-    /* setInterval(() => {
-        sync();
-    }, 10000); */
+    setInterval(() => {
+        syncData(update);
+    }, 10000);
+    syncData(update);
 
     // Initialize the app after data is loaded and state is restored
     initApp();

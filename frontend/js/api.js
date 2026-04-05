@@ -1,3 +1,6 @@
+import { saveFetchedData } from "./sharing_storage.js";
+import { fetchedData } from "./state.js";
+
 // @ts-check
 const API_BASE = "http://127.0.0.1:8000/api";
 
@@ -171,4 +174,13 @@ export async function fetchAll() {
     ])
 }
 
-// TODO: sync data and fire callback
+/**
+ * Sync data by fetching all data from the API and updating the global state, then calling the provided callback to update the UI if needed.
+ * @param {() => void} updateCallback 
+ */
+export async function syncData(updateCallback) {
+    [fetchedData.degrees, fetchedData.modules, fetchedData.events, fetchedData.staff, fetchedData.locations, fetchedData.semesters] = await fetchAll();
+    console.log("Data synced with API");
+    saveFetchedData();
+    if (updateCallback) updateCallback();
+}
