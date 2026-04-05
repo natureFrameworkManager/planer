@@ -1,5 +1,5 @@
 // @ts-check
-import { getContrastTextColor, getEventColor } from "./color.js";
+import { getContrastTextColor, getEventColor, STATUS_COLORS } from "./color.js";
 import { getEvents } from "./filters.js";
 import { saveState } from "./sharing_storage.js";
 import { fetchedData, pinnedEvents, view } from "./state.js";
@@ -253,7 +253,7 @@ function buildCalendarEvents(events) {
             .filter(el => el !== undefined);
 
         // Status color
-        const statusColor = /* STATUS_COLORS[ev.status] || */ "#6b7280"; // TODO: add status color mapping, default to gray
+        const statusColor = STATUS_COLORS[ev.status] || "#6b7280";
 
         fcEvents.push({
             id: String(ev.id),

@@ -1,6 +1,18 @@
 // @ts-check
 import { colorMode, darkMode, fetchedData } from "./state.js";
 
+/**
+ * Predefined colors for event statuses. These can be used directly or as a fallback when generating colors based on status.
+ * @type {Record<string, string>}
+ */
+export const STATUS_COLORS = {
+    "ok": "#4caf50",
+    "tok": "#2196f3",
+    "pok": "#ff9800",
+    "alt": "#9e9e9e",
+    "reserve": "#f44336"
+}
+
 /** @type {(() => void) | null} */
 let updateColorCallback = null;
 
