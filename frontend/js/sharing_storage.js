@@ -87,8 +87,6 @@ function setParam(params, key, value) {
     }
 }
 
-// TODO: create a not so cryptic looking share link
-// Currently looks with escaping like a tracking link with random parameters, which might be off-putting for users to click on or share.
 /**
  * Generate a shareable link that encodes the current state of the app (e.g. filters, calendar view, etc.) in the URL parameters. 
  * This allows users to share specific views or configurations of the app with others. 
@@ -100,6 +98,7 @@ export function getShareLink() {
     var url = new URL(window.location.href);
     url.search = "";
     var p = url.searchParams;
+    setParam(p, "shareSelection", "1"); // just a marker to make the link seem less random and more intentional
     setParam(p, "d", filterState.degree);
     setParam(p, "s", filterState.semester);
     setParam(p, "sm", [...filterState.selectedModules]);
