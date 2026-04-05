@@ -222,7 +222,6 @@ export function getContrastTextColor(color, bgColor) {
         ?? getComputedStyle(document.documentElement)
                .getPropertyValue("--color-background").trim();
     if (savedContrastTextColors[`${color}|${resolvedBg}`]) {
-        console.log("Using cached contrast text color");
         return savedContrastTextColors[`${color}|${resolvedBg}`];
     }
 
