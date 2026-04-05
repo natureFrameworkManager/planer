@@ -130,7 +130,6 @@ export function initCalendar() {
  * @param {string} arg.event.extendedProps.color - Event color
  * @param {string} arg.event.extendedProps.statusColor - Event status color
  * @param {string[]} arg.event.extendedProps.moduleNames - Event modules
- * @param {string} arg.event.extendedProps.typeShort - Event short type
  * @returns {{ domNodes: HTMLElement[] }}
  */
 function renderEventContent(arg) {
@@ -146,7 +145,7 @@ function renderEventContent(arg) {
     // Title
     const titleEl = document.createElement("div");
     titleEl.className = "ev-title";
-    titleEl.textContent = `${arg.event.title}`; // `${props.typeShort} ${arg.event.title}`;
+    titleEl.textContent = `${arg.event.title}`;
     el.appendChild(titleEl);
 
     // Module name
@@ -235,7 +234,7 @@ function getValidDateRange(fixedMonday) {
 /**
  * Build FullCalendar event objects from our event data
  * @param {import("./api").Event[]} events 
- * @returns {{id: string, title: string, daysOfWeek: number[], startTime: string, endTime: string, extendedProps: {eventData: import("./api").Event, color: string, statusColor: string, moduleNames: string[], typeShort: string}, display: string, classNames: string[]}[]}
+ * @returns {{id: string, title: string, daysOfWeek: number[], startTime: string, endTime: string, extendedProps: {eventData: import("./api").Event, color: string, statusColor: string, moduleNames: string[]}, display: string, classNames: string[]}[]}
  */
 function buildCalendarEvents(events) {
     const fcEvents = [];
@@ -266,8 +265,7 @@ function buildCalendarEvents(events) {
                 eventData: ev,
                 color,
                 statusColor,
-                moduleNames,
-                typeShort: /* TYPE_SHORT[ev.type] || */ "?", // TODO: add type short mapping
+                moduleNames
             },
             display: "auto",
             classNames: [
