@@ -36,19 +36,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# --- API routers (all prefixed under /api) ---
-
-api_router = APIRouter(prefix="/api")
-api_router.include_router(modules.router)
-api_router.include_router(events.router)
-api_router.include_router(staff.router)
-api_router.include_router(locations.router)
-api_router.include_router(degrees.router)
-api_router.include_router(semesters.router)
-app.include_router(api_router)
-
-
 # --- Frontend static files ---
 
 SERVE_FRONTEND = os.getenv("SERVE_FRONTEND", "true").lower() == "true"
@@ -67,3 +54,17 @@ if SERVE_FRONTEND:
         if file_path.is_file():
             return FileResponse(file_path)
         return FileResponse(frontend_dir / "index.html")
+
+# --- API routers (all prefixed under /api) ---
+
+if SERVE_FRONTEND:
+    api_router = APIRouter(prefix="/api")
+else:
+    api_router = APIRouter(prefix="")
+api_router.include_router(modules.router)
+api_router.include_router(events.router)
+api_router.include_router(staff.router)
+api_router.include_router(locations.router)
+api_router.include_router(degrees.router)
+api_router.include_router(semesters.router)
+app.include_router(api_router)
