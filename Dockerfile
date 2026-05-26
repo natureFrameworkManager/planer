@@ -17,9 +17,13 @@ FROM base AS frontend-false
 
 FROM frontend-${INCLUDE_FRONTEND}
 
+RUN useradd -u 8888 appuser && chown -R appuser:appuser /code
+
+USER appuser
+
 WORKDIR /code/backend
 
-CMD ["fastapi", "run", "main.py", "--port", "80"]
+# CMD ["fastapi", "run", "main.py", "--port", "80"]
 
 # If running behind a proxy like Nginx or Traefik add --proxy-headers
-# CMD ["fastapi", "run", "main.py", "--port", "80", "--proxy-headers"]
+CMD ["fastapi", "run", "main.py", "--port", "80", "--proxy-headers"]
