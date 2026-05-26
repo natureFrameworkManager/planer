@@ -20,6 +20,8 @@ async def lifespan(app: FastAPI):
     parse_and_populate()
     yield
 
+# --- Read proxy path from environment (Defaults to /planer/v1 for production) ---
+PROXY_ROOT_PATH = os.getenv("PROXY_ROOT_PATH", "/planer/v1")
 
 app = FastAPI(
     lifespan=lifespan,
@@ -27,6 +29,7 @@ app = FastAPI(
     summary="University Schedule API",
     description="API for accessing university schedule data including modules, events, staff, locations, degrees, and semesters.",
     version="1.0.0",
+    root_path=PROXY_ROOT_PATH,  # <-- CRITICAL: Tells Swagger to prepend this path to all core schemas
 )
 
 app.add_middleware(
