@@ -181,6 +181,10 @@ body {
     @apply bg-accent2-light text-accent2 hover:bg-accent2 hover:text-white;
 }
 
+#shareLink {
+    word-break: break-word;
+}
+
 .sb-backdrop {
     @apply hidden fixed inset-0 z-50 bg-black/50;
 }
