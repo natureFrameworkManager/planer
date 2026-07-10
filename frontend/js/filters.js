@@ -603,6 +603,7 @@ var cachedEvents = {
  * @returns {import('./api.js').Event[]}
  */
 export function getEvents() {
+    var currentSemesterId = filterState.semester_id;
     var currentDegree = filterState.degree;
     var currentSemester = filterState.semester;
     var currentSelectedModules = [...filterState.selectedModules].sort().join(",");
@@ -615,7 +616,7 @@ export function getEvents() {
     var currentHiddenLocations = [...filterState.hiddenLocations].sort().join(",");
     var currentStatus = Object.entries(filterState.status).map(([key, value]) => `${key}:${value}`).sort().join(",");
     var currentPinned = [...pinnedEvents].sort().join(",");
-    var cacheKey = `${currentDegree}|${currentSemester}|${currentSelectedModules}|${currentHiddenModules}|${currentSelectedTypes}|${currentHiddenTypes}|${currentSelectedStaff}|${currentHiddenStaff}|${currentSelectedLocations}|${currentHiddenLocations}|${currentStatus}|${currentPinned}`;
+    var cacheKey = `$${currentSemesterId}|${currentDegree}|${currentSemester}|${currentSelectedModules}|${currentHiddenModules}|${currentSelectedTypes}|${currentHiddenTypes}|${currentSelectedStaff}|${currentHiddenStaff}|${currentSelectedLocations}|${currentHiddenLocations}|${currentStatus}|${currentPinned}`;
     
     // Check if filter has changed in a way that requires recomputing events, if not return cached events
     if (cachedEvents) {
