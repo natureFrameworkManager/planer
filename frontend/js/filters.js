@@ -119,14 +119,14 @@ export function fillModules() {
     var currentDegree = /** @type {HTMLOptionElement | null} */ (document.querySelector("#degreeSelect option:checked"))?.value ?? "";
     if (!isNaN(parseInt(currentDegree))) {
         var degreeId = parseInt(currentDegree);
-        var modules = fetchedData.modules.filter(el => degreeId in el.degree_ids);
+        var modules = fetchedData.modules.filter(el => degreeId in el.degree_ids).filter(el => el.semester_ids.includes(filterState.semester_id ?? -1) || filterState.semester_id === null);
         if (filterState.semester !== null) {
             const semesterNum = /** @type {number} */ (filterState.semester);
             modules = modules.filter(el => el.degree_ids[degreeId]?.includes(semesterNum));
         }
-        var moreModules = fetchedData.modules.filter(el => !modules.includes(el));
+        var moreModules = fetchedData.modules.filter(el => !modules.includes(el)).filter(el => el.semester_ids.includes(filterState.semester_id ?? -1) || filterState.semester_id === null);
     } else {
-        var modules = fetchedData.modules;
+        var modules = fetchedData.modules.filter(el => el.semester_ids.includes(filterState.semester_id ?? -1) || filterState.semester_id === null);
         /** @type {import('./api.js').Module[]} */
         var moreModules = [];
     }
@@ -179,7 +179,7 @@ export function fillModules() {
  * Fill the type filter section with types from fetched data. Show event count for each type and disable types with no events.
  */
 export function fillTypes() {
-    var types = new Set(fetchedData.events.map(el => el.type));
+    var types = new Set(fetchedData.events.filter(el => el.semester_ids.includes(filterState.semester_id ?? -1) || filterState.semester_id === null).map(el => el.type));
 
     var typeCon = /** @type {HTMLElement | null} */ (document.querySelector("#typeList"));
     if (!typeCon) return;
@@ -307,7 +307,7 @@ export function handleModuleSearch(ev) {
         if (!filterRow) return;
         const moduleId = parseInt(filterRow.dataset['key'] ?? "");
         if (isNaN(moduleId)) return;
-        const module = fetchedData.modules.find(el => el.id == moduleId);
+        const module = fetchedData.modules.filter(el => el.semester_ids.includes(filterState.semester_id ?? -1) || filterState.semester_id === null).find(el => el.id == moduleId);
         if (!module) return;
         const moduleName = module.name.toLowerCase();
         const moduleNumber = module.module_number.toLowerCase();
@@ -333,7 +333,7 @@ export function handleMoreModuleSearch(ev) {
         if (!filterRow) return;
         const moduleId = parseInt(filterRow.dataset['key'] ?? "");
         if (isNaN(moduleId)) return;
-        const module = fetchedData.modules.find(el => el.id == moduleId);
+        const module = fetchedData.modules.filter(el => el.semester_ids.includes(filterState.semester_id ?? -1) || filterState.semester_id === null).find(el => el.id == moduleId);
         if (!module) return;
         const moduleName = module.name.toLowerCase();
         const moduleNumber = module.module_number.toLowerCase();
@@ -626,14 +626,14 @@ export function getEvents() {
     }
     // modules
     if (filterState.degree !== null) {
-        var degreeModules = fetchedData.modules.filter(el => /** @type {number} */(filterState.degree) in el.degree_ids);
+        var degreeModules = fetchedData.modules.filter(el => el.semester_ids.includes(filterState.semester_id ?? -1) || filterState.semester_id === null).filter(el => /** @type {number} */(filterState.degree) in el.degree_ids);
         if (filterState.semester !== null) {
             const degreeId = /** @type {number} */ (filterState.degree);
             const semesterNumber = /** @type {number} */ (filterState.semester);
             degreeModules = degreeModules.filter(el => el.degree_ids[degreeId]?.includes(semesterNumber));
         }
     } else {
-        var degreeModules = fetchedData.modules;
+        var degreeModules = fetchedData.modules.filter(el => el.semester_ids.includes(filterState.semester_id ?? -1) || filterState.semester_id === null);
     }
     var degreeModulesIds = degreeModules.map(el => el.id);
     var selectedDegreeModules = [...filterState.selectedModules].filter(el => degreeModulesIds.includes(el));
@@ -649,7 +649,7 @@ export function getEvents() {
     modules = modules.filter(el => !filterState.hiddenModules.has(el));
 
     const modulesSet = new Set(modules);
-    var result = fetchedData.events.filter(el =>
+    var result = fetchedData.events.filter(el => el.semester_ids.includes(filterState.semester_id ?? -1) || filterState.semester_id === null).filter(el =>
         el.module_ids.some(id => modulesSet.has(id)) &&
         filterState.status[/** @type {import('./state.js').StatusKey} */ (el.status)] !== TRI.HIDDEN &&
         !el.staff_ids.some(id => filterState.hiddenStaff.has(id)) &&
@@ -691,9 +691,9 @@ export function getHiddenEvents() {
     var hidden = [];
     var eventsPinned = [...pinnedEvents];
     for (const pinnedId of eventsPinned) {
-        var pinnedEvent = fetchedData.events.find(el => el.id == pinnedId);
+        var pinnedEvent = fetchedData.events.filter(el => el.semester_ids.includes(filterState.semester_id ?? -1) || filterState.semester_id === null).find(el => el.id == pinnedId);
         if (!pinnedEvent || pinnedEvent === undefined) continue;
-        var similar = fetchedData.events.filter(el =>
+        var similar = fetchedData.events.filter(el => el.semester_ids.includes(filterState.semester_id ?? -1) || filterState.semester_id === null).filter(el =>
             el.id !== pinnedId &&
             el.module_ids.some(id => pinnedEvent?.module_ids.includes(id)) &&
             el.type == pinnedEvent?.type
