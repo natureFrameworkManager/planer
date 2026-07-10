@@ -13,7 +13,7 @@ from database.models import (
 )
 from my_logging import get_logger
 
-SOURCE_URL = "https://casparkroll.de/planer/getHtml.php"
+SOURCE_URL = "https://stdplan.informatik.uni-leipzig.de/modul.html"
 
 logger = get_logger(__name__)
 
