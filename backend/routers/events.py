@@ -9,10 +9,11 @@ from database.database import SessionDep
 from database.models import (
     Module, Event, Staff,
     ModuleDegreeLink, ModuleEventLink, EventStaffLink,
+    Semester, EventSemesterLink,
     Weekday, EventType, Status,
 )
 from database.schemas import (
-    ModuleResponse, StaffResponse,
+    ModuleResponse, SemesterResponse, StaffResponse,
     EventResponse, EventWithRelationshipsResponse, EventDetailResponse,
 )
 
@@ -122,6 +123,12 @@ def get_events(
         .where(EventStaffLink.event_id.in_(event_ids))  # type: ignore
     ).all()
 
+    # Batch-fetch semester links: (event_id, semester_id)
+    semester_rows = session.exec(
+        select(EventSemesterLink.event_id, EventSemesterLink.semester_id)
+        .where(EventSemesterLink.event_id.in_(event_ids))  # type: ignore
+    ).all()
+
     # module_map: event_id -> [module_ids]
     module_map: dict[int, list[int]] = defaultdict(list)
     for eid, mid in module_rows:
@@ -134,11 +141,18 @@ def get_events(
         if eid is not None and sid is not None:
             staff_map[eid].append(sid)
 
+    # semester_map: event_id -> [semester_ids]
+    semester_map: dict[int, list[int]] = defaultdict(list)
+    for eid, sid in semester_rows:
+        if eid is not None and sid is not None:
+            semester_map[eid].append(sid)
+
     return [
         EventWithRelationshipsResponse(
             **e.model_dump(),
             module_ids=module_map.get(e.id, []),
             staff_ids=staff_map.get(e.id, []),
+            semester_ids=semester_map.get(e.id, []),
         )
         for e in events
         if e.id is not None
@@ -172,8 +186,14 @@ def get_event(event_id: int, session: SessionDep, include_relationships: bool = 
         select(Staff).join(EventStaffLink).where(EventStaffLink.event_id == event_id)
     ).all()
 
+    # Fetch full Semester objects linked to this event
+    semesters = session.exec(
+        select(Semester).join(EventSemesterLink).where(EventSemesterLink.event_id == event_id)
+    ).all()
+
     return EventDetailResponse(
         **event.model_dump(),
         module=[ModuleResponse.model_validate(m) for m in modules],
         staff=[StaffResponse.model_validate(s) for s in staff],
+        semester=[SemesterResponse.model_validate(s) for s in semesters],
     )

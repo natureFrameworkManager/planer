@@ -32,6 +32,13 @@ class EventType(str, Enum):
     EXERCISE = "Übung"
     NO_TYPE_SPECIFIED = "Kein Typ angegeben"
 
+class ModuleSemesterLink(SQLModel, table=True):
+    module_id: int | None = Field(default=None, foreign_key="module.id", primary_key=True)
+    semester_id: int | None = Field(default=None, foreign_key="semester.id", primary_key=True)
+
+class EventSemesterLink(SQLModel, table=True):
+    event_id: int | None = Field(default=None, foreign_key="event.id", primary_key=True)
+    semester_id: int | None = Field(default=None, foreign_key="semester.id", primary_key=True)
 
 class ModuleDegreeLink(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -55,6 +62,7 @@ class Module(SQLModel, table=True):
     credits: int
     planung: str # Institut, dass die Planung macht
     language: str
+    semester: list["Semester"] = Relationship(back_populates="modules", link_model=ModuleSemesterLink)
     degrees: list["Degree"] = Relationship(back_populates="modules", link_model=ModuleDegreeLink)
     events: list["Event"] = Relationship(back_populates="module", link_model=ModuleEventLink)
 
@@ -66,6 +74,7 @@ class Staff(SQLModel, table=True):
 class Event(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     module: list[Module] = Relationship(back_populates="events", link_model=ModuleEventLink)
+    semester: list["Semester"] = Relationship(back_populates="events", link_model=EventSemesterLink)
     type: EventType
     staff: list[Staff] = Relationship(back_populates="events", link_model=EventStaffLink)
     title: str
@@ -89,5 +98,7 @@ class Degree(SQLModel, table=True):
 class Semester(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(unique=True)
+    modules: list[Module] = Relationship(back_populates="semester", link_model=ModuleSemesterLink)
+    events: list[Event] = Relationship(back_populates="semester", link_model=EventSemesterLink)
 
 

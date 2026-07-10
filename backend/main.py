@@ -42,6 +42,7 @@ app.add_middleware(
 # --- Frontend static files ---
 
 SERVE_FRONTEND = os.getenv("SERVE_FRONTEND", "true").lower() == "true"
+SERVE_FRONTEND = False
 
 if SERVE_FRONTEND:
     frontend_dir = Path(__file__).parent.parent / "frontend"

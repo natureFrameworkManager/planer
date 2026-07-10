@@ -58,9 +58,10 @@ class StaffWithRelationshipsResponse(StaffResponse):
     event_ids: list[int] = []
 
 class EventWithRelationshipsResponse(EventResponse):
-    model_config = {"json_schema_extra": {"examples": [{"id": 10, "type": "Vorlesung", "title": "Mathematik I - Vorlesung", "weekday": 1, "start_time": "08:00:00", "end_time": "09:30:00", "location_id": 5, "status": "ok", "module_ids": [1], "staff_ids": [1, 3]}]}}
+    model_config = {"json_schema_extra": {"examples": [{"id": 10, "type": "Vorlesung", "title": "Mathematik I - Vorlesung", "weekday": 1, "start_time": "08:00:00", "end_time": "09:30:00", "location_id": 5, "status": "ok", "module_ids": [1], "staff_ids": [1, 3], "semester_ids": [1, 2]}]}}
     module_ids: list[int] = []
     staff_ids: list[int] = []
+    semester_ids: list[int] = []
 
 class LocationWithRelationshipsResponse(LocationResponse):
     model_config = {"json_schema_extra": {"examples": [{"id": 5, "name": "Raum A-101", "event_ids": [10, 11, 42]}]}}
@@ -94,9 +95,10 @@ class StaffDetailResponse(StaffResponse):
     events: list[EventResponse] = []
 
 class EventDetailResponse(EventResponse):
-    model_config = {"json_schema_extra": {"examples": [{"id": 10, "type": "Vorlesung", "title": "Mathematik I - Vorlesung", "weekday": 1, "start_time": "08:00:00", "end_time": "09:30:00", "location_id": 5, "status": "ok", "module": [{"id": 1, "name": "Mathematik I", "module_number": "MAT-101", "credits": 6, "planung": "FB Mathematik", "language": "Deutsch"}], "staff": [{"id": 1, "name": "Prof. Dr. Schmidt"}]}]}}
+    model_config = {"json_schema_extra": {"examples": [{"id": 10, "type": "Vorlesung", "title": "Mathematik I - Vorlesung", "weekday": 1, "start_time": "08:00:00", "end_time": "09:30:00", "location_id": 5, "status": "ok", "module": [{"id": 1, "name": "Mathematik I", "module_number": "MAT-101", "credits": 6, "planung": "FB Mathematik", "language": "Deutsch"}], "staff": [{"id": 1, "name": "Prof. Dr. Schmidt"}], "semester": [{"id": 1, "name": "Wintersemester 2023/24"}]}]}}
     module: list[ModuleResponse] = []
     staff: list[StaffResponse] = []
+    semester: list[SemesterResponse] = []
 
 class LocationDetailResponse(LocationResponse):
     model_config = {"json_schema_extra": {"examples": [{"id": 5, "name": "Raum A-101", "events": [{"id": 10, "type": "Vorlesung", "title": "Mathematik I - Vorlesung", "weekday": 1, "start_time": "08:00:00", "end_time": "09:30:00", "location_id": 5, "status": "ok"}]}]}}
