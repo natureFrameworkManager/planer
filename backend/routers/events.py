@@ -35,6 +35,7 @@ def get_events(
     end_time_max: time | None = Query(None, description="Filter events ending at or before this time (HH:MM)"),
     module_id: list[int] | None = Query(None, description="Filter by associated module ID(s). Multiple values combined with OR."),
     staff_id: list[int] | None = Query(None, description="Filter by associated staff ID(s). Multiple values combined with OR."),
+    semester_id: list[int] | None = Query(None, description="Filter by associated semester ID. Multiple values combined with OR."),
     degree_id: list[int] | None = Query(None, description="Filter by associated degree ID(s) (via modules). Multiple values combined with OR."),
     semester: int | None = Query(None, description="Filter by semester number (used with degree_id filter)"),
 ):
@@ -81,6 +82,8 @@ def get_events(
         query = query.join(ModuleEventLink).where(ModuleEventLink.module_id.in_(module_id))  # type: ignore[union-attr]
     if staff_id is not None:
         query = query.join(EventStaffLink).where(EventStaffLink.staff_id.in_(staff_id))  # type: ignore[union-attr]
+    if semester_id is not None:
+        query = query.join(EventSemesterLink).where(EventSemesterLink.semester_id.in_(semester_id))  # type: ignore[union-attr]
 
     # Filter by degree: Event -> ModuleEventLink -> ModuleDegreeLink
     if degree_id is not None:

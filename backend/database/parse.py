@@ -9,6 +9,7 @@ from database.database import engine
 from database.models import (
     Module, Event, Staff, Location, Degree, Semester,
     ModuleDegreeLink, ModuleEventLink, EventStaffLink,
+    ModuleSemesterLink, EventSemesterLink,
     EventType, Weekday, Status,
 )
 from my_logging import get_logger
@@ -39,8 +40,8 @@ STATUS_MAP = {
 EVENT_TYPE_BY_VALUE = {et.value: et for et in EventType}
 
 
-def _fetch_html() -> str:
-    response = httpx.get(SOURCE_URL, timeout=30)
+def _fetch_html(url: str) -> str:
+    response = httpx.get(url, timeout=30)
     response.raise_for_status()
     return response.text
 
@@ -293,10 +294,47 @@ def _parse_module_info(info_table: Tag) -> dict[str, str | int | list[str]]:
             ]
     return info
 
+def _link_module_semester(session: Session, module: Module, semester: Semester) -> None:
+    """
+    Create a link between a module and a semester if it doesn't already exist.
+    """
+    existing_link = session.exec(
+        select(ModuleSemesterLink).where(
+            ModuleSemesterLink.module_id == module.id,
+            ModuleSemesterLink.semester_id == semester.id,
+        )
+    ).first()
 
-def parse_and_populate() -> None:
-    logger.info("Fetching HTML from %s", SOURCE_URL)
-    html = _fetch_html()
+    if existing_link is None:
+        link = ModuleSemesterLink(
+            module_id=module.id,
+            semester_id=semester.id,
+        )
+        session.add(link)
+        session.flush()
+
+def _link_event_semester(session: Session, event: Event, semester: Semester) -> None:
+    """
+    Create a link between an event and a semester if it doesn't already exist.
+    """
+    existing_link = session.exec(
+        select(EventSemesterLink).where(
+            EventSemesterLink.event_id == event.id,
+            EventSemesterLink.semester_id == semester.id,
+        )
+    ).first()
+
+    if existing_link is None:
+        link = EventSemesterLink(
+            event_id=event.id,
+            semester_id=semester.id,
+        )
+        session.add(link)
+        session.flush()
+
+def parse_and_populate(url = SOURCE_URL) -> None:
+    logger.info("Fetching HTML from %s", url)
+    html = _fetch_html(url)
     soup = BeautifulSoup(html, "html.parser")
 
     h1 = soup.find("h1")
@@ -313,10 +351,10 @@ def parse_and_populate() -> None:
         semester_name = semester_name.replace("Wintersemester", "WiSe")
 
     with Session(engine) as session:
-        existing = session.exec(select(Semester)).first()
+        existing = session.exec(select(Semester).where(Semester.name == semester_name)).first()
         needs_clear = existing is not None and existing.name != semester_name
 
-        if needs_clear:
+        if needs_clear and False:
             logger.info(
                 "New semester '%s' detected (was '%s') – clearing database",
                 semester_name,
@@ -325,7 +363,7 @@ def parse_and_populate() -> None:
             _clear_database()
 
     with Session(engine) as session:
-        existing = session.exec(select(Semester)).first()
+        existing = session.exec(select(Semester).where(Semester.name == semester_name)).first()
         if existing:
             logger.info("Semester '%s' already in database – updating", semester_name)
         else:
@@ -334,6 +372,10 @@ def parse_and_populate() -> None:
             session.commit()
 
     with Session(engine) as session:
+        semester = session.exec(select(Semester).where(Semester.name == semester_name)).first()
+        if not semester:
+            logger.error("Failed to retrieve or create semester '%s' – aborting parse", semester_name)
+            return
         for h2 in soup.find_all("h2"):
             anchor = h2.find("a", attrs={"name": True})
             if not anchor or anchor["name"] == "top":
@@ -361,6 +403,7 @@ def parse_and_populate() -> None:
                 planung=info["planung"],
                 language=info["language"],
             )
+            _link_module_semester(session, module, semester)
 
             degree_names = info.get("degree_names", [])
             if not isinstance(degree_names, list):
@@ -478,6 +521,7 @@ def parse_and_populate() -> None:
                     )
                     session.add(event)
                     session.flush()
+                _link_event_semester(session, event, semester)
 
                 if module not in event.module:
                     event.module.append(module)

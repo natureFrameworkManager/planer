@@ -6,11 +6,12 @@ from sqlmodel import select
 from database.database import SessionDep
 from database.models import (
     Module, Event, Degree,
-    ModuleDegreeLink, ModuleEventLink,
+    ModuleDegreeLink, ModuleEventLink, 
+    Semester, ModuleSemesterLink,
 )
 from database.schemas import (
     ModuleResponse, ModuleWithRelationshipsResponse, ModuleDetailResponse,
-    EventResponse, DegreeInModuleResponse,
+    EventResponse, DegreeInModuleResponse, SemesterResponse,
 )
 
 router = APIRouter(prefix="/modules", tags=["Modules"])
@@ -26,6 +27,7 @@ def get_modules(
     planung: str | None = Query(None, description="Filter by planning department (case-insensitive substring match)"),
     credits_min: int | None = Query(None, description="Filter by minimum credits (inclusive)"),
     credits_max: int | None = Query(None, description="Filter by maximum credits (inclusive)"),
+    semester_id: list[int] | None = Query(None, description="Filter by associated semester ID. Multiple values combined with OR."),
     degree_id: int | None = Query(None, description="Filter by associated degree ID"),
     semester: int | None = Query(None, description="Filter by degree semester number"),
 ):
@@ -56,6 +58,10 @@ def get_modules(
     if credits_max is not None:
         query = query.where(Module.credits <= credits_max)
 
+    # Relationship filters via link tables
+    if semester_id is not None:
+        query = query.join(ModuleSemesterLink).where(ModuleSemesterLink.semester_id.in_(semester_id))  # type: ignore[union-attr]
+
     # Filter by degree/semester via the link table
     if degree_id is not None:
         query = query.join(ModuleDegreeLink).where(ModuleDegreeLink.degree_id == degree_id)
@@ -85,6 +91,12 @@ def get_modules(
         .where(ModuleEventLink.event_id.is_not(None))  # type: ignore
     ).all()
 
+    # Batch-fetch semester links: (module_id, semester_id)
+    semester_rows = session.exec(
+        select(ModuleSemesterLink.module_id, ModuleSemesterLink.semester_id)
+        .where(ModuleSemesterLink.module_id.in_(module_ids))  # type: ignore
+    ).all()
+
     # degree_map: module_id -> { degree_id -> [semester numbers] }
     degree_map: dict[int, dict[int, list[int]]] = defaultdict(lambda: defaultdict(list))
     for mid, did, semester_num, _note in degree_rows:
@@ -99,11 +111,18 @@ def get_modules(
         if mid is not None and eid is not None:
             event_map[mid].append(eid)
 
+    # semester_map: event_id -> [semester_ids]
+    semester_map: dict[int, list[int]] = defaultdict(list)
+    for eid, sid in semester_rows:
+        if eid is not None and sid is not None:
+            semester_map[eid].append(sid)
+
     return [
         ModuleWithRelationshipsResponse(
             **module.model_dump(),
             degree_ids=degree_map.get(module.id, {}),
             event_ids=event_map.get(module.id, []),
+            semester_ids=semester_map.get(module.id, []),
         )
         for module in modules
         if module.id is not None
@@ -142,6 +161,11 @@ def get_module(module_id: int, session: SessionDep, include_relationships: bool 
         select(Degree).where(Degree.id.in_(degree_links.keys()))  # type: ignore[union-attr]
     ).all()
 
+    # Fetch full Semester objects linked to this module
+    semesters = session.exec(
+        select(Semester).join(ModuleSemesterLink).where(ModuleSemesterLink.module_id == module_id)
+    ).all()
+
     # Fetch full Event objects linked to this module via the event link table
     events = session.exec(
         select(Event).join(ModuleEventLink).where(ModuleEventLink.module_id == module_id)
@@ -159,4 +183,5 @@ def get_module(module_id: int, session: SessionDep, include_relationships: bool 
             if d.id is not None
         ],
         events=[EventResponse.model_validate(e) for e in events],
+        semester=[SemesterResponse.model_validate(s) for s in semesters],
     )

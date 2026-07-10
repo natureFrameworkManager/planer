@@ -52,6 +52,7 @@ class ModuleWithRelationshipsResponse(ModuleResponse):
     model_config = {"json_schema_extra": {"examples": [{"id": 1, "name": "Mathematik I", "module_number": "MAT-101", "credits": 6, "planung": "FB Mathematik", "language": "Deutsch", "degree_ids": {1: [1, 2], 3: [1]}, "event_ids": [10, 11]}]}} # pyright: ignore[reportAssignmentType]
     degree_ids: dict[int, list[int]] = {}
     event_ids: list[int] = []
+    semester_ids: list[int] = []
 
 class StaffWithRelationshipsResponse(StaffResponse):
     model_config = {"json_schema_extra": {"examples": [{"id": 1, "name": "Prof. Dr. Schmidt", "event_ids": [10, 11, 25]}]}}
@@ -89,6 +90,7 @@ class ModuleDetailResponse(ModuleResponse):
     model_config = {"json_schema_extra": {"examples": [{"id": 1, "name": "Mathematik I", "module_number": "MAT-101", "credits": 6, "planung": "FB Mathematik", "language": "Deutsch", "degrees": [{"id": 1, "name": "Informatik B.Sc.", "semesters": [1], "note": "Pflichtmodul"}], "events": [{"id": 10, "type": "Vorlesung", "title": "Mathematik I - Vorlesung", "weekday": 1, "start_time": "08:00:00", "end_time": "09:30:00", "location_id": 5, "status": "ok"}]}]}}
     degrees: list[DegreeInModuleResponse] = []
     events: list[EventResponse] = []
+    semester: list[SemesterResponse] = []
 
 class StaffDetailResponse(StaffResponse):
     model_config = {"json_schema_extra": {"examples": [{"id": 1, "name": "Prof. Dr. Schmidt", "events": [{"id": 10, "type": "Vorlesung", "title": "Mathematik I - Vorlesung", "weekday": 1, "start_time": "08:00:00", "end_time": "09:30:00", "location_id": 5, "status": "ok"}]}]}}

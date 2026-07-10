@@ -17,7 +17,8 @@ from routers import modules, events, staff, locations, degrees, semesters
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
-    parse_and_populate()
+    for url in ["https://stdplan.informatik.uni-leipzig.de/modul.html", "https://stdplan.informatik.uni-leipzig.de/archiv/26s/modul.html", "https://stdplan.informatik.uni-leipzig.de/archiv/25s/modul.html", "https://stdplan.informatik.uni-leipzig.de/archiv/25w/modul.html", "https://stdplan.informatik.uni-leipzig.de/archiv/24s/modul.html", "https://stdplan.informatik.uni-leipzig.de/archiv/24w/modul.html"]:
+        parse_and_populate(url)
     yield
 
 # --- Read proxy path from environment (Defaults to /planer/v1 for production) ---
