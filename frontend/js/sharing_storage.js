@@ -16,6 +16,7 @@ function serializeState() {
     return {
         d: filterState.degree,
         s: filterState.semester,
+        sid: filterState.semester_id,
         sm: [...filterState.selectedModules],
         hm: [...filterState.hiddenModules],
         st: [...filterState.selectedTypes],
@@ -45,6 +46,9 @@ function applyState(o) {
 
     if (typeof o.s === "number") filterState.semester = o.s;
     else if (o.s === null) filterState.semester = null;
+
+    if (typeof o.sid === "number") filterState.semester_id = o.sid;
+    else if (o.sid === null) filterState.semester_id = null;
 
     if (Array.isArray(o.sm)) { filterState.selectedModules.clear(); o.sm.forEach(/** @param {number} id */ id => filterState.selectedModules.add(id)); }
     if (Array.isArray(o.hm)) { filterState.hiddenModules.clear(); o.hm.forEach(/** @param {number} id */ id => filterState.hiddenModules.add(id)); }
@@ -101,6 +105,7 @@ export function getShareLink() {
     setParam(p, "shareSelection", "1"); // just a marker to make the link seem less random and more intentional
     setParam(p, "d", filterState.degree);
     setParam(p, "s", filterState.semester);
+    setParam(p, "sid", filterState.semester_id);
     setParam(p, "sm", [...filterState.selectedModules]);
     setParam(p, "hm", [...filterState.hiddenModules]);
     setParam(p, "st", [...filterState.selectedTypes]);

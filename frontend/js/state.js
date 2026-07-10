@@ -4,7 +4,7 @@
 /** @typedef {{ key: StatusKey, name: string }} EventStateOption */
 /** @typedef {{ [key in StatusKey]: TriState | null }} StatusFilterState */
 /** @typedef {{ degrees: import("./api").Degree[], modules: import("./api").Module[], events: import("./api").Event[], staff: import("./api").Staff[], locations: import("./api").Location[], semesters: import("./api").Semester[], states: EventStateOption[] }} FetchedDataState */
-/** @typedef {{ degree: number | null, semester: number | null, selectedModules: Set<number>, hiddenModules: Set<number>, selectedTypes: Set<string>, hiddenTypes: Set<string>, status: StatusFilterState, selectedStaff: Set<number>, hiddenStaff: Set<number>, selectedLocations: Set<number>, hiddenLocations: Set<number> }} FilterState */
+/** @typedef {{ degree: number | null, semester: number | null, semester_id: number | null, selectedModules: Set<number>, hiddenModules: Set<number>, selectedTypes: Set<string>, hiddenTypes: Set<string>, status: StatusFilterState, selectedStaff: Set<number>, hiddenStaff: Set<number>, selectedLocations: Set<number>, hiddenLocations: Set<number> }} FilterState */
 
 /** 
  * TriState enum for filter states, with a helper function to cycle through states.
@@ -80,6 +80,7 @@ export const fetchedData = {
 export const filterState = {
     degree: null,
     semester: null,
+    semester_id: null,
     selectedModules: new Set(), // module ids
     hiddenModules: new Set(), // module ids
     selectedTypes: new Set(),

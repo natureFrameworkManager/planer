@@ -31,12 +31,52 @@ export function initFilters() {
  * Update all filter sections based on fetched data and filter state. This should be called after fetching data and whenever filter state changes.
  */
 export function updateFilters() {
+    fillSemesterSelect();
     fillDegreesSemesters();
     fillModules();
     fillTypes();
     fillStates();
     fillStaff();
     fillLocations();
+}
+export function fillSemesterSelect() {
+    var semesterSelect = /** @type {HTMLSelectElement | null} */ (document.querySelector("#semesterSelectHeader"));
+    if (!semesterSelect) return;
+
+    var semesters = fetchedData.semesters.sort((a, b) => {
+        // Names: WiSe 2026/27, SoSe 2027, s24 - Stundenplan Sommersemester 2024, w23 - Stundenplan Wintersemester 2023
+        // Sort by year and then by semester type (WiSe before SoSe)
+        const getYear = (/** @type {string} */ name) => {
+            const match = name.match(/(\d{4})/);
+            return match ? parseInt(match[1]) : 0;
+        };
+        const getSemesterType = (/** @type {string} */ name) => {
+            if (name.toLowerCase().includes("wise")) return 0; // Wintersemester
+            if (name.toLowerCase().includes("sose")) return 1; // Sommersemester
+            if (name.toLowerCase().includes("winter")) return 0; // Wintersemester
+            if (name.toLowerCase().includes("sommer")) return 1; // Sommersemester
+            return 2; // Unknown type
+        };
+        const yearA = getYear(a.name);
+        const yearB = getYear(b.name);
+        if (yearA !== yearB) return yearB - yearA; // Descending order by year
+        const typeA = getSemesterType(a.name);
+        const typeB = getSemesterType(b.name);
+        return typeA - typeB; // Wintersemester before Sommersemester
+    });
+    
+    var semesterHtml = "<option value=''>Alle Semester</option>";
+    var i = 0;
+    for (const semester of semesters) {
+        if (i === 0 && filterState.semester_id === null) {
+            filterState.semester_id = semester.id;
+        }
+        semesterHtml += '<option value="' + semester.id + '"' + (filterState.semester_id === semester.id ? " selected" : "") + '>' + semester.name + "</option>";
+        i++;
+    }
+    semesterSelect.innerHTML = semesterHtml;
+
+    semesterSelect.addEventListener("change", handleSemesterIdSelect);
 }
 /**
  * Fill the degree and semester filter sections with degrees and semesters from fetched data. Show semesters based on selected degree. If no degree is selected, hide semester filter.
@@ -364,6 +404,24 @@ export function handleLocationSearch(ev) {
         }
         var count = getEvents().filter(el => el.location_id == location.id).length;
         locationCon.appendChild(createFilterRow(location.id, location.name, state, count, handleLocationSelect));
+    }
+}
+
+/**
+ * Handle semester select change, update filter state and trigger update callback.
+ * @param {Event} ev
+ */
+export function handleSemesterIdSelect(ev) {
+    console.log("handleSemesterIdSelect called");
+    var selected = /** @type {HTMLOptionElement | null} */ (/** @type {HTMLSelectElement} */ (ev.target).querySelector("option:checked"))?.value ?? "";
+    if (!isNaN(parseInt(selected))) {
+        filterState.semester_id = parseInt(selected);
+    } else {
+        filterState.semester_id = null;
+    }
+
+    if (updateCallback !== null) {
+        updateCallback();
     }
 }
 
