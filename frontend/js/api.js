@@ -45,6 +45,7 @@ async function apiFetch(path) {
  * @property {string} language
  * @property {Object.<number, number[]>} degree_ids
  * @property {number[]} event_ids
+ * @property {number[]} semester_ids
  */
 /**
  * @typedef {Object} Degree
@@ -72,6 +73,7 @@ async function apiFetch(path) {
  * @property {string} status
  * @property {number[]} module_ids
  * @property {number[]} staff_ids
+ * @property {number[]} semester_ids
  */
 /**
  * @typedef {Object} Staff
