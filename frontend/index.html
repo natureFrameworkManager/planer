@@ -75,14 +75,19 @@
                 <div class="sb-backdrop" id="sbBackdrop"></div>
                 <aside id="sidebar" class="sidebar">
                     <div class="sidebar-mobile-header">
-                        <div style="display:flex;align-items:center;gap:8px">
-                            <img src="assets/img/small_logo.svg" alt="" style="width:20px;height:20px">
-                            <span style="font-size:0.82rem;font-weight:700">Uni Planer</span>
-                            <span id="semesterBadgeMobile" class="semester-badge" style="font-size:0.62rem">–</span>
+                        <div class="sidebar-mobile-header-top">
+                            <div style="display:flex;align-items:center;gap:8px">
+                                <img src="assets/img/small_logo.svg" alt="" style="width:20px;height:20px">
+                                <span style="font-size:0.82rem;font-weight:700">Uni Planer</span>
+                            </div>
+                            <button id="sidebarCloseBtn" class="icon-btn" aria-label="Schließen">
+                                <span class="material-icons-round">close</span>
+                            </button>
                         </div>
-                        <button id="sidebarCloseBtn" class="icon-btn" aria-label="Schließen">
-                            <span class="material-icons-round">close</span>
-                        </button>
+                        <span id="semesterBadgeMobile" class="semester-badge-mobile" style="font-size:0.62rem; display:none;">–</span>
+                        <select id="semesterSelectHeaderMobile" class="semester-badge-mobile">
+                            <option value="">Alle Semester</option>
+                        </select>
                     </div>
                     <div class="sidebar-scroll">
                         <div id="chipsSection" class="chips-section" style="display:none">

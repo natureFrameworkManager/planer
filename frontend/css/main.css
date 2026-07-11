@@ -117,8 +117,11 @@ body {
     @apply text-[0.9rem] font-bold whitespace-nowrap tracking-tight;
 }
 
-.semester-badge {
+.semester-badge, .semester-badge-mobile {
     @apply text-[0.7rem] whitespace-nowrap rounded-sm px-2 py-0.5 text-text-secondary bg-background-input;
+}
+.semester-badge-mobile {
+    @apply py-1.5;
 }
 
 .header-center {
@@ -761,7 +764,10 @@ body {
     }
 
     .sidebar-mobile-header {
-        @apply flex items-center justify-between shrink-0 px-3 py-2 bg-surface-background-alt border-b border-border;
+        @apply flex flex-col gap-y-2 shrink-0 px-3 py-2 bg-surface-background-alt border-b border-border;
+    }
+    .sidebar-mobile-header-top {
+        @apply flex items-center justify-between;
     }
 
     .mobile-view-bar {

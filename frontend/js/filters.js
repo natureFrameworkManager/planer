@@ -41,7 +41,8 @@ export function updateFilters() {
 }
 export function fillSemesterSelect() {
     var semesterSelect = /** @type {HTMLSelectElement | null} */ (document.querySelector("#semesterSelectHeader"));
-    if (!semesterSelect) return;
+    var mobileSemesterSelect = /** @type {HTMLSelectElement | null} */ (document.querySelector("#semesterSelectHeaderMobile"));
+    if (!semesterSelect || !mobileSemesterSelect) return;
 
     var semesters = fetchedData.semesters.sort((a, b) => {
         // Names: WiSe 2026/27, SoSe 2027, s24 - Stundenplan Sommersemester 2024, w23 - Stundenplan Wintersemester 2023
@@ -75,8 +76,10 @@ export function fillSemesterSelect() {
         i++;
     }
     semesterSelect.innerHTML = semesterHtml;
+    mobileSemesterSelect.innerHTML = semesterHtml;
 
     semesterSelect.addEventListener("change", handleSemesterIdSelect);
+    mobileSemesterSelect.addEventListener("change", handleSemesterIdSelect);
 }
 /**
  * Fill the degree and semester filter sections with degrees and semesters from fetched data. Show semesters based on selected degree. If no degree is selected, hide semester filter.
